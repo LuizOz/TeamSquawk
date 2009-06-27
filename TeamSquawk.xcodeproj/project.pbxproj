@@ -11,6 +11,8 @@
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
+		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +26,10 @@
 		32CA4F630368D1EE00C91783 /* TeamSquawk_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TeamSquawk_Prefix.pch; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* TeamSquawk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TeamSquawk.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
+		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
+		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
+		C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncUdpSocket.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,8 +47,9 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				C971748B0FF6D9ED008FC21C /* Socket */,
 			);
-			name = Classes;
+			path = Classes;
 			sourceTree = "<group>";
 		};
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
@@ -111,6 +118,17 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		C971748B0FF6D9ED008FC21C /* Socket */ = {
+			isa = PBXGroup;
+			children = (
+				C971748D0FF6DA13008FC21C /* AsyncSocket.m */,
+				C971748E0FF6DA13008FC21C /* AsyncSocket.h */,
+				C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */,
+				C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */,
+			);
+			path = Socket;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -167,6 +185,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
+				C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */,
+				C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
