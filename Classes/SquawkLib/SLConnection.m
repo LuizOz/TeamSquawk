@@ -1,0 +1,125 @@
+//
+//  SLConnection.m
+//  TeamSquawk
+//
+//  Created by Matt Wright on 28/06/2009.
+//  Copyright 2009 Matt Wright Consulting. All rights reserved.
+//
+
+#import "SLConnection.h"
+#import "SLPacketBuilder.h"
+#import "SLPacketChomper.h"
+
+@implementation SLConnection
+
+@synthesize clientName;
+@synthesize clientOperatingSystem;
+@synthesize clientMajorVersion;
+@synthesize clientMinorVersion;
+
+@synthesize delegate;
+
+- (id)initWithHost:(NSString*)host withError:(NSError**)error
+{
+  return [self initWithHost:host withPort:8767 withError:error];
+}
+
+- (id)initWithHost:(NSString*)host withPort:(int)port withError:(NSError**)error
+{
+  if (self = [super init])
+  {
+    socket = [[AsyncUdpSocket alloc] initWithDelegate:self];    
+    BOOL connected = [socket connectToHost:host onPort:port error:error];
+    if (!connected)
+    {
+      NSLog(@"%@", *error);
+      [socket release];
+      [self release];
+      return nil;
+    }
+  }
+  return self;
+}
+
+- (void)beginAsynchronousLogin:(NSString*)username password:(NSString*)password nickName:(NSString*)nickName isRegistered:(BOOL)isRegistered
+{
+  sequenceNumber = 1;
+  
+  SLPacketBuilder *packetBuilder = [SLPacketBuilder packetBuilder];
+  NSData *packet = [packetBuilder buildLoginPacketWithSequenceID:sequenceNumber
+                                                      clientName:[self clientName]
+                                             operatingSystemName:[self clientOperatingSystem]
+                                              clientVersionMajor:[self clientMajorVersion]
+                                              clientVersionMinor:[self clientMinorVersion]
+                                                    isRegistered:isRegistered
+                                                       loginName:username
+                                                   loginPassword:password
+                                                   loginNickName:nickName];
+  [socket sendData:packet withTimeout:20 tag:0];
+  
+  // queue up a read for the return packet
+  [socket receiveWithTimeout:20 tag:0];
+}
+
+- (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
+{
+  NSLog(@"%@, %d, %@, %d", data, tag, host, port);
+  
+  SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
+  NSDictionary *packet = [chomper chompPacket:data];
+  
+  if (packet)
+  {
+    switch ([[packet objectForKey:@"SLPacketType"] unsignedIntValue])
+    {
+      case PACKET_TYPE_LOGIN_REPLY:
+      {
+        BOOL isBadLogin = [[packet objectForKey:@"SLBadLogin"] boolValue];
+        
+        if (isBadLogin)
+        {
+          if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:)])
+          {
+            [[self delegate] connectionFailedToLogin:self];
+          }
+        }
+        else
+        {
+          unsigned int connectionID = [[packet objectForKey:@"SLNewConnectionID"] unsignedIntValue];
+          unsigned int clientID = [[packet objectForKey:@"SLClientID"] unsignedIntValue];
+          unsigned int sequenceID = [[packet objectForKey:@"SLSequenceNumber"] unsignedIntValue];
+          unsigned int lastCRC32 = [[packet objectForKey:@"SLCRC32"] unsignedIntValue];
+          
+          NSData *newPacket = [[SLPacketBuilder packetBuilder] buildLoginResponsePacketWithConnectionID:connectionID
+                                                                                               clientID:clientID
+                                                                                             sequenceID:sequenceNumber
+                                                                                              lastCRC32:lastCRC32];
+          [sock sendData:newPacket withTimeout:20 tag:0];
+          
+          if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:didLoginTo:port:serverName:platform:majorVersion:minorVersion:subLevelVersion:subsubLevelVersion:welcomeMessage:)])
+          {
+            [[self delegate] connection:self
+                             didLoginTo:host
+                                   port:port
+                             serverName:[packet objectForKey:@"SLServerName"]
+                               platform:[packet objectForKey:@"SLPlatform"]
+                           majorVersion:[[packet objectForKey:@"SLMajorVersion"] intValue]
+                           minorVersion:[[packet objectForKey:@"SLMinorVersion"] intValue]
+                        subLevelVersion:[[packet objectForKey:@"SLSubLevelVersion"] intValue]
+                     subsubLevelVersion:[[packet objectForKey:@"SLSubSubLevelVersion"] intValue]
+                         welcomeMessage:[packet objectForKey:@"SLWelcomeMessage"]];
+          }
+        }
+        
+        break;
+      }
+      default:
+        NSLog(@"got chomped packet I don't know about: %@", packet);
+    }
+    
+    return YES;
+  }
+  return NO;
+}
+
+@end

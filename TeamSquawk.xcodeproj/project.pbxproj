@@ -13,6 +13,11 @@
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
+		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
+		C971749A0FF7688E008FC21C /* SLPacketBuilder.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174990FF7688E008FC21C /* SLPacketBuilder.m */; };
+		C97174A20FF7756B008FC21C /* NSData+Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174A10FF7756B008FC21C /* NSData+Extensions.m */; };
+		C97174D70FF777CF008FC21C /* TSController.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174D60FF777CF008FC21C /* TSController.m */; };
+		C97174E50FF778E8008FC21C /* SLPacketChomper.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174E40FF778E8008FC21C /* SLPacketChomper.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +35,16 @@
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
 		C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncUdpSocket.h; sourceTree = "<group>"; };
+		C97174940FF76700008FC21C /* SLConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLConnection.h; sourceTree = "<group>"; };
+		C97174950FF76700008FC21C /* SLConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SLConnection.m; sourceTree = "<group>"; };
+		C97174980FF7688E008FC21C /* SLPacketBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLPacketBuilder.h; sourceTree = "<group>"; };
+		C97174990FF7688E008FC21C /* SLPacketBuilder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SLPacketBuilder.m; sourceTree = "<group>"; };
+		C97174A00FF7756B008FC21C /* NSData+Extensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSData+Extensions.h"; sourceTree = "<group>"; };
+		C97174A10FF7756B008FC21C /* NSData+Extensions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSData+Extensions.m"; sourceTree = "<group>"; };
+		C97174D50FF777CF008FC21C /* TSController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSController.h; sourceTree = "<group>"; };
+		C97174D60FF777CF008FC21C /* TSController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSController.m; sourceTree = "<group>"; };
+		C97174E30FF778E8008FC21C /* SLPacketChomper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLPacketChomper.h; sourceTree = "<group>"; };
+		C97174E40FF778E8008FC21C /* SLPacketChomper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SLPacketChomper.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,7 +62,10 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				C971749F0FF77557008FC21C /* Additions */,
+				C97174930FF766AC008FC21C /* SquawkLib */,
 				C971748B0FF6D9ED008FC21C /* Socket */,
+				C97174D40FF77785008FC21C /* UI */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -121,12 +139,43 @@
 		C971748B0FF6D9ED008FC21C /* Socket */ = {
 			isa = PBXGroup;
 			children = (
-				C971748D0FF6DA13008FC21C /* AsyncSocket.m */,
 				C971748E0FF6DA13008FC21C /* AsyncSocket.h */,
-				C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */,
+				C971748D0FF6DA13008FC21C /* AsyncSocket.m */,
 				C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */,
+				C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */,
 			);
 			path = Socket;
+			sourceTree = "<group>";
+		};
+		C97174930FF766AC008FC21C /* SquawkLib */ = {
+			isa = PBXGroup;
+			children = (
+				C97174940FF76700008FC21C /* SLConnection.h */,
+				C97174950FF76700008FC21C /* SLConnection.m */,
+				C97174980FF7688E008FC21C /* SLPacketBuilder.h */,
+				C97174990FF7688E008FC21C /* SLPacketBuilder.m */,
+				C97174E30FF778E8008FC21C /* SLPacketChomper.h */,
+				C97174E40FF778E8008FC21C /* SLPacketChomper.m */,
+			);
+			path = SquawkLib;
+			sourceTree = "<group>";
+		};
+		C971749F0FF77557008FC21C /* Additions */ = {
+			isa = PBXGroup;
+			children = (
+				C97174A00FF7756B008FC21C /* NSData+Extensions.h */,
+				C97174A10FF7756B008FC21C /* NSData+Extensions.m */,
+			);
+			path = Additions;
+			sourceTree = "<group>";
+		};
+		C97174D40FF77785008FC21C /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				C97174D50FF777CF008FC21C /* TSController.h */,
+				C97174D60FF777CF008FC21C /* TSController.m */,
+			);
+			path = UI;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -187,6 +236,11 @@
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
 				C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */,
 				C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */,
+				C97174960FF76700008FC21C /* SLConnection.m in Sources */,
+				C971749A0FF7688E008FC21C /* SLPacketBuilder.m in Sources */,
+				C97174A20FF7756B008FC21C /* NSData+Extensions.m in Sources */,
+				C97174D70FF777CF008FC21C /* TSController.m in Sources */,
+				C97174E50FF778E8008FC21C /* SLPacketChomper.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
