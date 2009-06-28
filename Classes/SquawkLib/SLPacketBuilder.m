@@ -162,7 +162,7 @@
   [packetData appendBytes:&crc length:4];
   
   // not sure what this is
-  unsigned short body1 = 0x0100;
+  unsigned short body1 = 0x0001;
   [packetData appendBytes:&body1 length:2];
   
   // these are actually channel name, sub channel name and password
@@ -183,11 +183,11 @@
   
   // channel password
   unsigned char channelPasswordLen = 0;
-  unsigned char channelPasswordBuffer[29];
+  unsigned char channelPasswordBuffer[25];
   
-  memset(channelPasswordBuffer, '\0', 29);
+  memset(channelPasswordBuffer, '\0', 25);
   [packetData appendBytes:&channelPasswordLen length:1];
-  [packetData appendBytes:channelPasswordBuffer length:29];  
+  [packetData appendBytes:channelPasswordBuffer length:25];  
   
   // now the crc from the previous login call
   [packetData appendBytes:&lastCRC32 length:4];
@@ -199,6 +199,29 @@
   // do the crc
   unsigned int packetCRC = [packetData crc32];
   [packetData replaceBytesInRange:NSMakeRange(20, 4) withBytes:&packetCRC length:4];
+  
+  return packetData;
+}
+
+#pragma mark Ack
+
+- (NSData*)buildAcknowledgePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID
+{
+  // we need to ack packets the server sends us.
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // this is the acknowledge header
+  unsigned char headerChunk[] = { 0xf1,  0xbe, 0x00, 0x00 };
+  [packetData appendBytes:headerChunk length:4];
+  
+  // connectiond id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  // sequence to ack
+  [packetData appendBytes:&sequenceID length:4];
+  
+  // don't need a crc, how odd
   
   return packetData;
 }

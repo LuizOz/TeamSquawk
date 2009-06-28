@@ -30,7 +30,14 @@
 - (id)initWithHost:(NSString*)host withError:(NSError**)error;
 - (id)initWithHost:(NSString*)host withPort:(int)port withError:(NSError**)error;
 
+#pragma mark Commands
+
 - (void)beginAsynchronousLogin:(NSString*)username password:(NSString*)password nickName:(NSString*)nickName isRegistered:(BOOL)isRegistered;
+
+#pragma mark Incoming Events
+
+- (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port;
+- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error;
 
 @end
 

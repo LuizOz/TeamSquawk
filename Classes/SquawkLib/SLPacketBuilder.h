@@ -33,4 +33,8 @@
                                          sequenceID:(unsigned int)sequenceID
                                           lastCRC32:(unsigned int)lastCRC32;
 
+#pragma mark Ack
+
+- (NSData*)buildAcknowledgePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID;
+
 @end

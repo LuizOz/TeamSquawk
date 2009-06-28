@@ -59,8 +59,20 @@
 - (NSDictionary*)chompPacket:(NSData*)data
 {
   // We've been given a packet to do something with. First four bytes of the packet are the packet type.
-  unsigned int packetType;
+  unsigned int packetType, connectionID, clientID, sequenceNumber;
   [data getBytes:&packetType range:NSMakeRange(0, 4)];
+  
+  if (packetType == PACKET_TYPE_ACKNOWELDGE)
+  {
+    // catch ack early. we don't really care about them.
+    return nil;
+  }
+  
+  // these aren't true for all packets. the one that aren't we'll have to specficially not send acks in the
+  // switch statement.
+  [data getBytes:&connectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   switch (packetType) 
   {
@@ -69,9 +81,20 @@
       return [self chompLoginReply:data];
       break;
     }
+    case PACKET_TYPE_CHANNEL_LIST:
+    {
+      NSDictionary *chompedPacket = [self chompChannelList:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
     default:
+    {
       NSLog(@"unknown packet type: 0x%08x", packetType);
+      NSData *packet = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:packet withTimeout:20 tag:0];
       break;
+    }
   }
   return nil;
 }
@@ -172,6 +195,108 @@
                                                nil];
 
   return packetDescriptionDictionary;
+}
+
+- (NSDictionary*)chompChannelList:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  // number of channels
+  unsigned int currentChannel = 0, numberOfChannels = 0;
+  [data getBytes:&numberOfChannels range:NSMakeRange(24, 4)];
+  
+  // from here on we're gonna need a channel byte pointer
+  unsigned int byteIndex = 28;
+  
+  NSMutableArray *channels = [NSMutableArray array];
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_LIST], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:numberOfChannels], @"SLNumberOfChannels",
+                                    channels, @"SLChannels",
+                                    nil];
+  
+  while (currentChannel < numberOfChannels)
+  {
+    unsigned int channelID = 0;
+    [data getBytes:&channelID range:NSMakeRange(byteIndex, 4)];
+    byteIndex += 4;
+    
+    unsigned short flags = 0;
+    [data getBytes:&flags range:NSMakeRange(byteIndex, 2)];
+    byteIndex += 2;
+    
+    unsigned short codec = 0;
+    [data getBytes:&codec range:NSMakeRange(byteIndex, 2)];
+    byteIndex += 2;
+    
+    unsigned int parentID = 0;
+    [data getBytes:&parentID range:NSMakeRange(byteIndex, 4)];
+    byteIndex += 4;
+    
+    // some unknown chomp here
+    byteIndex += 4;
+    
+    // we have to start reading null-terminated strings here :(
+    char *dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
+    unsigned int dataLen = strlen(dataPtr);
+    
+    NSString *channelName = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
+    byteIndex += dataLen + 1;
+    
+    dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
+    dataLen = strlen(dataPtr);
+    
+    NSString *channelTopic = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
+    byteIndex += dataLen + 1;
+    
+    dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
+    dataLen = strlen(dataPtr);
+    
+    NSString *channelDescription = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
+    byteIndex += dataLen + 1;
+    
+    NSDictionary *channelDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                       [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
+                                       [NSNumber numberWithUnsignedShort:flags], @"SLChannelFlags",
+                                       [NSNumber numberWithUnsignedShort:codec], @"SLChannelCodec",
+                                       [NSNumber numberWithUnsignedInt:parentID], @"SLChannelParentID",
+                                       channelName, @"SLChannelName",
+                                       channelTopic, @"SLChannelTopic",
+                                       channelDescription, @"SLChannelDescription",
+                                       nil];
+    [channels addObject:channelDictionary];
+    
+    currentChannel++;
+  }
+  
+  return packetDictionary;
 }
 
 @end

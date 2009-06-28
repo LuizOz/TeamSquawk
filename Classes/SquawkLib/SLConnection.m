@@ -41,6 +41,8 @@
   return self;
 }
 
+#pragma mark Commands
+
 - (void)beginAsynchronousLogin:(NSString*)username password:(NSString*)password nickName:(NSString*)nickName isRegistered:(BOOL)isRegistered
 {
   sequenceNumber = 1;
@@ -60,6 +62,8 @@
   // queue up a read for the return packet
   [socket receiveWithTimeout:20 tag:0];
 }
+
+#pragma mark Incoming Events
 
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
 {
@@ -87,7 +91,6 @@
         {
           unsigned int connectionID = [[packet objectForKey:@"SLNewConnectionID"] unsignedIntValue];
           unsigned int clientID = [[packet objectForKey:@"SLClientID"] unsignedIntValue];
-          unsigned int sequenceID = [[packet objectForKey:@"SLSequenceNumber"] unsignedIntValue];
           unsigned int lastCRC32 = [[packet objectForKey:@"SLCRC32"] unsignedIntValue];
           
           NSData *newPacket = [[SLPacketBuilder packetBuilder] buildLoginResponsePacketWithConnectionID:connectionID
@@ -117,9 +120,16 @@
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }
     
+    [sock receiveWithTimeout:20 tag:0];
     return YES;
   }
   return NO;
+}
+
+- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error
+{
+  // for now, just queue up again
+  [sock receiveWithTimeout:20 tag:0];
 }
 
 @end

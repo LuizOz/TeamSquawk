@@ -10,6 +10,9 @@
 #import "AsyncUdpSocket.h"
 
 #define PACKET_TYPE_LOGIN_REPLY   0x0004bef4
+#define PACKET_TYPE_ACKNOWELDGE   0x0000bef1
+
+#define PACKET_TYPE_CHANNEL_LIST  0x0006bef0
 
 @interface SLPacketChomper : NSObject {
   AsyncUdpSocket *socket;
@@ -29,5 +32,6 @@
 #pragma mark Login
 
 - (NSDictionary*)chompLoginReply:(NSData*)data;
+- (NSDictionary*)chompChannelList:(NSData*)data;
 
 @end
