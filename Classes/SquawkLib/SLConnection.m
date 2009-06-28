@@ -66,9 +66,7 @@
 #pragma mark Incoming Events
 
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
-{
-  NSLog(@"%@, %d, %@, %d", data, tag, host, port);
-  
+{  
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
   NSDictionary *packet = [chomper chompPacket:data];
   
@@ -114,6 +112,30 @@
           }
         }
         
+        break;
+      }
+      case PACKET_TYPE_CHANNEL_LIST:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
+        {
+          [[self delegate] connection:self receivedChannelList:packet];
+        }
+        break;
+      }
+      case PACKET_TYPE_PLAYER_LIST:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerList:)])
+        {
+          [[self delegate] connection:self receivedPlayerList:packet];
+        }
+        break;
+      }
+      case PACKET_TYPE_LOGIN_END:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
+        {
+          [[self delegate] connectionFinishedLogin:self];
+        }
         break;
       }
       default:

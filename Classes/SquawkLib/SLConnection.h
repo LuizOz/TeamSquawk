@@ -48,5 +48,10 @@
 
 - (void)connectionFailedToLogin:(SLConnection*)connection;
 
+- (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
+- (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
+
+- (void)connectionFinishedLogin:(SLConnection*)connection;
+
 @end
 

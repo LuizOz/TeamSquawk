@@ -88,6 +88,21 @@
       [socket sendData:ackPacket withTimeout:20 tag:0];
       return chompedPacket;
     }
+    case PACKET_TYPE_PLAYER_LIST:
+    {
+      NSDictionary *chompedPacket = [self chompPlayerList:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
+    case PACKET_TYPE_LOGIN_END:
+    {
+      // there is some data in this packet but i'm not convinced I care enough about it. looked like a url to the server website or something
+      // in wireshark
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:PACKET_TYPE_LOGIN_END], @"SLPacketType", nil];
+    }
     default:
     {
       NSLog(@"unknown packet type: 0x%08x", packetType);
@@ -197,6 +212,8 @@
   return packetDescriptionDictionary;
 }
 
+#pragma mark Server Info
+
 - (NSDictionary*)chompChannelList:(NSData*)data
 {
   // get connection id and client id
@@ -294,6 +311,89 @@
     [channels addObject:channelDictionary];
     
     currentChannel++;
+  }
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompPlayerList:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  unsigned int currentPlayer = 0, numberOfPlayers = 0;
+  [data getBytes:&numberOfPlayers range:NSMakeRange(24, 4)];
+  
+  // they're fixed spaces but we still need a byte counter
+  unsigned int byteIndex = 28;
+  
+  NSMutableArray *players = [NSMutableArray array];
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_LIST], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:numberOfPlayers], @"SLNumberOfPlayers",
+                                    players, @"SLPlayers",
+                                    nil];
+  
+  for (currentPlayer = 0; currentPlayer < numberOfPlayers; currentPlayer++)
+  {
+    unsigned int playerID = 0;
+    [data getBytes:&playerID range:NSMakeRange(byteIndex, 4)];
+    byteIndex += 4;
+    
+    unsigned int channelID = 0;
+    [data getBytes:&channelID range:NSMakeRange(byteIndex, 4)];
+    byteIndex += 4;
+    
+    // two blank bytes
+    byteIndex += 4;
+    
+    unsigned short flags = 0;
+    [data getBytes:&flags range:NSMakeRange(byteIndex, 2)];
+    byteIndex += 2;
+    
+    unsigned char nickLen = 0;
+    [data getBytes:&nickLen range:NSMakeRange(byteIndex, 1)];
+    byteIndex++;
+    
+    unsigned char nickBuffer[29];
+    [data getBytes:&nickBuffer range:NSMakeRange(byteIndex, 29)];
+    byteIndex += 29;
+    
+    NSString *nick = [[[NSString alloc] initWithCString:(char*)nickBuffer length:nickLen] autorelease];
+    
+    NSDictionary *playerDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                      [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                      [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
+                                      [NSNumber numberWithUnsignedShort:flags], @"SLPlayerFlags",
+                                      nick, @"SLPlayerNick",
+                                      nil];
+    [players addObject:playerDictionary];
   }
   
   return packetDictionary;
