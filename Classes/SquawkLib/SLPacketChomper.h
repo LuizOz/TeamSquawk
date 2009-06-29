@@ -16,8 +16,13 @@
 #define PACKET_TYPE_CHANNEL_LIST  0x0006bef0
 #define PACKET_TYPE_PLAYER_LIST   0x0007bef0
 
+#define PACKET_TYPE_PING_REPLY    0x0002bef4
+
+#define PACKET_TYPE_TEXT_MESSAGE  0x0082bef0
+
 @interface SLPacketChomper : NSObject {
   AsyncUdpSocket *socket;
+  NSDictionary *fragment;
 }
 
 + (id)packetChomper;
@@ -26,6 +31,7 @@
 - (id)initWithSocket:(AsyncUdpSocket*)aSocket;
 - (void)dealloc;
 - (void)setSocket:(AsyncUdpSocket*)aSocket;
+- (void)setFragment:(NSDictionary*)dictionary;
 
 #pragma mark Chomper
 
@@ -39,5 +45,10 @@
 
 - (NSDictionary*)chompChannelList:(NSData*)data;
 - (NSDictionary*)chompPlayerList:(NSData*)data;
+
+#pragma mark Text/Chat Messages
+
+- (NSDictionary*)chompTextMessage:(NSData*)data;
+- (NSDictionary*)chompMoreTextMessage:(NSData*)data;
 
 @end

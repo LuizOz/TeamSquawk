@@ -29,6 +29,8 @@
   if (self = [super init])
   {
     socket = [[AsyncUdpSocket alloc] initWithDelegate:self];    
+    textFragments = nil;
+    
     BOOL connected = [socket connectToHost:host onPort:port error:error];
     if (!connected)
     {
@@ -68,6 +70,14 @@
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
 {  
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
+  
+  if (textFragments && ([[textFragments objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0))
+  {
+    // we've got leftovers from the last part of the text message. let the chomper glue them
+    // together.
+    [chomper setFragment:textFragments];
+  }
+  
   NSDictionary *packet = [chomper chompPacket:data];
   
   if (packet)
@@ -87,13 +97,13 @@
         }
         else
         {
-          unsigned int connectionID = [[packet objectForKey:@"SLNewConnectionID"] unsignedIntValue];
-          unsigned int clientID = [[packet objectForKey:@"SLClientID"] unsignedIntValue];
+          connectionID = [[packet objectForKey:@"SLNewConnectionID"] unsignedIntValue];
+          clientID = [[packet objectForKey:@"SLClientID"] unsignedIntValue];
           unsigned int lastCRC32 = [[packet objectForKey:@"SLCRC32"] unsignedIntValue];
           
           NSData *newPacket = [[SLPacketBuilder packetBuilder] buildLoginResponsePacketWithConnectionID:connectionID
                                                                                                clientID:clientID
-                                                                                             sequenceID:sequenceNumber
+                                                                                             sequenceID:sequenceNumber++
                                                                                               lastCRC32:lastCRC32];
           [sock sendData:newPacket withTimeout:20 tag:0];
           
@@ -136,6 +146,42 @@
         {
           [[self delegate] connectionFinishedLogin:self];
         }
+        
+        // we should probably schedule some auto-pings here
+        [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES];
+        
+        break;
+      }
+      case PACKET_TYPE_PING_REPLY:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
+        {
+          [[self delegate] connectionPingReply:self];
+        }
+        break;
+      }
+      case PACKET_TYPE_TEXT_MESSAGE:
+      {
+        if ([[packet objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0)
+        {
+          textFragments = [packet retain];
+          
+          // don't tell the delegate about this packet till we've got all of it
+          break;
+        }
+        
+        // we got all of a fragment, so print it and ditch the last parts we had
+        [textFragments release];
+        textFragments = nil;
+        
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedTextMessage:fromNickname:playerID:)])
+        {
+          [[self delegate] connection:self
+                  receivedTextMessage:[packet objectForKey:@"SLMessage"] 
+                         fromNickname:[packet objectForKey:@"SLNickname"]
+                             playerID:-1];
+        }
+        
         break;
       }
       default:
@@ -152,6 +198,27 @@
 {
   // for now, just queue up again
   [sock receiveWithTimeout:20 tag:0];
+}
+
+#pragma mark Ping Timer
+
+- (void)pingTimer:(NSTimer*)timer
+{
+  // fire a ping every time this goes off
+  NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:1];
+  [socket sendData:data withTimeout:20 tag:0];
+}
+
+#pragma mark Text Message
+
+- (void)sendTextMessage:(NSString*)message toPlayer:(unsigned int)playerID
+{
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildTextMessagePacketWithConnectionID:connectionID
+                                                                                  clientID:clientID
+                                                                                sequenceID:sequenceNumber++
+                                                                                  playerID:playerID
+                                                                                   message:message];
+  [socket sendData:packet withTimeout:20 tag:0];
 }
 
 @end

@@ -226,4 +226,76 @@
   return packetData;
 }
 
+- (NSData*)buildPingPacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // ping header
+  unsigned char headerChunk[] = { 0xf4, 0xbe, 0x01, 0x00 };
+  [packetData appendBytes:headerChunk length:4];
+  
+  // session key
+  [packetData appendBytes:&connectionID length:4];
+  
+  // client id
+  [packetData appendBytes:&clientID length:4];
+  
+  // sequence
+  [packetData appendBytes:&sequenceID length:4];
+  
+  // crc placeholder
+  unsigned int crc = 0;
+  [packetData appendBytes:&crc length:4];
+  
+  unsigned int crc32 = [packetData crc32];
+  [packetData replaceBytesInRange:NSMakeRange(16, 4) withBytes:&crc32 length:4];
+  
+  return packetData;
+}
+
+#pragma mark Text Messages
+
+- (NSData*)buildTextMessagePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID message:(NSString*)message
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // text message header
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0xae, 0x01 };
+  [packetData appendBytes:headerChunk length:4];
+  
+  // session key
+  [packetData appendBytes:&connectionID length:4];
+  
+  // client id
+  [packetData appendBytes:&clientID length:4];
+  
+  // sequence
+  [packetData appendBytes:&sequenceID length:4];
+  
+  // we're gonna need to do something with the fragment count if we want to send long message
+  unsigned short resentCount = 0, fragmentCount = 0;
+  [packetData appendBytes:&resentCount length:2];
+  [packetData appendBytes:&fragmentCount length:2];
+  
+  // crc placeholder
+  unsigned int crc = 0;
+  [packetData appendBytes:&crc length:4];
+  
+  // 5 bytes of junk? then the player id.
+  unsigned char junk[] = { 0x00, 0x00, 0x00, 0x00, 0x02 };
+  [packetData appendBytes:junk length:5];
+  
+  // player id
+  [packetData appendBytes:&playerID length:4];
+  
+  const char *textBuffer = [message cStringUsingEncoding:NSASCIIStringEncoding];
+  [packetData appendBytes:textBuffer length:([message length]+1)];
+  
+  // do the crc
+  unsigned int crc32 = [packetData crc32];
+  [packetData replaceBytesInRange:NSMakeRange(20, 4) withBytes:&crc32 length:4];
+  
+  return packetData;
+}
+
 @end

@@ -29,6 +29,7 @@
   {
     // nada
     socket = nil;
+    fragment = nil;
   }
   return self;
 }
@@ -44,6 +45,7 @@
 
 - (void)dealloc
 {
+  [fragment release];
   [socket release];
   [super dealloc];
 }
@@ -52,6 +54,12 @@
 {
   [socket autorelease];
   socket = [aSocket retain];
+}
+
+- (void)setFragment:(NSDictionary*)dictionary
+{
+  [fragment autorelease];
+  fragment = [dictionary retain];
 }
 
 #pragma mark Chomper
@@ -101,7 +109,19 @@
       // in wireshark
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
-      return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:PACKET_TYPE_LOGIN_END], @"SLPacketType", nil];
+      return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:packetType], @"SLPacketType", nil];
+    }
+    case PACKET_TYPE_PING_REPLY:
+    {
+      // we don't need to ack ping packets.
+      return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:packetType], @"SLPacketType", nil];
+    }
+    case PACKET_TYPE_TEXT_MESSAGE:
+    {
+      NSDictionary *chompedPacket = [self chompTextMessage:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
     }
     default:
     {
@@ -397,6 +417,138 @@
   }
   
   return packetDictionary;
+}
+
+#pragma mark Text/Chat Messages
+
+- (NSDictionary*)chompTextMessage:(NSData*)data
+{
+  // Firstly, if we've got a fragment and its count is more than
+  // zero, we need to divert to the more message handler
+  if (fragment && ([[fragment objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0))
+  {
+    return [self chompMoreTextMessage:data];
+  }
+  
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  // there appears to be 5 bytes of crap here, probably 4 + 1 but the length
+  // of the sending nickname is at the 6th
+  
+  unsigned char nickLen;
+  [data getBytes:&nickLen range:NSMakeRange(29, 1)];
+  
+  unsigned char nickBuffer[29];
+  [data getBytes:&nickBuffer range:NSMakeRange(30, 29)];
+  
+  NSString *nick = [[[NSString alloc] initWithCString:(char*)nickBuffer length:nickLen] autorelease];
+  
+  // according to libtbb, the message data starts at 0x3b (59) and continues till the first
+  // null character. if it hits EOM then we should be expecting a second/third/etc packet
+  
+  unsigned int byteIndex = 59;
+  
+  unsigned char *dataPtr = (unsigned char*)[data bytes];
+  NSString *message = [NSString string];
+  
+  while (byteIndex < [data length])
+  {
+    if (dataPtr[byteIndex]  == '\0')
+    {
+      break;
+    }
+    message = [message stringByAppendingFormat:@"%c", dataPtr[byteIndex++]];
+  }
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_TEXT_MESSAGE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
+                                    nick, @"SLNickname",
+                                    message, @"SLMessage",
+                                    nil];
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompMoreTextMessage:(NSData*)data
+{
+  NSMutableDictionary *mutableFragment = [fragment mutableCopy];
+  
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  unsigned int byteIndex = 24;
+  
+  unsigned char *dataPtr = (unsigned char*)[data bytes];
+  NSString *moreMessage = [NSString string];
+  
+  while (byteIndex < [data length])
+  {
+    if (dataPtr[byteIndex] == '\0')
+    {
+      break;
+    }
+    moreMessage = [moreMessage stringByAppendingFormat:@"%c", dataPtr[byteIndex++]];
+  }
+  
+  // we've got more message, mutate the fragment and bomb out
+  NSString *messageFragment = [mutableFragment objectForKey:@"SLMessage"];
+  NSString *betterMessageFragment = [messageFragment stringByAppendingString:moreMessage];
+  
+  [mutableFragment setObject:betterMessageFragment forKey:@"SLMessage"];
+  [mutableFragment setObject:[NSNumber numberWithUnsignedShort:fragmentCount] forKey:@"SLFragmentCount"];
+  
+  return mutableFragment;
 }
 
 @end

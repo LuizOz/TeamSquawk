@@ -11,7 +11,11 @@
 
 @interface SLConnection : NSObject {
   AsyncUdpSocket *socket;
+  
+  NSDictionary *textFragments;
 
+  unsigned int connectionID;
+  unsigned int clientID;
   unsigned int sequenceNumber;
   
   int clientMajorVersion, clientMinorVersion;
@@ -39,6 +43,14 @@
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port;
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error;
 
+#pragma mark Ping Timer
+
+- (void)pingTimer:(NSTimer*)timer;
+
+#pragma mark Text Message
+
+- (void)sendTextMessage:(NSString*)message toPlayer:(unsigned int)playerID;
+
 @end
 
 @interface NSObject (SLConnectionDelegate)
@@ -52,6 +64,10 @@
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
 
 - (void)connectionFinishedLogin:(SLConnection*)connection;
+
+- (void)connectionPingReply:(SLConnection*)connection;
+
+- (void)connection:(SLConnection*)connection receivedTextMessage:(NSString*)message fromNickname:(NSString*)nickname playerID:(unsigned int)playerID;
 
 @end
 

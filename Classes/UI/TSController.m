@@ -15,6 +15,8 @@
 {
   NSError *error = nil;
   SLConnection *connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
+  [connection setDelegate:self];
+  
   if (!connection)
   {
     NSLog(@"%@", error);
@@ -26,6 +28,11 @@
   [connection setClientMinorVersion:0];
   
   [connection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"Shamlion" isRegistered:NO];
+}
+
+- (void)connectionFinishedLogin:(SLConnection*)connection
+{
+  [connection sendTextMessage:@"hey foo" toPlayer:2];
 }
 
 @end
