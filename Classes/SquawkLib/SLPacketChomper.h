@@ -9,16 +9,25 @@
 #import <Cocoa/Cocoa.h>
 #import "AsyncUdpSocket.h"
 
-#define PACKET_TYPE_LOGIN_REPLY   0x0004bef4
-#define PACKET_TYPE_LOGIN_END     0x0008bef0
-#define PACKET_TYPE_ACKNOWELDGE   0x0000bef1
+#define PACKET_TYPE_LOGIN_REPLY       0x0004bef4
+#define PACKET_TYPE_LOGIN_END         0x0008bef0
+#define PACKET_TYPE_ACKNOWELDGE       0x0000bef1
 
-#define PACKET_TYPE_CHANNEL_LIST  0x0006bef0
-#define PACKET_TYPE_PLAYER_LIST   0x0007bef0
+#define PACKET_TYPE_CHANNEL_LIST      0x0006bef0
+#define PACKET_TYPE_PLAYER_LIST       0x0007bef0
 
-#define PACKET_TYPE_PING_REPLY    0x0002bef4
+#define PACKET_TYPE_PING_REPLY        0x0002bef4
 
-#define PACKET_TYPE_TEXT_MESSAGE  0x0082bef0
+#define PACKET_TYPE_TEXT_MESSAGE      0x0082bef0
+
+#define PACKET_TYPE_VOICE_SPEEX_3_4   0x0500bef3
+#define PACKET_TYPE_VOICE_SPEEX_5_2   0x0600bef3
+#define PACKET_TYPE_VOICE_SPEEX_7_2   0x0700bef3
+#define PACKET_TYPE_VOICE_SPEEX_9_3   0x0800bef3
+#define PACKET_TYPE_VOICE_SPEEX_12_3  0x0900bef3
+#define PACKET_TYPE_VOICE_SPEEX_16_3  0x0a00bef3
+#define PACKET_TYPE_VOICE_SPEEX_19_5  0x0b00bef3
+#define PACKET_TYPE_VOICE_SPEEX_25_9  0x0c00bef3
 
 @interface SLPacketChomper : NSObject {
   AsyncUdpSocket *socket;
@@ -50,5 +59,9 @@
 
 - (NSDictionary*)chompTextMessage:(NSData*)data;
 - (NSDictionary*)chompMoreTextMessage:(NSData*)data;
+
+#pragma mark Voice Packet
+
+- (NSDictionary*)chompVoiceMessage:(NSData*)data;
 
 @end

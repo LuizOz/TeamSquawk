@@ -7,14 +7,16 @@
 //
 
 #import "TSController.h"
-#import "SLConnection.h"
 
 @implementation TSController
 
 - (void)awakeFromNib
 {
   NSError *error = nil;
-  SLConnection *connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
+  
+  [NSApp setDelegate:self];
+  
+  connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
   [connection setDelegate:self];
   
   if (!connection)
@@ -30,9 +32,15 @@
   [connection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"Shamlion" isRegistered:NO];
 }
 
-- (void)connectionFinishedLogin:(SLConnection*)connection
+- (void)connectionFinishedLogin:(SLConnection*)conn
 {
-  [connection sendTextMessage:@"hey foo" toPlayer:2];
+  [conn sendTextMessage:@"hey foo" toPlayer:2];
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+  [connection disconnect];
+  return YES;
 }
 
 @end

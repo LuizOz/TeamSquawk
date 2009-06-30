@@ -123,6 +123,20 @@
       [socket sendData:ackPacket withTimeout:20 tag:0];
       return chompedPacket;
     }
+    case PACKET_TYPE_VOICE_SPEEX_3_4:
+    case PACKET_TYPE_VOICE_SPEEX_5_2:
+    case PACKET_TYPE_VOICE_SPEEX_7_2:
+    case PACKET_TYPE_VOICE_SPEEX_9_3:
+    case PACKET_TYPE_VOICE_SPEEX_12_3:
+    case PACKET_TYPE_VOICE_SPEEX_16_3:
+    case PACKET_TYPE_VOICE_SPEEX_19_5:
+    case PACKET_TYPE_VOICE_SPEEX_25_9:
+    {
+      NSDictionary *chompedPacket = [self chompVoiceMessage:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
     default:
     {
       NSLog(@"unknown packet type: 0x%08x", packetType);
@@ -549,6 +563,47 @@
   [mutableFragment setObject:[NSNumber numberWithUnsignedShort:fragmentCount] forKey:@"SLFragmentCount"];
   
   return mutableFragment;
+}
+
+#pragma mark Voice Packet
+
+- (NSDictionary*)chompVoiceMessage:(NSData*)data
+{
+  unsigned int packetType = 0;
+  [data getBytes:&packetType range:NSMakeRange(0, 4)];
+  
+  unsigned int connectionID, clientID;
+  [data getBytes:&connectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  unsigned short packetCounter;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 2)];
+  
+  unsigned short serverData;
+  [data getBytes:&serverData range:NSMakeRange(14, 2)];
+  
+  unsigned int senderID;
+  [data getBytes:&senderID range:NSMakeRange(16, 4)];
+  
+  // one byte of guff here?
+  
+  unsigned int senderCounter;
+  [data getBytes:&senderCounter range:NSMakeRange(21, 2)];
+  
+  NSData *audioCodecData = [data subdataWithRange:NSMakeRange(23, [data length]-23)];
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:packetType], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedShort:packetCounter], @"SLPacketCounter",
+                                    [NSNumber numberWithUnsignedShort:serverData], @"SLServerData",
+                                    [NSNumber numberWithUnsignedInt:senderID], @"SLSenderID",
+                                    [NSNumber numberWithUnsignedShort:senderCounter], @"SLSenderCounter",
+                                    audioCodecData, @"SLAudioCodecData",
+                                    nil];
+  
+  return packetDictionary;
 }
 
 @end

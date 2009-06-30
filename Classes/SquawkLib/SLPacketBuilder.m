@@ -203,6 +203,35 @@
   return packetData;
 }
 
+- (NSData*)buildDisconnectPacketWithConnectionID:(unsigned int)connectionID
+                                        clientID:(unsigned int)clientID
+                                      sequenceID:(unsigned int)sequenceID
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0x2c, 0x01 };
+  [packetData appendBytes:headerChunk length:4];
+  
+  // connection id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  // sequence id
+  [packetData appendBytes:&sequenceID length:4];
+  
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [packetData appendBytes:&resendCount length:2];
+  [packetData appendBytes:&fragmentCount length:2];
+  
+  unsigned int crc = 0, crcPosition = [packetData length];
+  [packetData appendBytes:&crc length:4];
+  
+  unsigned int crc32 = [packetData crc32];
+  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  
+  return packetData;
+}
+
 #pragma mark Ack
 
 - (NSData*)buildAcknowledgePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID
@@ -294,6 +323,33 @@
   // do the crc
   unsigned int crc32 = [packetData crc32];
   [packetData replaceBytesInRange:NSMakeRange(20, 4) withBytes:&crc32 length:4];
+  
+  return packetData;
+}
+
+#pragma mark Voice Messages
+
+- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data commandChannel:(BOOL)command
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // packet header
+  unsigned char headerChunk[] = { 0xf2, 0xbe, (command ? 0x01 : 0x00), codec };
+  [packetData appendBytes:&headerChunk length:4];
+  
+  // conenction id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  // packet count
+  [packetData appendBytes:&packetCount length:2];
+  
+  // unknown data
+  unsigned char unknown[] = { 0x01, 0x00, 0x05 };
+  [packetData appendBytes:unknown length:3];
+  
+  // audio data
+  [packetData appendData:data];
   
   return packetData;
 }

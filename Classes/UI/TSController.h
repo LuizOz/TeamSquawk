@@ -7,10 +7,10 @@
 //
 
 #import <Cocoa/Cocoa.h>
-
+#import "SLConnection.h"
 
 @interface TSController : NSObject {
-
+  SLConnection *connection;
 }
 
 @end

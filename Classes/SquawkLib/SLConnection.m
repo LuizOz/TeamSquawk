@@ -30,6 +30,7 @@
   {
     socket = [[AsyncUdpSocket alloc] initWithDelegate:self];    
     textFragments = nil;
+    audioSequenceCounter = 0;
     
     BOOL connected = [socket connectToHost:host onPort:port error:error];
     if (!connected)
@@ -63,6 +64,19 @@
   
   // queue up a read for the return packet
   [socket receiveWithTimeout:20 tag:0];
+}
+
+- (void)disconnect
+{
+  if (pingTimer)
+  {
+    [pingTimer invalidate];
+    [pingTimer release];
+    pingTimer = nil;
+  }
+  
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber++];
+  [socket sendData:packet withTimeout:20 tag:0];
 }
 
 #pragma mark Incoming Events
@@ -142,13 +156,13 @@
       }
       case PACKET_TYPE_LOGIN_END:
       {
+        // we should probably schedule some auto-pings here
+        pingTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
+        
         if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
         {
           [[self delegate] connectionFinishedLogin:self];
         }
-        
-        // we should probably schedule some auto-pings here
-        [NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES];
         
         break;
       }
@@ -182,6 +196,26 @@
                              playerID:-1];
         }
         
+        break;
+      }
+      case PACKET_TYPE_VOICE_SPEEX_3_4:
+      case PACKET_TYPE_VOICE_SPEEX_5_2:
+      case PACKET_TYPE_VOICE_SPEEX_7_2:
+      case PACKET_TYPE_VOICE_SPEEX_9_3:
+      case PACKET_TYPE_VOICE_SPEEX_12_3:
+      case PACKET_TYPE_VOICE_SPEEX_16_3:
+      case PACKET_TYPE_VOICE_SPEEX_19_5:
+      case PACKET_TYPE_VOICE_SPEEX_25_9:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedVoiceMessage:codec:playerID:senderPacketCounter:)])
+        {
+          NSData *data = [packet objectForKey:@"SLAudioCodecData"];
+          SLAudioCodecType codec = (([[packet objectForKey:@"SLPacketType"] unsignedIntValue] >> 6) & 0xff);
+          unsigned int playerID = [[packet objectForKey:@"SLSenderID"] unsignedIntValue];
+          unsigned short count = [[packet objectForKey:@"SLSenderCounter"] unsignedShortValue];
+          
+          [[self delegate] connection:self receivedVoiceMessage:data codec:codec playerID:playerID senderPacketCounter:count];
+        }
         break;
       }
       default:
@@ -218,6 +252,19 @@
                                                                                 sequenceID:sequenceNumber++
                                                                                   playerID:playerID
                                                                                    message:message];
+  [socket sendData:packet withTimeout:20 tag:0];
+}
+
+#pragma mark Voice Message
+
+- (void)sendVoiceMessage:(NSData*)audioCodecData commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec
+{
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildVoiceMessageWithConnectionID:connectionID
+                                                                             clientID:clientID
+                                                                                codec:(codec & 0xff)
+                                                                          packetCount:packetCount
+                                                                            audioData:audioCodecData
+                                                                       commandChannel:command];
   [socket sendData:packet withTimeout:20 tag:0];
 }
 

@@ -8,6 +8,14 @@
 
 #import <Cocoa/Cocoa.h>
 
+#define VOICE_CODEC_SPEEX_3_4         0x05
+#define VOICE_CODEC_SPEEX_5_2         0x06
+#define VOICE_CODEC_SPEEX_7_2         0x07
+#define VOICE_CODEC_SPEEX_9_3         0x08
+#define VOICE_CODEC_SPEEX_12_3        0x09
+#define VOICE_CODEC_SPEEX_16_3        0x0a
+#define VOICE_CODEC_SPEEX_19_5        0x0b
+#define VOICE_CODEC_SPEEX_25_9        0x0c
 
 @interface SLPacketBuilder : NSObject {
 
@@ -33,6 +41,10 @@
                                          sequenceID:(unsigned int)sequenceID
                                           lastCRC32:(unsigned int)lastCRC32;
 
+- (NSData*)buildDisconnectPacketWithConnectionID:(unsigned int)connectionID
+                                        clientID:(unsigned int)clientID
+                                      sequenceID:(unsigned int)sequenceID;
+
 #pragma mark Ack
 
 - (NSData*)buildAcknowledgePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID;
@@ -42,4 +54,9 @@
 
 - (NSData*)buildTextMessagePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID message:(NSString*)message;
 
+#pragma mark Voice Messages
+
+- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data commandChannel:(BOOL)command;
+
 @end
+
