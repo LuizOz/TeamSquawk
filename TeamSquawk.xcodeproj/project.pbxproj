@@ -32,6 +32,8 @@
 		C97174A20FF7756B008FC21C /* NSData+Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174A10FF7756B008FC21C /* NSData+Extensions.m */; };
 		C97174D70FF777CF008FC21C /* TSController.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174D60FF777CF008FC21C /* TSController.m */; };
 		C97174E50FF778E8008FC21C /* SLPacketChomper.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174E40FF778E8008FC21C /* SLPacketChomper.m */; };
+		C9BD01F80FFB440900FC280A /* libspeex.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */; };
+		C9BD01F90FFB440900FC280A /* libspeexdsp.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -233,6 +235,8 @@
 		C9BD00C70FFA02CD00FC280A /* testenc_uwb.vcproj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = testenc_uwb.vcproj; sourceTree = "<group>"; };
 		C9BD00C80FFA02CD00FC280A /* testenc_wb.vcproj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = testenc_wb.vcproj; sourceTree = "<group>"; };
 		C9BD00C90FFA02CD00FC280A /* testresample.vcproj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = testresample.vcproj; sourceTree = "<group>"; };
+		C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libspeex.1.5.0.dylib; path = build/Debug/libspeex.1.5.0.dylib; sourceTree = "<group>"; };
+		C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libspeexdsp.1.5.0.dylib; path = build/Debug/libspeexdsp.1.5.0.dylib; sourceTree = "<group>"; };
 		C9BDFF9B0FFA02CD00FC280A /* acinclude.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = acinclude.m4; sourceTree = "<group>"; };
 		C9BDFF9C0FFA02CD00FC280A /* aclocal.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = aclocal.m4; sourceTree = "<group>"; };
 		C9BDFF9D0FFA02CD00FC280A /* AUTHORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = AUTHORS; sourceTree = "<group>"; };
@@ -338,6 +342,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+				C9BD01F80FFB440900FC280A /* libspeex.1.5.0.dylib in Frameworks */,
+				C9BD01F90FFB440900FC280A /* libspeexdsp.1.5.0.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,6 +354,7 @@
 			isa = PBXGroup;
 			children = (
 				C971749F0FF77557008FC21C /* Additions */,
+				C9BD02050FFB474D00FC280A /* Speex */,
 				C97174930FF766AC008FC21C /* SquawkLib */,
 				C971748B0FF6D9ED008FC21C /* Socket */,
 				C97174D40FF77785008FC21C /* UI */,
@@ -366,6 +373,8 @@
 		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */,
+				C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */,
 				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
 				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
 				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
@@ -812,6 +821,13 @@
 			path = tests;
 			sourceTree = "<group>";
 		};
+		C9BD02050FFB474D00FC280A /* Speex */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Speex;
+			sourceTree = "<group>";
+		};
 		C9BDFF9A0FFA02CD00FC280A /* speex-1.2rc1 */ = {
 			isa = PBXGroup;
 			children = (
@@ -1061,7 +1077,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# shell script goes here\n\necho $*\nexit 0\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-arch i386 -arch ppc -g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make";
+			shellScript = "# shell script goes here\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-arch i386 -arch ppc -g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make\n\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeex.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeexdsp.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1106,7 +1122,7 @@
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -1114,8 +1130,13 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/speex-1.2rc1/include\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/build/Debug\"",
+				);
 				PRODUCT_NAME = TeamSquawk;
 			};
 			name = Debug;
@@ -1123,13 +1144,18 @@
 		C01FCF4C08A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/speex-1.2rc1/include\"";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/build/Debug\"",
+				);
 				PRODUCT_NAME = TeamSquawk;
 			};
 			name = Release;
