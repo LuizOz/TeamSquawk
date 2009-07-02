@@ -8,9 +8,11 @@
 
 #import <Cocoa/Cocoa.h>
 #import "SLConnection.h"
+#import "TSCoreAudioPlayer.h"
 
 @interface TSController : NSObject {
   SLConnection *connection;
+  TSCoreAudioPlayer *player;
 }
 
 @end
