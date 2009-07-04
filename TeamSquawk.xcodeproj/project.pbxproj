@@ -44,6 +44,7 @@
 		C9BD028A0FFC96DC00FC280A /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD02890FFC96DC00FC280A /* AudioToolbox.framework */; };
 		C9BD028E0FFC96E200FC280A /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD028D0FFC96E200FC280A /* QuickTime.framework */; };
 		C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */; };
+		C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -274,6 +275,8 @@
 		C9BD028D0FFC96E200FC280A /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = System/Library/Frameworks/QuickTime.framework; sourceTree = SDKROOT; };
 		C9BD02920FFC972400FC280A /* TSCoreAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSCoreAudioPlayer.h; sourceTree = "<group>"; };
 		C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSCoreAudioPlayer.m; sourceTree = "<group>"; };
+		C9BD05F40FFD692C00FC280A /* TSAudioConverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSAudioConverter.h; sourceTree = "<group>"; };
+		C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSAudioConverter.m; sourceTree = "<group>"; };
 		C9BDFF9B0FFA02CD00FC280A /* acinclude.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = acinclude.m4; sourceTree = "<group>"; };
 		C9BDFF9C0FFA02CD00FC280A /* aclocal.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = aclocal.m4; sourceTree = "<group>"; };
 		C9BDFF9D0FFA02CD00FC280A /* AUTHORS */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = AUTHORS; sourceTree = "<group>"; };
@@ -883,6 +886,8 @@
 				C9BD02830FFC942200FC280A /* TSAudioExtraction.m */,
 				C9BD02920FFC972400FC280A /* TSCoreAudioPlayer.h */,
 				C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */,
+				C9BD05F40FFD692C00FC280A /* TSAudioConverter.h */,
+				C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */,
 			);
 			path = CoreAudio;
 			sourceTree = "<group>";
@@ -1138,7 +1143,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# shell script goes here\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-arch i386 -arch ppc -g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make\n\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeex.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeexdsp.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"";
+			shellScript = "# shell script goes here\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make clean && make\n\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeex.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeexdsp.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"";
 		};
 		C9BD03210FFCA14400FC280A /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1172,6 +1177,7 @@
 				C9BD020F0FFB47C600FC280A /* SpeexEncoder.m in Sources */,
 				C9BD02840FFC942200FC280A /* TSAudioExtraction.m in Sources */,
 				C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */,
+				C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

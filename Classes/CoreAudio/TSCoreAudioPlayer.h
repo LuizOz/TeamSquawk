@@ -31,6 +31,5 @@
                   clientData:(void *)inClientData;
 
 - (void)queueAudioBufferList:(const AudioBufferList*)theABL count:(unsigned int)count;
-- (void)queueBytesFromData:(NSData*)data numOfFrames:(unsigned int)count;
 
 @end

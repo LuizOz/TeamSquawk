@@ -9,10 +9,17 @@
 #import <Cocoa/Cocoa.h>
 #import "SLConnection.h"
 #import "TSCoreAudioPlayer.h"
+#import "TSAudioConverter.h"
+
+#import "SpeexDecoder.h"
 
 @interface TSController : NSObject {
   SLConnection *connection;
+  
   TSCoreAudioPlayer *player;
+  TSAudioConverter *converter;
+  
+  SpeexDecoder *speex;
 }
 
 @end

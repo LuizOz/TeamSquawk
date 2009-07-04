@@ -18,8 +18,11 @@
     audioDevice = [device retain];
     isRunning = NO;
     
-    // 10s of audio at 44.1kHz mono.
-    audioBuffer = [[MTAudioBuffer alloc] initWithCapacityFrames:441000 channels:1];
+    // get 10s of audio at the output sample rate
+    unsigned int audioBufferCapacity = (unsigned int)([[device streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] sampleRate] * 10);
+    unsigned int audioBufferChannels = [[device streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] channelsPerFrame];
+    
+    audioBuffer = [[MTAudioBuffer alloc] initWithCapacityFrames:audioBufferCapacity channels:audioBufferChannels];
   }
   return self;
 }
@@ -72,20 +75,6 @@
   // this one should be quite easy, queue up audio in our buffer list. waitForRoom so we block the
   // producer if he's decoding too quickly.
   [audioBuffer writeFromAudioBufferList:theABL maxFrames:count rateScalar:1.0f waitForRoom:YES];
-}
-
-- (void)queueBytesFromData:(NSData*)data numOfFrames:(unsigned int)count
-{
-  // this is to let me queue data from somewhere else into an ABL to pass into the buffer
-  AudioBufferList *tempABL = MTAudioBufferListNew(1, count, NO);
-  
-  // copy the data into the audio buffer
-  tempABL->mBuffers[0].mDataByteSize = [data length];
-  [data getBytes:tempABL->mBuffers[0].mData length:[data length]];
-  
-  [self queueAudioBufferList:tempABL count:count];
-  
-  MTAudioBufferListDispose(tempABL);
 }
 
 @end
