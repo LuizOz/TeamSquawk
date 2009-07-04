@@ -145,14 +145,56 @@ SInt64 ExtractionFileSize (void *inClientData)
   }
 }
 
--(OSErr)getStreamDescription:(AudioStreamBasicDescription*)ref
+- (MTCoreAudioStreamDescription*)fileStreamDescription
 {
-  OSErr err;
-  
+  AudioStreamBasicDescription asbd;
   UInt32 size = sizeof(AudioStreamBasicDescription);
-  err = ExtAudioFileGetProperty(extAudioRef, kExtAudioFileProperty_FileDataFormat, &size, ref);
+  OSErr err = ExtAudioFileGetProperty(extAudioRef, kExtAudioFileProperty_FileDataFormat, &size, &asbd);
+  if (err != noErr)
+  {
+    NSLog(@"ExtAudioFileGetProperty returned %d. %@", err, [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
+    return nil;
+  }
   
-  return err;
+  return [MTCoreAudioStreamDescription streamDescriptionWithAudioStreamBasicDescription:asbd];
+}
+
+- (MTCoreAudioStreamDescription*)outputStreamDescription
+{
+  return outputStreamDescription;
+}
+
+- (void)setOutputStreamDescription:(MTCoreAudioStreamDescription*)outputStreamDesc
+{
+  [outputStreamDescription autorelease];
+  outputStreamDescription = [outputStreamDesc retain];
+  
+  AudioStreamBasicDescription asbd = [outputStreamDescription audioStreamBasicDescription];
+  UInt32 size = sizeof(AudioStreamBasicDescription);
+  
+  OSErr err = ExtAudioFileSetProperty(extAudioRef, kExtAudioFileProperty_ClientDataFormat, size, &asbd);
+  if (err != noErr)
+  {
+    NSLog(@"ExtAudioFileSetProperty returned %d. %@", err, [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
+    [[NSException exceptionWithName:@"TSAudioExtractionStreamDescriptionError" reason:[[NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil] localizedDescription] userInfo:nil] raise];
+  }
+}
+
+- (AudioBufferList*)extractNumberOfFrames:(unsigned long)frames
+{
+  AudioBufferList *buffer = MTAudioBufferListNew([outputStreamDescription channelsPerFrame], frames, !([outputStreamDescription formatFlags] & kAudioFormatFlagIsNonInterleaved));
+  
+  UInt32 numberOfFrames = frames;
+  OSErr err = ExtAudioFileRead(extAudioRef, &numberOfFrames, buffer);
+  if (err != noErr)
+  {
+    NSLog(@"ExtAudioFileRead returned %d. %@", err, [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
+    MTAudioBufferListDispose(buffer);
+    
+    return nil;
+  }
+  
+  return buffer;
 }
 
 -(NSData*)extractWithDuration:(int)seconds error:(NSError**)error
@@ -217,7 +259,15 @@ SInt64 ExtractionFileSize (void *inClientData)
   return extractedData;
 }
 
-- (long)numOfFrames
+- (unsigned long)position
+{
+  SInt64 position;
+  ExtAudioFileTell(extAudioRef, &position);
+  
+  return position;
+}
+
+- (unsigned long)numOfFrames
 {
   OSErr err;
   UInt32 size = sizeof(numFramesFile);

@@ -11,10 +11,6 @@
 #import "TSController.h"
 #import "TSAudioExtraction.h"
 
-#import "SpeexEncoder.h"
-#import "SpeexDecoder.h"
-
-
 @implementation TSController
 
 - (void)awakeFromNib
@@ -23,7 +19,8 @@
   
   [NSApp setDelegate:self];
   
-  speex = [[SpeexDecoder alloc] initWithMode:SpeexWideBandMode];
+  speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
+  speexEncoder = [[SpeexEncoder alloc] initWithMode:SpeexEncodeWideBandMode];
   connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
   [connection setDelegate:self];
   
@@ -40,7 +37,7 @@
   // get the output form that we need
   MTCoreAudioStreamDescription *outputDesc = [[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
   MTCoreAudioStreamDescription *inputDesc = [[MTCoreAudioStreamDescription alloc] initWithAudioStreamBasicDescription:[outputDesc audioStreamBasicDescription]];
-  [inputDesc setSampleRate:[speex bitRate]];
+  [inputDesc setSampleRate:[speex sampleRate]];
   [inputDesc setFormatFlags:kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsPacked|kAudioFormatFlagsNativeEndian];
   [inputDesc setChannelsPerFrame:1];
   [inputDesc setBitsPerChannel:sizeof(short) * 8];
@@ -60,6 +57,11 @@
   [connection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"Shamlion" isRegistered:NO];
 }
 
+- (void)connectionFinishedLogin:(SLConnection*)connection
+{
+  [self performSelectorInBackground:@selector(audioDecoderThread2) withObject:nil];
+}
+
 - (void)audioPlayerThread
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -69,41 +71,50 @@
 
 - (void)audioDecoderThread
 {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  NSError *error = nil;
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];  
+  TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Music/iTunes/iTunes Music/Level 70 Elite Tauren Chieftain/[non-album tracks]/02 Rogues Do It From Behind.mp3"];
+    
+  MTCoreAudioStreamDescription *streamDescription = [[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
+  [extraction setOutputStreamDescription:streamDescription];
   
-  TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Desktop/Disturbed/Believe/Disturbed/Believe/01 - Prayer.m4a"];
-  NSLog(@"starting, %@", extraction);
-  NSData *audio = [extraction extractWithDuration:120 error:&error];
-  NSLog(@"finished, %@, %d", error, [audio length]);
-  
-  MTCoreAudioStreamDescription *inputDesc = [[[[MTCoreAudioDevice defaultOutputDevice] streamsForDirection:kMTCoreAudioDevicePlaybackDirection] objectAtIndex:0] streamDescriptionForSide:kMTCoreAudioDevicePlaybackDirection];
-  [inputDesc setChannelsPerFrame:1];
-  MTCoreAudioStreamDescription *outputDesc = [[MTCoreAudioStreamDescription alloc] initWithAudioStreamBasicDescription:[inputDesc audioStreamBasicDescription]];
-  [outputDesc setSampleRate:22500];
-  
-  TSAudioConverter *converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:inputDesc andOutputStreamDescription:outputDesc];
-  
-  unsigned int counter = 0;
-  while (counter < [audio length])
+  while ([extraction position] < [extraction numOfFrames])
   {
-    NSData *subData = [audio subdataWithRange:NSMakeRange(counter, 44100*sizeof(float))];
+    // decode a second at a time
+    unsigned long samples = [streamDescription sampleRate];
+    AudioBufferList *audio = [extraction extractNumberOfFrames:samples];
+    [player queueAudioBufferList:audio count:samples];
+    MTAudioBufferListDispose(audio);    
+  }
+  
+  [pool release];
+}
+
+- (void)audioDecoderThread2
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Music/iTunes/iTunes Music/Level 70 Elite Tauren Chieftain/[non-album tracks]/02 Rogues Do It From Behind.mp3"];
+
+  [speexEncoder setBitrate:24800];
+  MTCoreAudioStreamDescription *encoderDescription = [speexEncoder encoderStreamDescription];
+  [extraction setOutputStreamDescription:encoderDescription];
+  
+  unsigned int frameSize = [speexEncoder frameSize];
+  unsigned short packetCount = 250;
+  while ([extraction position] < [extraction numOfFrames])
+  {
+    NSMutableData *packetData = [NSMutableData data];
+    int i;
     
-    // this is to let me queue data from somewhere else into an ABL to pass into the buffer
-    AudioBufferList *tempABL = MTAudioBufferListNew(1, 44100*4, NO);
+    for (i=0; i<4; i++)
+    {
+      AudioBufferList *audio = [extraction extractNumberOfFrames:frameSize];
+      NSData *encodedAudioData = [speexEncoder encodedDataForAudioBufferList:audio];
+      MTAudioBufferListDispose(audio);
+      [packetData appendData:encodedAudioData];
+    }
     
-    // copy the data into the audio buffer
-    tempABL->mBuffers[0].mNumberChannels = 1;
-    tempABL->mBuffers[0].mDataByteSize = [subData length];
-    [subData getBytes:tempABL->mBuffers[0].mData length:[subData length]];
-    
-    AudioBufferList *outputList = [converter audioBufferListByConvertingList:tempABL];
-    [player queueAudioBufferList:outputList count:48000];
-    
-    MTAudioBufferListDispose(tempABL);
-    MTAudioBufferListDispose(outputList);
-    
-    counter += 44110*4;
+    [connection sendVoiceMessage:packetData commanderChannel:NO packetCount:packetCount++ codec:SLCodecSpeex_25_9];
+    NSLog(@"sent %@", packetData);
   }
   
   [pool release];
@@ -126,6 +137,8 @@
   unsigned int outputFrameCount = 0;
   AudioBufferList *convertedABL = [converter audioBufferListByConvertingList:abl framesConverted:&outputFrameCount];
   [player queueAudioBufferList:convertedABL count:outputFrameCount];
+  
+  NSLog(@"%d", [speex bitrate]);
   
   MTAudioBufferListDispose(abl);
   MTAudioBufferListDispose(convertedABL);

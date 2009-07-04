@@ -11,6 +11,7 @@
 #import "TSCoreAudioPlayer.h"
 #import "TSAudioConverter.h"
 
+#import "SpeexEncoder.h"
 #import "SpeexDecoder.h"
 
 @interface TSController : NSObject {
@@ -20,6 +21,7 @@
   TSAudioConverter *converter;
   
   SpeexDecoder *speex;
+  SpeexEncoder *speexEncoder;
 }
 
 @end

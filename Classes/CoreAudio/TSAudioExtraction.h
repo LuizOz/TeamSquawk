@@ -9,8 +9,10 @@
 #import <Cocoa/Cocoa.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import <QuickTime/QuickTime.h>
+#import <MTCoreAudio/MTCoreAudio.h>
 
 @interface TSAudioExtraction : NSObject {
+  MTCoreAudioStreamDescription *outputStreamDescription;
   NSData *audioFile;
   
   AudioFileID audioFileID;
@@ -21,12 +23,21 @@
 - (id)init;
 - (id)initWithFilename:(NSString*)filename;
 - (id)initWithFilename:(NSString*)filename withInternalCache:(BOOL)cache;
+
 - (void)close;
 - (void)dealloc;
+
 - (OSStatus)openWithFilename:(NSString*)filename;
 - (OSStatus)openWithFilename:(NSString*)filename withInternalCache:(BOOL)cache;
-- (OSErr)getStreamDescription:(AudioStreamBasicDescription*)ref;
-- (NSData*)extractWithDuration:(int)seconds error:(NSError**)error;
-- (long)numOfFrames;
+
+- (MTCoreAudioStreamDescription*)fileStreamDescription;
+
+- (MTCoreAudioStreamDescription*)outputStreamDescription;
+- (void)setOutputStreamDescription:(MTCoreAudioStreamDescription*)outputStreamDesc;
+
+- (AudioBufferList*)extractNumberOfFrames:(unsigned long)frames;
+
+- (unsigned long)position;
+- (unsigned long)numOfFrames;
 
 @end

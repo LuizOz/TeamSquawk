@@ -10,9 +10,9 @@
 #import <speex/speex.h>
 
 typedef enum {
-  SpeexNarrowBandMode,
-  SpeexWideBandMode,
-  SpeexUltraWideBandMode,
+  SpeexDecodeNarrowBandMode,
+  SpeexDecodeWideBandMode,
+  SpeexDecodeUltraWideBandMode,
 } SpeexDecodeMode;
 
 @interface SpeexDecoder : NSObject {
@@ -28,7 +28,8 @@ typedef enum {
 - (void)dealloc;
 
 - (unsigned int)frameSize;
-- (float)bitRate;
+- (float)sampleRate;
+- (unsigned int)bitrate;
 
 - (NSData*)audioDataForEncodedData:(NSData*)data framesDecoded:(unsigned int*)frames;
 

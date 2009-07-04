@@ -13,22 +13,22 @@
 
 - (id)init
 {
-  return [self initWithMode:SpeexNarrowBandMode];
+  return [self initWithMode:SpeexDecodeNarrowBandMode];
 }
 
 - (id)initWithMode:(SpeexDecodeMode)aMode
 {
   if (self = [super init])
   {
-    if (aMode == SpeexNarrowBandMode)
+    if (aMode == SpeexDecodeNarrowBandMode)
     {
       speexState = speex_decoder_init(&speex_nb_mode);
     }
-    else if (aMode == SpeexWideBandMode)
+    else if (aMode == SpeexDecodeWideBandMode)
     {
       speexState = speex_decoder_init(&speex_wb_mode);
     }
-    else if (aMode == SpeexUltraWideBandMode)
+    else if (aMode == SpeexDecodeUltraWideBandMode)
     {
       speexState = speex_decoder_init(&speex_uwb_mode);
     }
@@ -57,15 +57,22 @@
   return frameSize;
 }
 
-- (float)bitRate
+- (unsigned int)bitrate
+{
+  unsigned int bitrate;
+  speex_decoder_ctl(speexState, SPEEX_GET_BITRATE, &bitrate);
+  return bitrate;
+}
+
+- (float)sampleRate
 {
   switch (mode)
   {
-    case SpeexNarrowBandMode:
+    case SpeexDecodeNarrowBandMode:
       return 8000.0;
-    case SpeexWideBandMode:
+    case SpeexDecodeWideBandMode:
       return 16000.0;
-    case SpeexUltraWideBandMode:
+    case SpeexDecodeUltraWideBandMode:
       return 32000.0;
     default:
       return NAN;
