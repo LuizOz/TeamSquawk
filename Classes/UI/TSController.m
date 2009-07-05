@@ -57,6 +57,9 @@
   // create a connection
   teamspeakConnection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
   
+  // setup some basic things about this client
+  [teamspeakConnection setClientName:@"TeamSquawk"];
+  
 }
 
 - (IBAction)disconnectMenuAction:(id)sender
