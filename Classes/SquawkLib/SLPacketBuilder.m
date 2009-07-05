@@ -329,7 +329,7 @@
 
 #pragma mark Voice Messages
 
-- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data commandChannel:(BOOL)command
+- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data audioFrames:(unsigned char)frames commandChannel:(BOOL)command
 {
   NSMutableData *packetData = [NSMutableData data];
   
@@ -345,8 +345,11 @@
   [packetData appendBytes:&packetCount length:2];
   
   // unknown data
-  unsigned char unknown[] = { 0x01, 0x00, 0x05 };
-  [packetData appendBytes:unknown length:3];
+  unsigned char unknown[] = { 0x01, 0x00 };
+  [packetData appendBytes:unknown length:2];
+  
+  // number of frames
+  [packetData appendBytes:&frames length:1];
   
   // audio data
   [packetData appendData:data];

@@ -28,7 +28,11 @@
 {
   if (self = [super init])
   {
-    socket = [[AsyncUdpSocket alloc] initWithDelegate:self];    
+    socket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    connectionThread = [[NSThread currentThread] retain];
+    
+    [socket setRunLoopModes:[NSArray arrayWithObjects:NSRunLoopCommonModes, nil]];
+    
     textFragments = nil;
     audioSequenceCounter = 0;
     
@@ -42,6 +46,28 @@
     }
   }
   return self;
+}
+
+- (void)dealloc
+{
+  [socket release];
+  [connectionThread release];
+  [textFragments release];
+  [super dealloc];
+}
+
+#pragma mark Threading
+
+- (void)sendData:(NSData*)data
+{
+  // intended to be run on the socket's thread
+  [socket sendData:data withTimeout:20 tag:0];
+}
+
+- (void)queueReceiveData
+{
+  // queue up a recieve
+  [socket receiveWithTimeout:20 tag:0];
 }
 
 #pragma mark Commands
@@ -59,11 +85,12 @@
                                                     isRegistered:isRegistered
                                                        loginName:username
                                                    loginPassword:password
-                                                   loginNickName:nickName];
-  [socket sendData:packet withTimeout:20 tag:0];
+                                                   loginNickName:nickName];  
+  // send the packet
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
   
-  // queue up a read for the return packet
-  [socket receiveWithTimeout:20 tag:0];
+  // queue up a read
+  [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
 }
 
 - (void)disconnect
@@ -76,7 +103,7 @@
   }
   
   NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber++];
-  [socket sendData:packet withTimeout:20 tag:0];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
 }
 
 #pragma mark Incoming Events
@@ -119,6 +146,7 @@
                                                                                                clientID:clientID
                                                                                              sequenceID:sequenceNumber++
                                                                                               lastCRC32:lastCRC32];
+          // this only gets called form the socket's thread. so should be thread safe.
           [sock sendData:newPacket withTimeout:20 tag:0];
           
           if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:didLoginTo:port:serverName:platform:majorVersion:minorVersion:subLevelVersion:subsubLevelVersion:welcomeMessage:)])
@@ -240,7 +268,7 @@
 {
   // fire a ping every time this goes off
   NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:1];
-  [socket sendData:data withTimeout:20 tag:0];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:data waitUntilDone:YES];
 }
 
 #pragma mark Text Message
@@ -252,20 +280,21 @@
                                                                                 sequenceID:sequenceNumber++
                                                                                   playerID:playerID
                                                                                    message:message];
-  [socket sendData:packet withTimeout:20 tag:0];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
 }
 
 #pragma mark Voice Message
 
-- (void)sendVoiceMessage:(NSData*)audioCodecData commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec
+- (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec
 {
   NSData *packet = [[SLPacketBuilder packetBuilder] buildVoiceMessageWithConnectionID:connectionID
                                                                              clientID:clientID
                                                                                 codec:(codec & 0xff)
                                                                           packetCount:packetCount
                                                                             audioData:audioCodecData
+                                                                          audioFrames:frames
                                                                        commandChannel:command];
-  [socket sendData:packet withTimeout:20 tag:0];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
 }
 
 @end

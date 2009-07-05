@@ -22,6 +22,7 @@ typedef enum {
 
 @interface SLConnection : NSObject {
   AsyncUdpSocket *socket;
+  NSThread *connectionThread;
   
   NSTimer *pingTimer;
   NSDictionary *textFragments;
@@ -68,7 +69,7 @@ typedef enum {
 
 #pragma mark Voice Message
 
-- (void)sendVoiceMessage:(NSData*)audioCodecData commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec;
+- (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec;
 
 @end
 

@@ -59,17 +59,10 @@
 
 - (float)sampleRate
 {
-  switch (mode)
-  {
-    case SpeexEncodeNarrowBandMode:
-      return 8000.0;
-    case SpeexEncodeWideBandMode:
-      return 16000.0;
-    case SpeexEncodeUltraWideBandMode:
-      return 32000.0;
-    default:
-      return NAN;
-  }
+  int sampleRate;
+  speex_encoder_ctl(speexState, SPEEX_GET_SAMPLING_RATE, &sampleRate);
+  
+  return (float)sampleRate;
 }
 
 - (unsigned int)bitRate
@@ -105,11 +98,18 @@
   return desc;
 }
 
-- (NSData*)encodedDataForAudioBufferList:(AudioBufferList*)audioBufferList
+- (void)resetEncoder
 {
   speex_bits_reset(&speexBits);
+}
+
+- (void)encodeAudioBufferList:(AudioBufferList*)audioBufferList
+{
   speex_encode_int(speexState, audioBufferList->mBuffers[0].mData, &speexBits);
-  
+}
+
+- (NSData*)encodedData
+{
   // find out how many bits we're gonna have to write
   int nbytes = speex_bits_nbytes(&speexBits);
   char *buffer = (char*)malloc(nbytes);
@@ -117,7 +117,7 @@
   nbytes = speex_bits_write(&speexBits, buffer, nbytes);
   
   // copy the encoded data into an NSData
-  return [NSData dataWithBytesNoCopy:buffer length:nbytes freeWhenDone:YES];
+  return [NSData dataWithBytesNoCopy:buffer length:nbytes freeWhenDone:YES];  
 }
 
 @end

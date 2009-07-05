@@ -56,7 +56,7 @@
 
 #pragma mark Voice Messages
 
-- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data commandChannel:(BOOL)command;
+- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data audioFrames:(unsigned char)frames commandChannel:(BOOL)command;
 
 @end
 

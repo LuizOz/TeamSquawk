@@ -35,6 +35,8 @@ typedef enum {
 
 - (MTCoreAudioStreamDescription*)encoderStreamDescription;
 
-- (NSData*)encodedDataForAudioBufferList:(AudioBufferList*)audioBufferList;
+- (void)resetEncoder;
+- (void)encodeAudioBufferList:(AudioBufferList*)audioBufferList;
+- (NSData*)encodedData;
 
 @end
