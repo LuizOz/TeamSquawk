@@ -78,12 +78,11 @@ typedef enum {
 - (void)connection:(SLConnection*)connection didLoginTo:(NSString*)host port:(int)port serverName:(NSString*)serverName platform:(NSString*)platform
       majorVersion:(int)majorVersion minorVersion:(int)minorVersion subLevelVersion:(int)subLevelVersion subsubLevelVersion:(int)subsubLevelVersion welcomeMessage:(NSString*)welcomeMessage;
 
+- (void)connectionFinishedLogin:(SLConnection*)connection;
 - (void)connectionFailedToLogin:(SLConnection*)connection;
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
-
-- (void)connectionFinishedLogin:(SLConnection*)connection;
 
 - (void)connectionPingReply:(SLConnection*)connection;
 

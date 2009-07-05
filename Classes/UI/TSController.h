@@ -24,13 +24,17 @@
   // state
   
   BOOL isConnected;
+  NSMutableDictionary *players;
+  NSMutableDictionary *channels;
+  NSMutableDictionary *flattenedChannels;
+  NSArray *sortedChannels;
   
   // background stuff
   
   SLConnection *teamspeakConnection;
   
-  TSCoreAudioPlayer *player;
-  TSAudioConverter *converter;
+//  TSCoreAudioPlayer *player;
+//  TSAudioConverter *converter;
   
   SpeexDecoder *speex;
   SpeexEncoder *speexEncoder;

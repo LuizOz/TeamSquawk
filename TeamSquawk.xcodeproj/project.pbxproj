@@ -25,6 +25,8 @@
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		C90586E31000DFFC003BD88A /* TSPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C90586E21000DFFC003BD88A /* TSPlayer.m */; };
+		C90587301000E813003BD88A /* TSChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = C905872F1000E813003BD88A /* TSChannel.m */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
@@ -74,6 +76,10 @@
 		32CA4F630368D1EE00C91783 /* TeamSquawk_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TeamSquawk_Prefix.pch; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* TeamSquawk.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TeamSquawk.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C90586E11000DFFC003BD88A /* TSPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSPlayer.h; sourceTree = "<group>"; };
+		C90586E21000DFFC003BD88A /* TSPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSPlayer.m; sourceTree = "<group>"; };
+		C905872E1000E813003BD88A /* TSChannel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSChannel.h; sourceTree = "<group>"; };
+		C905872F1000E813003BD88A /* TSChannel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSChannel.m; sourceTree = "<group>"; };
 		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
@@ -516,6 +522,10 @@
 			children = (
 				C97174D50FF777CF008FC21C /* TSController.h */,
 				C97174D60FF777CF008FC21C /* TSController.m */,
+				C90586E11000DFFC003BD88A /* TSPlayer.h */,
+				C90586E21000DFFC003BD88A /* TSPlayer.m */,
+				C905872E1000E813003BD88A /* TSChannel.h */,
+				C905872F1000E813003BD88A /* TSChannel.m */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -1178,6 +1188,8 @@
 				C9BD02840FFC942200FC280A /* TSAudioExtraction.m in Sources */,
 				C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */,
 				C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */,
+				C90586E31000DFFC003BD88A /* TSPlayer.m in Sources */,
+				C90587301000E813003BD88A /* TSChannel.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
