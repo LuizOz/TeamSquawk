@@ -82,49 +82,49 @@
 
 #pragma mark Old Shit
 
-- (void)awakeFromNib2
-{
-  NSError *error = nil;
-  
-  [NSApp setDelegate:self];
-  
-  speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
-  speexEncoder = [[SpeexEncoder alloc] initWithMode:SpeexEncodeWideBandMode];
-  connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
-  [connection setDelegate:self];
-  
-  if (!connection)
-  {
-    NSLog(@"%@", error);
-  }
-  
-  [connection setClientName:@"TeamSquawk"];
-  [connection setClientOperatingSystem:@"Mac OS X"];
-  [connection setClientMajorVersion:1];
-  [connection setClientMinorVersion:0];
-    
-  // get the output form that we need
-  MTCoreAudioStreamDescription *outputDesc = [[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
-  MTCoreAudioStreamDescription *inputDesc = [[MTCoreAudioStreamDescription alloc] initWithAudioStreamBasicDescription:[outputDesc audioStreamBasicDescription]];
-  [inputDesc setSampleRate:[speex sampleRate]];
-  [inputDesc setFormatFlags:kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsPacked|kAudioFormatFlagsNativeEndian];
-  [inputDesc setChannelsPerFrame:1];
-  [inputDesc setBitsPerChannel:sizeof(short) * 8];
-  [inputDesc setBytesPerFrame:sizeof(short) * [inputDesc channelsPerFrame]];
-  [inputDesc setBytesPerPacket:[inputDesc bytesPerFrame]];
-
-  converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:inputDesc andOutputStreamDescription:outputDesc];
-  if (!converter)
-  {
-    return;
-  }
-  
-  player = [[TSCoreAudioPlayer alloc] initWithOutputDevice:[MTCoreAudioDevice defaultOutputDevice]];
-  [self performSelectorInBackground:@selector(audioPlayerThread) withObject:nil];
-  //[self performSelectorInBackground:@selector(audioDecoderThread) withObject:nil];
-  
-  [connection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"Shamlion" isRegistered:NO];
-}
+//- (void)awakeFromNib2
+//{
+//  NSError *error = nil;
+//  
+//  [NSApp setDelegate:self];
+//  
+//  speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
+//  speexEncoder = [[SpeexEncoder alloc] initWithMode:SpeexEncodeWideBandMode];
+//  connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
+//  [connection setDelegate:self];
+//  
+//  if (!connection)
+//  {
+//    NSLog(@"%@", error);
+//  }
+//  
+//  [connection setClientName:@"TeamSquawk"];
+//  [connection setClientOperatingSystem:@"Mac OS X"];
+//  [connection setClientMajorVersion:1];
+//  [connection setClientMinorVersion:0];
+//    
+//  // get the output form that we need
+//  MTCoreAudioStreamDescription *outputDesc = [[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
+//  MTCoreAudioStreamDescription *inputDesc = [[MTCoreAudioStreamDescription alloc] initWithAudioStreamBasicDescription:[outputDesc audioStreamBasicDescription]];
+//  [inputDesc setSampleRate:[speex sampleRate]];
+//  [inputDesc setFormatFlags:kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsPacked|kAudioFormatFlagsNativeEndian];
+//  [inputDesc setChannelsPerFrame:1];
+//  [inputDesc setBitsPerChannel:sizeof(short) * 8];
+//  [inputDesc setBytesPerFrame:sizeof(short) * [inputDesc channelsPerFrame]];
+//  [inputDesc setBytesPerPacket:[inputDesc bytesPerFrame]];
+//
+//  converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:inputDesc andOutputStreamDescription:outputDesc];
+//  if (!converter)
+//  {
+//    return;
+//  }
+//  
+//  player = [[TSCoreAudioPlayer alloc] initWithOutputDevice:[MTCoreAudioDevice defaultOutputDevice]];
+//  [self performSelectorInBackground:@selector(audioPlayerThread) withObject:nil];
+//  //[self performSelectorInBackground:@selector(audioDecoderThread) withObject:nil];
+//  
+//  [connection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"Shamlion" isRegistered:NO];
+//}
 
 - (void)connectionFinishedLogin:(SLConnection*)connection
 {
@@ -159,49 +159,49 @@
   [pool release];
 }
 
-- (void)audioDecoderThread2
-{
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  //TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Music/iTunes/iTunes Music/Level 70 Elite Tauren Chieftain/[non-album tracks]/02 Rogues Do It From Behind.mp3"];
-  TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Desktop/Disturbed/Ten Thousand Fists/Disturbed/Ten Thousand Fists/01 - Ten Thousand Fists.mp3"];
-  
-  [speexEncoder setBitrate:25900];
-  MTCoreAudioStreamDescription *encoderDescription = [speexEncoder encoderStreamDescription];
-  [extraction setOutputStreamDescription:encoderDescription];
-  
-  unsigned int frameSize = [speexEncoder frameSize];
-  unsigned short packetCount = 0;
-  NSDate *releaseTime = [[NSDate distantPast] retain];
-  
-  while ([extraction position] < [extraction numOfFrames])
-  {
-    NSAutoreleasePool *innerPool = [[NSAutoreleasePool alloc] init];
-    [speexEncoder resetEncoder];
-    int i;
-    
-    for (i=0; i<5; i++)
-    {
-      AudioBufferList *audio = [extraction extractNumberOfFrames:frameSize];
-      [speexEncoder encodeAudioBufferList:audio];
-      MTAudioBufferListDispose(audio);
-    }
-    
-    NSData *packetData = [speexEncoder encodedData];
-    
-    while ([[releaseTime laterDate:[NSDate date]] isEqual:releaseTime])
-    {
-      [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
-    }
-    
-    [connection sendVoiceMessage:packetData frames:5 commanderChannel:NO packetCount:packetCount++ codec:SLCodecSpeex_25_9];
-    [releaseTime release];
-    releaseTime = [[NSDate dateWithTimeIntervalSinceNow:(double)((frameSize*5)/[encoderDescription sampleRate])] retain];
-    
-    [innerPool release];
-  }
-  
-  [pool release];
-}
+//- (void)audioDecoderThread2
+//{
+//  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+//  //TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Music/iTunes/iTunes Music/Level 70 Elite Tauren Chieftain/[non-album tracks]/02 Rogues Do It From Behind.mp3"];
+//  TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Desktop/Disturbed/Ten Thousand Fists/Disturbed/Ten Thousand Fists/01 - Ten Thousand Fists.mp3"];
+//  
+//  [speexEncoder setBitrate:25900];
+//  MTCoreAudioStreamDescription *encoderDescription = [speexEncoder encoderStreamDescription];
+//  [extraction setOutputStreamDescription:encoderDescription];
+//  
+//  unsigned int frameSize = [speexEncoder frameSize];
+//  unsigned short packetCount = 0;
+//  NSDate *releaseTime = [[NSDate distantPast] retain];
+//  
+//  while ([extraction position] < [extraction numOfFrames])
+//  {
+//    NSAutoreleasePool *innerPool = [[NSAutoreleasePool alloc] init];
+//    [speexEncoder resetEncoder];
+//    int i;
+//    
+//    for (i=0; i<5; i++)
+//    {
+//      AudioBufferList *audio = [extraction extractNumberOfFrames:frameSize];
+//      [speexEncoder encodeAudioBufferList:audio];
+//      MTAudioBufferListDispose(audio);
+//    }
+//    
+//    NSData *packetData = [speexEncoder encodedData];
+//    
+//    while ([[releaseTime laterDate:[NSDate date]] isEqual:releaseTime])
+//    {
+//      [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
+//    }
+//    
+//    [connection sendVoiceMessage:packetData frames:5 commanderChannel:NO packetCount:packetCount++ codec:SLCodecSpeex_25_9];
+//    [releaseTime release];
+//    releaseTime = [[NSDate dateWithTimeIntervalSinceNow:(double)((frameSize*5)/[encoderDescription sampleRate])] retain];
+//    
+//    [innerPool release];
+//  }
+//  
+//  [pool release];
+//}
 
 - (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count
 {  
