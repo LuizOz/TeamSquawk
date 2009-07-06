@@ -67,7 +67,7 @@
   {
     return [[item players] count];
   }
-  
+  return 0;
 }
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item
@@ -84,6 +84,7 @@
   {
     return [(TSPlayer*)item playerName];
   }
+  return nil;
 }
 
 #pragma mark OutlineView Delegates
@@ -230,7 +231,7 @@
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
   [channel addPlayer:player];
   
-  [mainWindowOutlineView reloadItem:channel];
+  [mainWindowOutlineView reloadItem:channel reloadChildren:YES];
   [mainWindowOutlineView expandItem:channel];
 }
 
@@ -242,7 +243,7 @@
   [channel removePlayer:player];
   [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   
-  [mainWindowOutlineView reloadItem:channel];
+  [mainWindowOutlineView reloadItem:channel reloadChildren:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags
@@ -262,8 +263,8 @@
   [oldChannel removePlayer:player];
   [newChannel addPlayer:player];
   
-  [mainWindowOutlineView reloadItem:oldChannel];
-  [mainWindowOutlineView reloadItem:newChannel];
+  [mainWindowOutlineView reloadItem:oldChannel reloadChildren:YES];
+  [mainWindowOutlineView reloadItem:newChannel reloadChildren:YES];
   [mainWindowOutlineView expandItem:newChannel];
 }
 
