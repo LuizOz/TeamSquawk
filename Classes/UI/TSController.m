@@ -140,6 +140,7 @@
 - (void)connectionFinishedLogin:(SLConnection*)connection
 {
   [mainWindowOutlineView reloadData];
+  [mainWindowOutlineView expandItem:nil expandChildren:YES];
 }
 
 - (void)connectionFailedToLogin:(SLConnection*)connection
@@ -195,7 +196,7 @@
   
   for (NSDictionary *playerDictionary in playersDictionary)
   {
-    TSPlayer *player = [[TSPlayer alloc] init];
+    TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
     
     [player setPlayerName:[playerDictionary objectForKey:@"SLPlayerNick"]];
     [player setPlayerFlags:[[playerDictionary objectForKey:@"SLPlayerFlags"] unsignedIntValue]];
@@ -207,6 +208,57 @@
     TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
     [channel addPlayer:player];
   }
+}
+
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname
+{
+  TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
+  
+  [player setPlayerID:playerID];
+  [player setPlayerName:nickname];
+  [player setChannelID:channelID];
+  [player setPlayerFlags:0];
+  
+  [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
+  
+  TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+  [channel addPlayer:player];
+  
+  [mainWindowOutlineView reloadItem:channel];
+  [mainWindowOutlineView expandItem:channel];
+}
+
+- (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+  
+  [channel removePlayer:player];
+  [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  
+  [mainWindowOutlineView reloadItem:channel];
+}
+
+- (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  [player setPlayerFlags:flags];
+  
+  [mainWindowOutlineView reloadItem:player];
+}
+
+- (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  TSChannel *oldChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:fromChannelID]];
+  TSChannel *newChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:toChannelID]];
+  
+  [oldChannel removePlayer:player];
+  [newChannel addPlayer:player];
+  
+  [mainWindowOutlineView reloadItem:oldChannel];
+  [mainWindowOutlineView reloadItem:newChannel];
+  [mainWindowOutlineView expandItem:newChannel];
 }
 
 #pragma mark Old Shit

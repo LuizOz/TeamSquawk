@@ -61,14 +61,19 @@
 
 - (BOOL)validateUserInterfaceItem:(id < NSValidatedUserInterfaceItem >)anItem;
 
+#pragma mark SLConnection Delegates
+
+- (void)connection:(SLConnection*)connection didLoginTo:(NSString*)host port:(int)port serverName:(NSString*)serverName platform:(NSString*)platform majorVersion:(int)majorVersion minorVersion:(int)minorVersion subLevelVersion:(int)subLevelVersion subsubLevelVersion:(int)subsubLevelVersion welcomeMessage:(NSString*)welcomeMessage;
+- (void)connectionFinishedLogin:(SLConnection*)connection;
+- (void)connectionFailedToLogin:(SLConnection*)connection;
+- (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
+- (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname;
+- (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
+- (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
+
 #pragma mark Old Shit
 
-- (void)awakeFromNib2;
-- (void)connectionFinishedLogin:(SLConnection*)connection;
-- (void)audioPlayerThread;
-- (void)audioDecoderThread;
-- (void)audioDecoderThread2;
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count;
 
 
 @end

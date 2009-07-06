@@ -16,6 +16,11 @@
 #define PACKET_TYPE_CHANNEL_LIST      0x0006bef0
 #define PACKET_TYPE_PLAYER_LIST       0x0007bef0
 
+#define PACKET_TYPE_NEW_PLAYER        0x0064bef0
+#define PACKET_TYPE_PLAYER_LEFT       0x0065bef0
+#define PACKET_TYPE_CHANNEL_CHANGE    0x0067bef0
+#define PACKET_TYPE_PLAYER_UPDATE     0x0068bef0
+
 #define PACKET_TYPE_PING_REPLY        0x0002bef4
 
 #define PACKET_TYPE_TEXT_MESSAGE      0x0082bef0
@@ -54,6 +59,13 @@
 
 - (NSDictionary*)chompChannelList:(NSData*)data;
 - (NSDictionary*)chompPlayerList:(NSData*)data;
+
+#pragma mark Status Updates
+
+- (NSDictionary*)chompNewPlayer:(NSData*)data;
+- (NSDictionary*)chompPlayerLeft:(NSData*)data;
+- (NSDictionary*)chompChannelChange:(NSData*)data;
+- (NSDictionary*)chompPlayerUpdate:(NSData*)data;
 
 #pragma mark Text/Chat Messages
 

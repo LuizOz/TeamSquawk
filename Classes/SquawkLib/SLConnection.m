@@ -246,6 +246,49 @@
         }
         break;
       }
+      case PACKET_TYPE_NEW_PLAYER:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          unsigned int channelID = [[packet objectForKey:@"SLChannelID"] unsignedIntValue];
+          NSString *nick = [packet objectForKey:@"SLNickname"];
+          
+          [[self delegate] connection:self receivedNewPlayerNotification:playerID channel:channelID nickname:nick];
+        }
+        break;
+      }
+      case PACKET_TYPE_PLAYER_LEFT:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
+        {
+          [[self delegate] connection:self receivedPlayerLeftNotification:[[packet objectForKey:@"SLPlayerID"] unsignedIntValue]];
+        }
+        break;
+      }
+      case PACKET_TYPE_CHANNEL_CHANGE:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelChangeNotification:fromChannel:toChannel:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          unsigned int oldChannelID = [[packet objectForKey:@"SLPreviousChannelID"] unsignedIntValue];
+          unsigned int newChannelID = [[packet objectForKey:@"SLNewChannelID"] unsignedIntValue];
+          
+          [[self delegate] connection:self receivedChannelChangeNotification:playerID fromChannel:oldChannelID toChannel:newChannelID];
+        }
+        break;
+      }
+      case PACKET_TYPE_PLAYER_UPDATE:
+      {
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerUpdateNotification:flags:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          unsigned short playerFlags = [[packet objectForKey:@"SLPlayerFlags"] unsignedShortValue];
+          
+          [[self delegate] connection:self receivedPlayerUpdateNotification:playerID flags:playerFlags];
+        }
+        break;
+      }
       default:
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }

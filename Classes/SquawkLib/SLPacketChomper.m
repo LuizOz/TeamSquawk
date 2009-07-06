@@ -137,6 +137,34 @@
       [socket sendData:ackPacket withTimeout:20 tag:0];
       return chompedPacket;
     }
+    case PACKET_TYPE_NEW_PLAYER:
+    {
+      NSDictionary *chompedPacket = [self chompNewPlayer:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
+    case PACKET_TYPE_PLAYER_LEFT:
+    {
+      NSDictionary *chompedPacket = [self chompPlayerLeft:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
+    case PACKET_TYPE_CHANNEL_CHANGE:
+    {
+      NSDictionary *chompedPacket = [self chompChannelChange:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
+    case PACKET_TYPE_PLAYER_UPDATE:
+    {
+      NSDictionary *chompedPacket = [self chompPlayerUpdate:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:20 tag:0];
+      return chompedPacket;
+    }
     default:
     {
       NSLog(@"unknown packet type: 0x%08x", packetType);
@@ -431,6 +459,211 @@
   }
   
   return packetDictionary;
+}
+
+#pragma mark Status Updates
+
+- (NSDictionary*)chompNewPlayer:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  unsigned int playerID;
+  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  
+  unsigned int channelID;
+  [data getBytes:&channelID range:NSMakeRange(28, 4)];
+  
+  // 6 btyes here of unknown crap. 2 bytes of it might be player status.
+  
+  unsigned char nickLen;
+  char nickBuffer[29];
+  [data getBytes:&nickLen range:NSMakeRange(38, 1)];
+  [data getBytes:nickBuffer range:NSMakeRange(39, 29)];
+  
+  NSString *nick = [NSString stringWithCString:nickBuffer length:nickLen];
+  
+  // 4 bytes at the end that I don't know what they are either
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_NEW_PLAYER], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
+                                    nick, @"SLNickname",
+                                    nil];
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompPlayerLeft:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+
+  unsigned int playerID;
+  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  
+  // there is a whole load of crap in the player left packet but I've no idea what
+  // it means. Some if it will be timed out vs. disconnected I imagine
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_LEFT], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    nil];
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompChannelChange:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  unsigned int playerID;
+  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  
+  unsigned int previousChannelID;
+  [data getBytes:&previousChannelID range:NSMakeRange(28, 4)];
+  
+  unsigned int newChannelID;
+  [data getBytes:&newChannelID range:NSMakeRange(32, 4)];
+  
+  // 2 bytes of unknown + possible other crc?
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_CHANGE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    [NSNumber numberWithUnsignedInt:previousChannelID], @"SLPreviousChannelID",
+                                    [NSNumber numberWithUnsignedInt:newChannelID], @"SLNewChannelID",
+                                    nil];
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompPlayerUpdate:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  // multiple packet channel names come in more than one blob
+  unsigned int packetCounter = 0;
+  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+
+  unsigned int playerID;
+  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  
+  unsigned short playerFlags;
+  [data getBytes:&playerFlags range:NSMakeRange(28, 2)];
+  
+  // 4 bytes of unknown, possible other crc?
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_UPDATE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    [NSNumber numberWithUnsignedShort:playerFlags], @"SLPlayerFlags",
+                                    nil];
+  
+  return packetDictionary;  
 }
 
 #pragma mark Text/Chat Messages

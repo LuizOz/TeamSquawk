@@ -84,6 +84,11 @@ typedef enum {
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
 
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname;
+- (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID;
+- (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
+- (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
+
 - (void)connectionPingReply:(SLConnection*)connection;
 
 - (void)connection:(SLConnection*)connection receivedTextMessage:(NSString*)message fromNickname:(NSString*)nickname playerID:(unsigned int)playerID;
