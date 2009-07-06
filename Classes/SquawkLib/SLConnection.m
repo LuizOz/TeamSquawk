@@ -105,6 +105,11 @@
   
   NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber++];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  
+  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:)])
+  {
+    [[self delegate] connectionDisconnected:self];
+  }
 }
 
 #pragma mark Incoming Events
@@ -338,6 +343,18 @@
                                                                             audioData:audioCodecData
                                                                           audioFrames:frames
                                                                        commandChannel:command];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+}
+
+#pragma mark Channel/Status
+
+- (void)changeChannelTo:(unsigned int)newChannel withPassword:(NSString*)password
+{
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildSwitchChannelMessageWithConnectionID:connectionID
+                                                                                     clientID:clientID
+                                                                                   sequenceID:sequenceNumber++
+                                                                                 newChannelID:newChannel
+                                                                                     password:password];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
 }
 

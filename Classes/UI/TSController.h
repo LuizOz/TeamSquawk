@@ -56,6 +56,7 @@
 
 - (IBAction)connectMenuAction:(id)sender;
 - (IBAction)disconnectMenuAction:(id)sender;
+- (IBAction)doubleClickOutlineView:(id)sender;
 
 #pragma mark Menu Validation
 

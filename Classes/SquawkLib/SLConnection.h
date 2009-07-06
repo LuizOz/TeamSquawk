@@ -71,6 +71,10 @@ typedef enum {
 
 - (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec;
 
+#pragma mark Channel/Status
+
+- (void)changeChannelTo:(unsigned int)newChannel withPassword:(NSString*)password;
+
 @end
 
 @interface NSObject (SLConnectionDelegate)
@@ -80,6 +84,7 @@ typedef enum {
 
 - (void)connectionFinishedLogin:(SLConnection*)connection;
 - (void)connectionFailedToLogin:(SLConnection*)connection;
+- (void)connectionDisconnected:(SLConnection*)connection;
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;

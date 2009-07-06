@@ -357,4 +357,45 @@
   return packetData;
 }
 
+#pragma mark Channel/Status
+
+- (NSData*)buildSwitchChannelMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID newChannelID:(unsigned int)channelID password:(NSString*)password
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // packet header
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0x2f, 0x01 };
+  [packetData appendBytes:&headerChunk length:4];
+  
+  // connection id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  [packetData appendBytes:&sequenceID length:4];
+  
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [packetData appendBytes:&resendCount length:2];
+  [packetData appendBytes:&fragmentCount length:2];
+  
+  unsigned int crc = 0, crcPosition = [packetData length];
+  [packetData appendBytes:&crc length:4];
+  
+  // channel id
+  [packetData appendBytes:&channelID length:4];
+  
+  // password length
+  unsigned char passwordLength = [password length] & 0xff;
+  unsigned char passwordBuffer[29];
+  
+  memset(passwordBuffer, '\0', 29);
+  memcpy(passwordBuffer, [password cStringUsingEncoding:NSASCIIStringEncoding], [password length]);
+  [packetData appendBytes:&passwordLength length:1];
+  [packetData appendBytes:passwordBuffer length:29];
+  
+  unsigned int crc32 = [packetData crc32];
+  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  
+  return packetData;
+}
+
 @end

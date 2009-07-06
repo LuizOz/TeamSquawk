@@ -20,6 +20,8 @@
   // setup the outline view
   [mainWindowOutlineView setDelegate:self];
   [mainWindowOutlineView setDataSource:self];
+  [mainWindowOutlineView setDoubleAction:@selector(doubleClickOutlineView:)];
+  [mainWindowOutlineView setTarget:self];
   
   // reset our internal state
   isConnected = NO;
@@ -27,6 +29,9 @@
   channels = [[NSMutableDictionary alloc] init];
   flattenedChannels = [[NSMutableDictionary alloc] init];
   sortedChannels = nil;
+  
+  // point NSApp here
+  [NSApp setDelegate:self];
 }
 
 #pragma mark OutlineView DataSource
@@ -111,9 +116,23 @@
 
 - (IBAction)disconnectMenuAction:(id)sender
 {
-  
+  if (isConnected)
+  {
+    [teamspeakConnection disconnect];
+  }
 }
 
+- (IBAction)doubleClickOutlineView:(id)sender
+{
+  id item = [(NSOutlineView*)sender itemAtRow:[(NSOutlineView*)sender selectedRow]];
+  
+  if ([item isKindOfClass:[TSChannel class]])
+  {
+    [teamspeakConnection changeChannelTo:[(TSChannel*)item channelID] withPassword:nil];
+  }
+  
+}
+   
 #pragma mark Menu Validation
 
 - (BOOL)validateUserInterfaceItem:(id < NSValidatedUserInterfaceItem >)anItem
@@ -140,13 +159,29 @@
 
 - (void)connectionFinishedLogin:(SLConnection*)connection
 {
+  isConnected = YES;
+  
   [mainWindowOutlineView reloadData];
   [mainWindowOutlineView expandItem:nil expandChildren:YES];
 }
 
 - (void)connectionFailedToLogin:(SLConnection*)connection
 {
+  isConnected = NO;
+}
+
+- (void)connectionDisconnected:(SLConnection*)connection
+{
+  isConnected = NO;
   
+  [sortedChannels release];
+  sortedChannels = nil;
+  
+  [flattenedChannels removeAllObjects];
+  [channels removeAllObjects];
+  [players removeAllObjects];
+  
+  [mainWindowOutlineView reloadData];
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary

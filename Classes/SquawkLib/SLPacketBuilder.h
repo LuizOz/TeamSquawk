@@ -58,5 +58,9 @@
 
 - (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data audioFrames:(unsigned char)frames commandChannel:(BOOL)command;
 
+#pragma mark Channel/Status
+
+- (NSData*)buildSwitchChannelMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID newChannelID:(unsigned int)channelID password:(NSString*)password;
+
 @end
 
