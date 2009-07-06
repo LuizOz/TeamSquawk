@@ -19,6 +19,8 @@
 @synthesize parent;
 @synthesize codec;
 @synthesize flags;
+@synthesize maxUsers;
+@synthesize sortOrder;
 
 - (id)init
 {
@@ -89,6 +91,26 @@
 - (void)removeAllPlayers
 {
   [players removeAllObjects];
+}
+
+- (BOOL)isDefaultChannel
+{
+  return ((flags & TSChannelDefault) == TSChannelDefault);
+}
+
+- (BOOL)isModerated
+{
+  return ((flags & TSChannelIsModerated) == TSChannelIsModerated);
+}
+
+- (BOOL)hasSubChannels
+{
+  return ((flags & TSChannelHasSubChannels) == TSChannelHasSubChannels);
+}
+
+- (BOOL)hasPassword
+{
+  return ((flags & TSChannelHasPassword) == TSChannelHasPassword);
 }
 
 @end

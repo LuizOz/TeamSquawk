@@ -164,6 +164,8 @@
     [channel setParent:[[channelDictionary objectForKey:@"SLChannelParentID"] unsignedIntValue]];
     [channel setCodec:[[channelDictionary objectForKey:@"SLChannelCodec"] unsignedIntValue]];
     [channel setFlags:[[channelDictionary objectForKey:@"SLChannelFlags"] unsignedIntValue]];
+    [channel setMaxUsers:[[channelDictionary objectForKey:@"SLChannelMaxUsers"] unsignedIntValue]];
+    [channel setSortOrder:[[channelDictionary objectForKey:@"SLChannelSortOrder"] unsignedIntValue]];
    
     [flattenedChannels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
     
@@ -186,8 +188,11 @@
   }
   
   [sortedChannels autorelease];
-  NSSortDescriptor *sortDescriptor = [[[NSSortDescriptor alloc] initWithKey:@"channelID" ascending:YES] autorelease];
-  sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:[NSArray arrayWithObjects:sortDescriptor, nil]] retain];
+  NSArray *sortDescriptors = [NSArray arrayWithObjects:
+                              [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],
+                              [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],
+                              nil];
+  sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary

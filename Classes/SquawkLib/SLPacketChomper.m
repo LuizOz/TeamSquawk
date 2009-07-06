@@ -288,6 +288,8 @@
 
 - (NSDictionary*)chompChannelList:(NSData*)data
 {
+  NSMutableArray *channelOrder = [NSMutableArray array];
+  
   // get connection id and client id
   unsigned int connnectionID, clientID;
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
@@ -349,8 +351,13 @@
     [data getBytes:&parentID range:NSMakeRange(byteIndex, 4)];
     byteIndex += 4;
     
-    // some unknown chomp here
-    byteIndex += 4;
+    unsigned short sortOrder = 0;
+    [data getBytes:&sortOrder range:NSMakeRange(byteIndex, 2)];
+    byteIndex += 2;
+    
+    unsigned short maxUsers;
+    [data getBytes:&maxUsers range:NSMakeRange(byteIndex, 2)];
+    byteIndex += 2;    
     
     // we have to start reading null-terminated strings here :(
     char *dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
@@ -370,7 +377,7 @@
     
     NSString *channelDescription = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
     byteIndex += dataLen + 1;
-    
+        
     NSDictionary *channelDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                        [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
                                        [NSNumber numberWithUnsignedShort:flags], @"SLChannelFlags",
@@ -379,9 +386,10 @@
                                        channelName, @"SLChannelName",
                                        channelTopic, @"SLChannelTopic",
                                        channelDescription, @"SLChannelDescription",
+                                       [NSNumber numberWithUnsignedShort:maxUsers], @"SLChannelMaxUsers",
+                                       [NSNumber numberWithUnsignedShort:sortOrder], @"SLChannelSortOrder",
                                        nil];
-    [channels addObject:channelDictionary];
-    
+    [channels addObject:channelDictionary];    
     currentChannel++;
   }
   

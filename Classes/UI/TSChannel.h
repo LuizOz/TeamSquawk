@@ -10,6 +10,13 @@
 
 @class TSPlayer;
 
+typedef enum {
+  TSChannelDefault = 0x80,
+  TSChannelHasSubChannels = 0x08,
+  TSChannelHasPassword = 0x04,
+  TSChannelIsModerated = 0x02,
+} TSChannelFlags;
+
 @interface TSChannel : NSObject {
   NSString *channelName;
   NSString *channelDescription;
@@ -22,6 +29,8 @@
   unsigned int parent;
   unsigned int codec;
   unsigned int flags;
+  unsigned int maxUsers;
+  unsigned int sortOrder;
 }
 
 - (id)init;
@@ -37,6 +46,11 @@
 - (void)removePlayer:(TSPlayer*)player;
 - (void)removeAllPlayers;
 
+- (BOOL)isDefaultChannel;
+- (BOOL)isModerated;
+- (BOOL)hasSubChannels;
+- (BOOL)hasPassword;
+
 @property (retain) NSString *channelName;
 @property (retain) NSString *channelDescription;
 @property (retain) NSString *channelTopic;
@@ -45,5 +59,7 @@
 @property (assign) unsigned int parent;
 @property (assign) unsigned int codec;
 @property (assign) unsigned int flags;
+@property (assign) unsigned int maxUsers;
+@property (assign) unsigned int sortOrder;
 
 @end
