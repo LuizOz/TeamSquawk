@@ -66,17 +66,34 @@
 
 - (float)sampleRate
 {
-  switch (mode)
-  {
-    case SpeexDecodeNarrowBandMode:
-      return 8000.0;
-    case SpeexDecodeWideBandMode:
-      return 16000.0;
-    case SpeexDecodeUltraWideBandMode:
-      return 32000.0;
-    default:
-      return NAN;
-  }
+  int sampleRate;
+  speex_decoder_ctl(speexState, SPEEX_GET_SAMPLING_RATE, &sampleRate);
+  
+  return (float)sampleRate;
+}
+
+- (MTCoreAudioStreamDescription*)decoderStreamDescription
+{
+  MTCoreAudioStreamDescription *desc = [MTCoreAudioStreamDescription nativeStreamDescription];
+  // set format
+  [desc setFormatID:kAudioFormatLinearPCM];
+  // set flags
+  [desc setFormatFlags:kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsPacked|kAudioFormatFlagsNativeEndian];
+  // 16 bit audio
+  [desc setBitsPerChannel:8*sizeof(short)];
+  // mono
+  [desc setChannelsPerFrame:1];
+  // bitrate
+  [desc setSampleRate:[self sampleRate]];
+  [desc setBytesPerFrame:sizeof(short)*[desc channelsPerFrame]];
+  [desc setBytesPerPacket:[desc bytesPerFrame]];
+  
+  return desc;
+}
+
+- (void)resetDecoder
+{
+  speex_bits_reset(&speexBits);
 }
 
 - (NSData*)audioDataForEncodedData:(NSData*)data framesDecoded:(unsigned int*)frames

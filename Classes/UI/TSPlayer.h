@@ -7,6 +7,9 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "SpeexDecoder.h"
+#import "TSAudioConverter.h"
+#import "TSCoreAudioPlayer.h"
 
 typedef enum {
   TSPlayerChannelCommander = 0x01,
@@ -17,11 +20,21 @@ typedef enum {
 } TSPlayerFlags;
 
 @interface TSPlayer : NSObject {
+  TSCoreAudioPlayer *coreAudio;
+  TSAudioConverter *converter;
+  SpeexDecoder *speex;
+  
   NSString *playerName;
   unsigned int playerFlags;
   unsigned int playerID;
   unsigned int channelID;
+  unsigned int lastVoicePacketCount;
 }
+
+@property (readonly) SpeexDecoder *decoder;
+@property (readonly) TSAudioConverter *converter;
+@property (readonly) TSCoreAudioPlayer *coreAudioPlayer;
+@property (assign) unsigned int lastVoicePacketCount;
 
 - (NSString*)playerName;
 - (void)setPlayerName:(NSString*)name;

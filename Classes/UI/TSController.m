@@ -207,6 +207,7 @@
     [player setPlayerFlags:[[playerDictionary objectForKey:@"SLPlayerFlags"] unsignedIntValue]];
     [player setPlayerID:[[playerDictionary objectForKey:@"SLPlayerID"] unsignedIntValue]];
     [player setChannelID:[[playerDictionary objectForKey:@"SLChannelID"] unsignedIntValue]];
+    [player setLastVoicePacketCount:0];
     
     [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
     
@@ -264,6 +265,37 @@
   [mainWindowOutlineView reloadItem:oldChannel];
   [mainWindowOutlineView reloadItem:newChannel];
   [mainWindowOutlineView expandItem:newChannel];
+}
+
+#pragma mark Audio
+
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count
+{ 
+  unsigned int decodedFrames = 0;
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  NSData *data = [[player decoder] audioDataForEncodedData:audioCodecData framesDecoded:&decodedFrames];
+  AudioBufferList *decodedBufferList = MTAudioBufferListNew(1, decodedFrames * [[player decoder] frameSize], NO);
+  
+  decodedBufferList->mBuffers[0].mNumberChannels = 1;
+  decodedBufferList->mBuffers[0].mDataByteSize = [data length];
+  [data getBytes:decodedBufferList->mBuffers[0].mData length:[data length]];
+  
+  unsigned int convertedFrameCount = 0;
+  AudioBufferList *resampledBufferList = [[player converter] audioBufferListByConvertingList:decodedBufferList framesConverted:&convertedFrameCount];
+  [[player coreAudioPlayer] queueAudioBufferList:resampledBufferList count:convertedFrameCount];
+  
+  MTAudioBufferListDispose(resampledBufferList);
+  MTAudioBufferListDispose(decodedBufferList);
+}
+
+#pragma mark NSApplication Delegate
+
+- (void)applicationWillTerminate:(NSNotification *)aNotification
+{
+  if (isConnected)
+  {
+    [teamspeakConnection disconnect];
+  }
 }
 
 #pragma mark Old Shit

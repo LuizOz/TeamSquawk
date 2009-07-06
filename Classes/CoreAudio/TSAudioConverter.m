@@ -29,8 +29,6 @@
     
     inputStreamDescription = [anInputDesc retain];
     outputStreamDescription = [anOutputDesc retain];
-    
-    NSLog(@"%@, %@", inputStreamDescription, outputStreamDescription);
   }
   return self;
 }

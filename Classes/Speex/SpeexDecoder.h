@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <speex/speex.h>
+#import <MTCoreAudio/MTCoreAudio.h>
 
 typedef enum {
   SpeexDecodeNarrowBandMode,
@@ -30,7 +31,9 @@ typedef enum {
 - (unsigned int)frameSize;
 - (float)sampleRate;
 - (unsigned int)bitrate;
+- (MTCoreAudioStreamDescription*)decoderStreamDescription;
 
+- (void)resetDecoder;
 - (NSData*)audioDataForEncodedData:(NSData*)data framesDecoded:(unsigned int*)frames;
 
 @end

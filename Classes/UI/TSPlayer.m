@@ -11,10 +11,22 @@
 
 @implementation TSPlayer
 
+@synthesize decoder = speex;
+@synthesize converter;
+@synthesize coreAudioPlayer = coreAudio;
+@synthesize lastVoicePacketCount;
+
 - (id)init
 {
   if (self = [super init])
   {
+    speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
+    // for now
+    coreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:[MTCoreAudioDevice defaultOutputDevice]];
+    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
+    
+    [coreAudio setIsRunning:YES];
+    
     playerName = nil;
   }
   return self;
@@ -22,6 +34,9 @@
 
 - (void)dealloc
 {
+  [coreAudio release];
+  [converter release];
+  [speex release];
   [playerName release];
   [super dealloc];
 }
