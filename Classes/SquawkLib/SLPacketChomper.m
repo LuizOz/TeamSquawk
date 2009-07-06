@@ -94,6 +94,7 @@
       NSDictionary *chompedPacket = [self chompChannelList:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_LIST:
@@ -101,6 +102,7 @@
       NSDictionary *chompedPacket = [self chompPlayerList:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_LOGIN_END:
@@ -109,6 +111,7 @@
       // in wireshark
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:packetType], @"SLPacketType", nil];
     }
     case PACKET_TYPE_PING_REPLY:
@@ -121,6 +124,7 @@
       NSDictionary *chompedPacket = [self chompTextMessage:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_VOICE_SPEEX_3_4:
@@ -135,6 +139,7 @@
       NSDictionary *chompedPacket = [self chompVoiceMessage:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_NEW_PLAYER:
@@ -142,6 +147,7 @@
       NSDictionary *chompedPacket = [self chompNewPlayer:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_LEFT:
@@ -149,6 +155,7 @@
       NSDictionary *chompedPacket = [self chompPlayerLeft:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_CHANNEL_CHANGE:
@@ -156,6 +163,7 @@
       NSDictionary *chompedPacket = [self chompChannelChange:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_UPDATE:
@@ -163,6 +171,7 @@
       NSDictionary *chompedPacket = [self chompPlayerUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       return chompedPacket;
     }
     default:
@@ -170,6 +179,7 @@
       NSLog(@"unknown packet type: 0x%08x", packetType);
       NSData *packet = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:packet withTimeout:20 tag:0];
+      [socket maybeDequeueSend];
       break;
     }
   }

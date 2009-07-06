@@ -62,6 +62,7 @@
 {
   // intended to be run on the socket's thread
   [socket sendData:data withTimeout:20 tag:0];
+  [socket maybeDequeueSend];
 }
 
 - (void)queueReceiveData
