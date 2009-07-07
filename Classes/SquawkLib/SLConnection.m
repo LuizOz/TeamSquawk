@@ -75,6 +75,7 @@
 
 - (void)beginAsynchronousLogin:(NSString*)username password:(NSString*)password nickName:(NSString*)nickName isRegistered:(BOOL)isRegistered
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   sequenceNumber = 1;
   
   SLPacketBuilder *packetBuilder = [SLPacketBuilder packetBuilder];
@@ -92,6 +93,7 @@
   
   // queue up a read
   [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  [pool release];
 }
 
 - (void)disconnect
@@ -115,7 +117,8 @@
 #pragma mark Incoming Events
 
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
-{  
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
   
   if (textFragments && ([[textFragments objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0))
@@ -300,8 +303,10 @@
     }
     
     [sock receiveWithTimeout:20 tag:0];
+    [pool release];
     return YES;
   }
+  [pool release];
   return NO;
 }
 
@@ -315,27 +320,32 @@
 
 - (void)pingTimer:(NSTimer*)timer
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   // fire a ping every time this goes off
   NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:1];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:data waitUntilDone:YES];
+  [pool release];
 }
 
 #pragma mark Text Message
 
 - (void)sendTextMessage:(NSString*)message toPlayer:(unsigned int)playerID
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildTextMessagePacketWithConnectionID:connectionID
                                                                                   clientID:clientID
                                                                                 sequenceID:sequenceNumber++
                                                                                   playerID:playerID
                                                                                    message:message];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [pool release];
 }
 
 #pragma mark Voice Message
 
 - (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildVoiceMessageWithConnectionID:connectionID
                                                                              clientID:clientID
                                                                                 codec:(codec & 0xff)
@@ -344,18 +354,21 @@
                                                                           audioFrames:frames
                                                                        commandChannel:command];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [pool release];
 }
 
 #pragma mark Channel/Status
 
 - (void)changeChannelTo:(unsigned int)newChannel withPassword:(NSString*)password
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildSwitchChannelMessageWithConnectionID:connectionID
                                                                                      clientID:clientID
                                                                                    sequenceID:sequenceNumber++
                                                                                  newChannelID:newChannel
                                                                                      password:password];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [pool release];
 }
 
 @end

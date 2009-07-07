@@ -287,9 +287,7 @@
 #pragma mark Server Info
 
 - (NSDictionary*)chompChannelList:(NSData*)data
-{
-  NSMutableArray *channelOrder = [NSMutableArray array];
-  
+{  
   // get connection id and client id
   unsigned int connnectionID, clientID;
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
