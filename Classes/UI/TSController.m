@@ -8,6 +8,8 @@
 
 #import <MTCoreAudio/MTCoreAudio.h>
 
+#import "RPImageAndTextCell.h"
+
 #import "TSController.h"
 #import "TSAudioExtraction.h"
 #import "TSPlayer.h"
@@ -22,6 +24,7 @@
   [mainWindowOutlineView setDataSource:self];
   [mainWindowOutlineView setDoubleAction:@selector(doubleClickOutlineView:)];
   [mainWindowOutlineView setTarget:self];
+  [[[mainWindowOutlineView tableColumns] objectAtIndex:0] setDataCell:[[[RPImageAndTextCell alloc] init] autorelease]];
   
   // reset our internal state
   isConnected = NO;
@@ -93,6 +96,35 @@
 }
 
 #pragma mark OutlineView Delegates
+
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item
+{
+  if ([item isKindOfClass:[TSChannel class]])
+  {
+    [self outlineView:outlineView willDisplayCell:cell forTableColumn:tableColumn forChannel:item];
+  }
+  else if ([item isKindOfClass:[TSPlayer class]])
+  {
+    [self outlineView:outlineView willDisplayCell:cell forTableColumn:tableColumn forPlayer:item];
+  }
+}
+
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forChannel:(TSChannel*)channel
+{
+  [cell setImage:nil];
+}
+
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forPlayer:(TSPlayer*)player
+{
+  if ([player isTalking])
+  {
+    [cell setImage:[NSImage imageNamed:@"Green"]];
+  }
+  else
+  {
+    [cell setImage:[NSImage imageNamed:@"Blue"]];
+  }
+}
 
 #pragma mark Menu Items
 
@@ -306,22 +338,20 @@
 #pragma mark Audio
 
 - (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count
-{ 
-  unsigned int decodedFrames = 0;
+{
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
-  NSData *data = [[player decoder] audioDataForEncodedData:audioCodecData framesDecoded:&decodedFrames];
-  AudioBufferList *decodedBufferList = MTAudioBufferListNew(1, decodedFrames * [[player decoder] frameSize], NO);
-  
-  decodedBufferList->mBuffers[0].mNumberChannels = 1;
-  decodedBufferList->mBuffers[0].mDataByteSize = [data length];
-  [data getBytes:decodedBufferList->mBuffers[0].mData length:[data length]];
-  
-  unsigned int convertedFrameCount = 0;
-  AudioBufferList *resampledBufferList = [[player converter] audioBufferListByConvertingList:decodedBufferList framesConverted:&convertedFrameCount];
-  [[player coreAudioPlayer] queueAudioBufferList:resampledBufferList count:convertedFrameCount];
-  
-  MTAudioBufferListDispose(resampledBufferList);
-  MTAudioBufferListDispose(decodedBufferList);
+  NSInvocationOperation *invocation = [[NSInvocationOperation alloc] initWithTarget:player selector:@selector(backgroundDecodeData:) object:[audioCodecData retain]];
+  [[player decodeQueue] addOperation:invocation];
+  [invocation release];
+
+  [mainWindowOutlineView reloadItem:player];
+  [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(idleAudioCheck:) userInfo:player repeats:NO];
+}
+
+- (void)idleAudioCheck:(NSTimer*)timer
+{
+  TSPlayer *player = [timer userInfo];
+  [mainWindowOutlineView reloadItem:player];
 }
 
 #pragma mark NSApplication Delegate

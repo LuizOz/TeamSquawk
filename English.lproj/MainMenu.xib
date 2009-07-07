@@ -8,8 +8,8 @@
 		<string key="IBDocument.HIToolboxVersion">353.00</string>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
+			<integer value="456"/>
 			<integer value="81"/>
-			<integer value="372"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -2764,6 +2764,7 @@
 					<string>453.IBPluginDependency</string>
 					<string>454.IBPluginDependency</string>
 					<string>456.IBPluginDependency</string>
+					<string>459.CustomClassName</string>
 					<string>459.IBPluginDependency</string>
 					<string>462.IBEditorWindowLastContentRect</string>
 					<string>462.IBPluginDependency</string>
@@ -2973,6 +2974,7 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>RPImageAndTextCell</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>{{515, 962}, {617, 0}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -3045,6 +3047,14 @@
 					</object>
 				</object>
 				<object class="IBPartialClassDescription">
+					<string key="className">RPImageAndTextCell</string>
+					<string key="superclassName">NSTextFieldCell</string>
+					<object class="IBClassDescriptionSource" key="sourceIdentifier">
+						<string key="majorKey">IBProjectSource</string>
+						<string key="minorKey">Classes/UI/RPImageAndTextCell.h</string>
+					</object>
+				</object>
+				<object class="IBPartialClassDescription">
 					<string key="className">TSController</string>
 					<string key="superclassName">NSObject</string>
 					<object class="NSMutableDictionary" key="actions">
@@ -3053,9 +3063,11 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>connectMenuAction:</string>
 							<string>disconnectMenuAction:</string>
+							<string>doubleClickOutlineView:</string>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 						</object>

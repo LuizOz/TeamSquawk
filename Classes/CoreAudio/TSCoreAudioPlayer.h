@@ -22,6 +22,8 @@
 - (BOOL)isRunning;
 - (void)setIsRunning:(BOOL)flag;
 
+- (unsigned int)activeFramesInBuffer;
+
 - (OSStatus)ioCycleForDevice:(MTCoreAudioDevice *)theDevice 
                    timeStamp:(const AudioTimeStamp *)inNow
                    inputData:(const AudioBufferList *)inInputData

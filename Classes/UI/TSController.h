@@ -14,6 +14,8 @@
 #import "SpeexEncoder.h"
 #import "SpeexDecoder.h"
 
+@class RPImageAndTextCell, TSPlayer, TSChannel;
+
 @interface TSController : NSObject {
   
   // user interface
@@ -51,6 +53,9 @@
 
 #pragma mark OutlineView Delegates
 
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item;
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forChannel:(TSChannel*)channel;
+- (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forPlayer:(TSPlayer*)player;
 
 #pragma mark Menu Items
 
@@ -67,14 +72,24 @@
 - (void)connection:(SLConnection*)connection didLoginTo:(NSString*)host port:(int)port serverName:(NSString*)serverName platform:(NSString*)platform majorVersion:(int)majorVersion minorVersion:(int)minorVersion subLevelVersion:(int)subLevelVersion subsubLevelVersion:(int)subsubLevelVersion welcomeMessage:(NSString*)welcomeMessage;
 - (void)connectionFinishedLogin:(SLConnection*)connection;
 - (void)connectionFailedToLogin:(SLConnection*)connection;
+- (void)connectionDisconnected:(SLConnection*)connection;
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
 - (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname;
+- (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID;
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
 
-#pragma mark Old Shit
+#pragma mark Audio
 
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count;
+- (void)invokeInBackground:(NSInvocation*)invocation;
+
+#pragma mark NSApplication Delegate
+
+- (void)applicationWillTerminate:(NSNotification *)aNotification;
+
+#pragma mark Old Shit
 
 
 @end

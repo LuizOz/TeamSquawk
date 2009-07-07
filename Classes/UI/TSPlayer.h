@@ -23,6 +23,7 @@ typedef enum {
   TSCoreAudioPlayer *coreAudio;
   TSAudioConverter *converter;
   SpeexDecoder *speex;
+  NSOperationQueue *decodeQueue;
   
   NSString *playerName;
   unsigned int playerFlags;
@@ -34,6 +35,7 @@ typedef enum {
 @property (readonly) SpeexDecoder *decoder;
 @property (readonly) TSAudioConverter *converter;
 @property (readonly) TSCoreAudioPlayer *coreAudioPlayer;
+@property (readonly) NSOperationQueue *decodeQueue;
 @property (assign) unsigned int lastVoicePacketCount;
 
 - (NSString*)playerName;
@@ -47,6 +49,8 @@ typedef enum {
 - (BOOL)isAway;
 - (BOOL)hasMutedMicrophone;
 - (BOOL)isMuted;
+
+- (BOOL)isTalking;
 
 - (unsigned int)playerID;
 - (void)setPlayerID:(unsigned int)aPlayerID;

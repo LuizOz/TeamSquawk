@@ -47,6 +47,14 @@
 		C9BD028E0FFC96E200FC280A /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD028D0FFC96E200FC280A /* QuickTime.framework */; };
 		C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */; };
 		C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */; };
+		C9E2CA1F10032ACB00ED920D /* Graphite.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1810032ACB00ED920D /* Graphite.tiff */; };
+		C9E2CA2010032ACB00ED920D /* Green.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1910032ACB00ED920D /* Green.tiff */; };
+		C9E2CA2110032ACB00ED920D /* Grey.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1A10032ACB00ED920D /* Grey.tiff */; };
+		C9E2CA2210032ACB00ED920D /* Blue.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1B10032ACB00ED920D /* Blue.tiff */; };
+		C9E2CA2310032ACB00ED920D /* Orange.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1C10032ACB00ED920D /* Orange.tiff */; };
+		C9E2CA2410032ACB00ED920D /* Purple.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1D10032ACB00ED920D /* Purple.tiff */; };
+		C9E2CA2510032ACB00ED920D /* Red.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1E10032ACB00ED920D /* Red.tiff */; };
+		C9E2CA2810032B0700ED920D /* RPImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C9E2CA2610032B0700ED920D /* RPImageAndTextCell.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -380,6 +388,15 @@
 		C9BDFFFD0FFA02CD00FC280A /* os_support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_support.h; sourceTree = "<group>"; };
 		C9BDFFFE0FFA02CD00FC280A /* preprocess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = preprocess.c; sourceTree = "<group>"; };
 		C9BDFFFF0FFA02CD00FC280A /* pseudofloat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pseudofloat.h; sourceTree = "<group>"; };
+		C9E2CA1810032ACB00ED920D /* Graphite.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Graphite.tiff; sourceTree = "<group>"; };
+		C9E2CA1910032ACB00ED920D /* Green.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Green.tiff; sourceTree = "<group>"; };
+		C9E2CA1A10032ACB00ED920D /* Grey.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Grey.tiff; sourceTree = "<group>"; };
+		C9E2CA1B10032ACB00ED920D /* Blue.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Blue.tiff; sourceTree = "<group>"; };
+		C9E2CA1C10032ACB00ED920D /* Orange.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Orange.tiff; sourceTree = "<group>"; };
+		C9E2CA1D10032ACB00ED920D /* Purple.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Purple.tiff; sourceTree = "<group>"; };
+		C9E2CA1E10032ACB00ED920D /* Red.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Red.tiff; sourceTree = "<group>"; };
+		C9E2CA2610032B0700ED920D /* RPImageAndTextCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RPImageAndTextCell.m; sourceTree = "<group>"; };
+		C9E2CA2710032B0700ED920D /* RPImageAndTextCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RPImageAndTextCell.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -468,6 +485,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				C9E2CA1610032AAF00ED920D /* Images */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				1DDD58140DA1D0A300B32029 /* MainMenu.xib */,
@@ -526,6 +544,8 @@
 				C90586E21000DFFC003BD88A /* TSPlayer.m */,
 				C905872E1000E813003BD88A /* TSChannel.h */,
 				C905872F1000E813003BD88A /* TSChannel.m */,
+				C9E2CA2710032B0700ED920D /* RPImageAndTextCell.h */,
+				C9E2CA2610032B0700ED920D /* RPImageAndTextCell.m */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -1088,6 +1108,20 @@
 			path = libspeex;
 			sourceTree = "<group>";
 		};
+		C9E2CA1610032AAF00ED920D /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				C9E2CA1810032ACB00ED920D /* Graphite.tiff */,
+				C9E2CA1910032ACB00ED920D /* Green.tiff */,
+				C9E2CA1A10032ACB00ED920D /* Grey.tiff */,
+				C9E2CA1B10032ACB00ED920D /* Blue.tiff */,
+				C9E2CA1C10032ACB00ED920D /* Orange.tiff */,
+				C9E2CA1D10032ACB00ED920D /* Purple.tiff */,
+				C9E2CA1E10032ACB00ED920D /* Red.tiff */,
+			);
+			path = Images;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1136,6 +1170,13 @@
 			files = (
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				1DDD58160DA1D0A300B32029 /* MainMenu.xib in Resources */,
+				C9E2CA1F10032ACB00ED920D /* Graphite.tiff in Resources */,
+				C9E2CA2010032ACB00ED920D /* Green.tiff in Resources */,
+				C9E2CA2110032ACB00ED920D /* Grey.tiff in Resources */,
+				C9E2CA2210032ACB00ED920D /* Blue.tiff in Resources */,
+				C9E2CA2310032ACB00ED920D /* Orange.tiff in Resources */,
+				C9E2CA2410032ACB00ED920D /* Purple.tiff in Resources */,
+				C9E2CA2510032ACB00ED920D /* Red.tiff in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1190,6 +1231,7 @@
 				C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */,
 				C90586E31000DFFC003BD88A /* TSPlayer.m in Sources */,
 				C90587301000E813003BD88A /* TSChannel.m in Sources */,
+				C9E2CA2810032B0700ED920D /* RPImageAndTextCell.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

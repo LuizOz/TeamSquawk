@@ -14,6 +14,7 @@
 @synthesize decoder = speex;
 @synthesize converter;
 @synthesize coreAudioPlayer = coreAudio;
+@synthesize decodeQueue;
 @synthesize lastVoicePacketCount;
 
 - (id)init
@@ -24,8 +25,10 @@
     // for now
     coreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:[MTCoreAudioDevice defaultOutputDevice]];
     converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
+    decodeQueue = [[NSOperationQueue alloc] init];
+    [decodeQueue setMaxConcurrentOperationCount:1];
     
-    [coreAudio setIsRunning:YES];
+    [self performSelectorInBackground:@selector(_setIsRunningThread) withObject:nil];
     
     playerName = nil;
   }
@@ -48,6 +51,37 @@
           [self isChannelCommander], [self shouldBlockWhispers], [self isAway], [self hasMutedMicrophone], [self isMuted],
           [self channelID],
           [self playerID]];
+}
+
+- (void)_setIsRunningThread
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  [coreAudio setIsRunning:YES];
+  [[NSRunLoop currentRunLoop] run];
+  [pool release];
+}
+
+- (void)backgroundDecodeData:(NSData*)audioCodecData
+{
+  // to try and control our memory usage
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
+  unsigned int decodedFrames = 0;
+  NSData *data = [[self decoder] audioDataForEncodedData:audioCodecData framesDecoded:&decodedFrames];
+  AudioBufferList *decodedBufferList = MTAudioBufferListNew(1, decodedFrames * [[self decoder] frameSize], NO);
+  
+  decodedBufferList->mBuffers[0].mNumberChannels = 1;
+  decodedBufferList->mBuffers[0].mDataByteSize = [data length];
+  [data getBytes:decodedBufferList->mBuffers[0].mData length:[data length]];
+  
+  unsigned int convertedFrameCount = 0;
+  AudioBufferList *resampledBufferList = [[self converter] audioBufferListByConvertingList:decodedBufferList framesConverted:&convertedFrameCount];
+  [[self coreAudioPlayer] queueAudioBufferList:resampledBufferList count:convertedFrameCount];
+  
+  MTAudioBufferListDispose(resampledBufferList);
+  MTAudioBufferListDispose(decodedBufferList);
+  [audioCodecData release];
+  [pool release];
 }
 
 - (NSString*)playerName
@@ -94,6 +128,11 @@
 - (BOOL)isMuted
 {
   return ((playerFlags & TSPlayerIsMuted) == TSPlayerIsMuted);
+}
+
+- (BOOL)isTalking
+{
+  return ([coreAudio activeFramesInBuffer] > 0);
 }
 
 - (unsigned int)playerID

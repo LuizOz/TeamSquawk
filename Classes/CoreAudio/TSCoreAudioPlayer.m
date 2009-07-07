@@ -19,7 +19,7 @@
     isRunning = NO;
     
     // get 10s of audio at the output sample rate
-    unsigned int audioBufferCapacity = (unsigned int)([[device streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] sampleRate] * 10);
+    unsigned int audioBufferCapacity = (unsigned int)([[device streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] sampleRate] * 1);
     unsigned int audioBufferChannels = [[device streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] channelsPerFrame];
     
     audioBuffer = [[MTAudioBuffer alloc] initWithCapacityFrames:audioBufferCapacity channels:audioBufferChannels];
@@ -54,6 +54,11 @@
     [audioDevice removeIOTarget];
   }
   isRunning = flag;
+}
+
+- (unsigned int)activeFramesInBuffer
+{
+  return [audioBuffer count];
 }
     
 - (OSStatus)ioCycleForDevice:(MTCoreAudioDevice *)theDevice 
