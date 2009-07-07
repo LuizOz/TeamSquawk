@@ -55,6 +55,10 @@
 		C9E2CA2410032ACB00ED920D /* Purple.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1D10032ACB00ED920D /* Purple.tiff */; };
 		C9E2CA2510032ACB00ED920D /* Red.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1E10032ACB00ED920D /* Red.tiff */; };
 		C9E2CA2810032B0700ED920D /* RPImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C9E2CA2610032B0700ED920D /* RPImageAndTextCell.m */; };
+		C9E2CBBB1003EDC500ED920D /* TSPlayerCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C9E2CBBA1003EDC500ED920D /* TSPlayerCell.m */; };
+		C9E2CC0C1003F18F00ED920D /* TransmitBlue.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CC091003F18F00ED920D /* TransmitBlue.png */; };
+		C9E2CC0D1003F18F00ED920D /* TransmitGreen.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CC0A1003F18F00ED920D /* TransmitGreen.png */; };
+		C9E2CC0E1003F18F00ED920D /* TransmitOrange.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CC0B1003F18F00ED920D /* TransmitOrange.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -397,6 +401,11 @@
 		C9E2CA1E10032ACB00ED920D /* Red.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Red.tiff; sourceTree = "<group>"; };
 		C9E2CA2610032B0700ED920D /* RPImageAndTextCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RPImageAndTextCell.m; sourceTree = "<group>"; };
 		C9E2CA2710032B0700ED920D /* RPImageAndTextCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RPImageAndTextCell.h; sourceTree = "<group>"; };
+		C9E2CBB91003EDC500ED920D /* TSPlayerCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSPlayerCell.h; sourceTree = "<group>"; };
+		C9E2CBBA1003EDC500ED920D /* TSPlayerCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSPlayerCell.m; sourceTree = "<group>"; };
+		C9E2CC091003F18F00ED920D /* TransmitBlue.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitBlue.png; sourceTree = "<group>"; };
+		C9E2CC0A1003F18F00ED920D /* TransmitGreen.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitGreen.png; sourceTree = "<group>"; };
+		C9E2CC0B1003F18F00ED920D /* TransmitOrange.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitOrange.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -540,6 +549,8 @@
 			children = (
 				C97174D50FF777CF008FC21C /* TSController.h */,
 				C97174D60FF777CF008FC21C /* TSController.m */,
+				C9E2CBB91003EDC500ED920D /* TSPlayerCell.h */,
+				C9E2CBBA1003EDC500ED920D /* TSPlayerCell.m */,
 				C90586E11000DFFC003BD88A /* TSPlayer.h */,
 				C90586E21000DFFC003BD88A /* TSPlayer.m */,
 				C905872E1000E813003BD88A /* TSChannel.h */,
@@ -1111,6 +1122,9 @@
 		C9E2CA1610032AAF00ED920D /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				C9E2CC091003F18F00ED920D /* TransmitBlue.png */,
+				C9E2CC0A1003F18F00ED920D /* TransmitGreen.png */,
+				C9E2CC0B1003F18F00ED920D /* TransmitOrange.png */,
 				C9E2CA1810032ACB00ED920D /* Graphite.tiff */,
 				C9E2CA1910032ACB00ED920D /* Green.tiff */,
 				C9E2CA1A10032ACB00ED920D /* Grey.tiff */,
@@ -1177,6 +1191,9 @@
 				C9E2CA2310032ACB00ED920D /* Orange.tiff in Resources */,
 				C9E2CA2410032ACB00ED920D /* Purple.tiff in Resources */,
 				C9E2CA2510032ACB00ED920D /* Red.tiff in Resources */,
+				C9E2CC0C1003F18F00ED920D /* TransmitBlue.png in Resources */,
+				C9E2CC0D1003F18F00ED920D /* TransmitGreen.png in Resources */,
+				C9E2CC0E1003F18F00ED920D /* TransmitOrange.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1232,6 +1249,7 @@
 				C90586E31000DFFC003BD88A /* TSPlayer.m in Sources */,
 				C90587301000E813003BD88A /* TSChannel.m in Sources */,
 				C9E2CA2810032B0700ED920D /* RPImageAndTextCell.m in Sources */,
+				C9E2CBBB1003EDC500ED920D /* TSPlayerCell.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

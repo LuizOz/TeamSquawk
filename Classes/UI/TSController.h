@@ -10,6 +10,7 @@
 #import "SLConnection.h"
 #import "TSCoreAudioPlayer.h"
 #import "TSAudioConverter.h"
+#import "TSPlayerCell.h"
 
 #import "SpeexEncoder.h"
 #import "SpeexDecoder.h"
@@ -22,6 +23,10 @@
   
   IBOutlet NSWindow *mainWindow;
   IBOutlet NSOutlineView *mainWindowOutlineView;
+  
+  // outline view stuff
+  NSTextFieldCell *sharedTextFieldCell;
+  TSPlayerCell *sharedPlayerCell;
   
   // state
   

@@ -16,6 +16,7 @@
 @synthesize coreAudioPlayer = coreAudio;
 @synthesize decodeQueue;
 @synthesize lastVoicePacketCount;
+@synthesize extendedFlags;
 
 - (id)init
 {
@@ -33,6 +34,24 @@
     playerName = nil;
   }
   return self;
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+  TSPlayer *copyPlayer = [[TSPlayer allocWithZone:zone] init];
+  copyPlayer->speex = [speex retain];
+  copyPlayer->coreAudio = [coreAudio retain];
+  copyPlayer->converter = [converter retain];
+  copyPlayer->decodeQueue = [decodeQueue retain];
+  
+  [copyPlayer setPlayerName:[self playerName]];
+  [copyPlayer setPlayerID:[self playerID]];
+  [copyPlayer setPlayerFlags:[self playerFlags]];
+  [copyPlayer setChannelID:[self channelID]];
+  [copyPlayer setLastVoicePacketCount:[self lastVoicePacketCount]];
+  [copyPlayer setExtendedFlags:[self extendedFlags]];
+
+  return copyPlayer;
 }
 
 - (void)dealloc
@@ -133,6 +152,16 @@
 - (BOOL)isTalking
 {
   return ([coreAudio activeFramesInBuffer] > 0);
+}
+
+- (BOOL)isRegistered
+{
+  return ((extendedFlags & TSPlayerRegistered) == TSPlayerRegistered);
+}
+
+- (BOOL)isServerAdmin
+{
+  return ((extendedFlags & TSPlayerServerAdmin) == TSPlayerServerAdmin);
 }
 
 - (unsigned int)playerID

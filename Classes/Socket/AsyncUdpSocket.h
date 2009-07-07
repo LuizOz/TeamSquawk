@@ -366,5 +366,6 @@ typedef enum AsyncUdpSocketError AsyncUdpSocketError;
  * Matt hack, expose maybeDequeueSend to the outside world so I can enforce certain packets are transmitted synchronously
  **/
 - (void)maybeDequeueSend;
+- (void)maybeDequeueReceive;
 
 @end

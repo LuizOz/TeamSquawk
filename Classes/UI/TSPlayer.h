@@ -19,6 +19,11 @@ typedef enum {
   TSPlayerIsMuted = 0x20,
 } TSPlayerFlags;
 
+typedef enum {
+  TSPlayerServerAdmin = 0x01,
+  TSPlayerRegistered = 0x04,
+} TSPlayerExtendedFlags;
+
 @interface TSPlayer : NSObject {
   TSCoreAudioPlayer *coreAudio;
   TSAudioConverter *converter;
@@ -27,6 +32,7 @@ typedef enum {
   
   NSString *playerName;
   unsigned int playerFlags;
+  unsigned int extendedFlags;
   unsigned int playerID;
   unsigned int channelID;
   unsigned int lastVoicePacketCount;
@@ -37,6 +43,9 @@ typedef enum {
 @property (readonly) TSCoreAudioPlayer *coreAudioPlayer;
 @property (readonly) NSOperationQueue *decodeQueue;
 @property (assign) unsigned int lastVoicePacketCount;
+@property (assign) unsigned int extendedFlags;
+
+- (id)copyWithZone:(NSZone *)zone;
 
 - (NSString*)playerName;
 - (void)setPlayerName:(NSString*)name;
@@ -49,6 +58,9 @@ typedef enum {
 - (BOOL)isAway;
 - (BOOL)hasMutedMicrophone;
 - (BOOL)isMuted;
+
+- (BOOL)isRegistered;
+- (BOOL)isServerAdmin;
 
 - (BOOL)isTalking;
 

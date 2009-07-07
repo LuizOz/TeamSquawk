@@ -8,7 +8,6 @@
 
 #import <MTCoreAudio/MTCoreAudio.h>
 
-#import "RPImageAndTextCell.h"
 
 #import "TSController.h"
 #import "TSAudioExtraction.h"
@@ -24,7 +23,10 @@
   [mainWindowOutlineView setDataSource:self];
   [mainWindowOutlineView setDoubleAction:@selector(doubleClickOutlineView:)];
   [mainWindowOutlineView setTarget:self];
-  [[[mainWindowOutlineView tableColumns] objectAtIndex:0] setDataCell:[[[RPImageAndTextCell alloc] init] autorelease]];
+  //[mainWindowOutlineView setIndentationPerLevel:0.0];
+  
+  sharedTextFieldCell = [[NSTextFieldCell alloc] init];
+  sharedPlayerCell = [[TSPlayerCell alloc] init];
   
   // reset our internal state
   isConnected = NO;
@@ -90,15 +92,45 @@
   }
   else if ([item isKindOfClass:[TSPlayer class]])
   {
-    return [(TSPlayer*)item playerName];
+    return (TSPlayer*)item;
   }
   return nil;
 }
 
 #pragma mark OutlineView Delegates
 
+- (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
+{
+  if ([item isKindOfClass:[TSChannel class]])
+  {
+    return 17.0;
+  }
+  return [outlineView rowHeight];
+}
+
+- (NSCell *)outlineView:(NSOutlineView *)outlineView dataCellForTableColumn:(NSTableColumn *)tableColumn item:(id)item
+{
+  if ([item isKindOfClass:[TSPlayer class]])
+  {
+    return sharedPlayerCell;
+  }
+  return sharedTextFieldCell;
+}
+
+- (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item
+{
+  if ([outlineView isEqualTo:mainWindowOutlineView] && [item isKindOfClass:[TSChannel class]])
+  {
+    return YES;
+  }
+  return NO;
+}
+
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
+  // This is a hack but I can't seem to get the view to paint properly without it
+  [outlineView sizeToFit];
+  
   if ([item isKindOfClass:[TSChannel class]])
   {
     [self outlineView:outlineView willDisplayCell:cell forTableColumn:tableColumn forChannel:item];
@@ -129,7 +161,7 @@
 #pragma mark Menu Items
 
 - (IBAction)connectMenuAction:(id)sender
-{
+{  
   // this is going to be somewhat place holdery
   NSError *error = nil;
   
@@ -273,6 +305,7 @@
     
     [player setPlayerName:[playerDictionary objectForKey:@"SLPlayerNick"]];
     [player setPlayerFlags:[[playerDictionary objectForKey:@"SLPlayerFlags"] unsignedIntValue]];
+    [player setExtendedFlags:[[playerDictionary objectForKey:@"SLPlayerExtendedFlags"] unsignedIntValue]];
     [player setPlayerID:[[playerDictionary objectForKey:@"SLPlayerID"] unsignedIntValue]];
     [player setChannelID:[[playerDictionary objectForKey:@"SLChannelID"] unsignedIntValue]];
     [player setLastVoicePacketCount:0];

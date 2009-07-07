@@ -8,8 +8,8 @@
 		<string key="IBDocument.HIToolboxVersion">353.00</string>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="456"/>
 			<integer value="81"/>
+			<integer value="456"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -1054,7 +1054,7 @@
 						<bool key="EncodedWithXMLCoder">YES</bool>
 						<object class="NSScrollView" id="905025283">
 							<reference key="NSNextResponder" ref="439893737"/>
-							<int key="NSvFlags">268</int>
+							<int key="NSvFlags">274</int>
 							<object class="NSMutableArray" key="NSSubviews">
 								<bool key="EncodedWithXMLCoder">YES</bool>
 								<object class="NSClipView" id="250855273">
@@ -1065,13 +1065,13 @@
 										<object class="NSOutlineView" id="611829221">
 											<reference key="NSNextResponder" ref="250855273"/>
 											<int key="NSvFlags">256</int>
-											<string key="NSFrameSize">{1003, 411}</string>
+											<string key="NSFrameSize">{1003, 555}</string>
 											<reference key="NSSuperview" ref="250855273"/>
 											<bool key="NSEnabled">YES</bool>
 											<object class="_NSCornerView" key="NSCornerView">
 												<nil key="NSNextResponder"/>
 												<int key="NSvFlags">256</int>
-												<string key="NSFrame">{{257, 0}, {16, 17}}</string>
+												<string key="NSFrame">{{257, 1}, {16, 17}}</string>
 											</object>
 											<object class="NSMutableArray" key="NSTableColumns">
 												<bool key="EncodedWithXMLCoder">YES</bool>
@@ -1148,15 +1148,16 @@
 													<bytes key="NSWhite">MC41AA</bytes>
 												</object>
 											</object>
-											<double key="NSRowHeight">1.700000e+01</double>
-											<int key="NSTvFlags">308281344</int>
+											<double key="NSRowHeight">3.200000e+01</double>
+											<int key="NSTvFlags">1390411776</int>
 											<int key="NSColumnAutoresizingStyle">4</int>
 											<int key="NSDraggingSourceMaskForLocal">15</int>
 											<int key="NSDraggingSourceMaskForNonLocal">0</int>
 											<bool key="NSAllowsTypeSelect">YES</bool>
+											<float key="NSOutlineViewIndentationPerLevelKey">1.200000e+01</float>
 										</object>
 									</object>
-									<string key="NSFrame">{{1, 1}, {256, 411}}</string>
+									<string key="NSFrame">{{1, 1}, {271, 555}}</string>
 									<reference key="NSSuperview" ref="905025283"/>
 									<reference key="NSNextKeyView" ref="611829221"/>
 									<reference key="NSDocView" ref="611829221"/>
@@ -1165,12 +1166,12 @@
 								</object>
 								<object class="NSScroller" id="532945116">
 									<reference key="NSNextResponder" ref="905025283"/>
-									<int key="NSvFlags">256</int>
-									<string key="NSFrame">{{257, 1}, {15, 411}}</string>
+									<int key="NSvFlags">-2147483392</int>
+									<string key="NSFrame">{{257, 1}, {15, 540}}</string>
 									<reference key="NSSuperview" ref="905025283"/>
 									<reference key="NSTarget" ref="905025283"/>
 									<string key="NSAction">_doScroller:</string>
-									<double key="NSPercent">9.971910e-01</double>
+									<double key="NSPercent">9.982046e-01</double>
 								</object>
 								<object class="NSScroller" id="198888455">
 									<reference key="NSNextResponder" ref="905025283"/>
@@ -1184,14 +1185,14 @@
 									<double key="NSPercent">2.552343e-01</double>
 								</object>
 							</object>
-							<string key="NSFrame">{{-1, 143}, {273, 413}}</string>
+							<string key="NSFrame">{{-1, -1}, {273, 557}}</string>
 							<reference key="NSSuperview" ref="439893737"/>
 							<reference key="NSNextKeyView" ref="250855273"/>
-							<int key="NSsFlags">146</int>
+							<int key="NSsFlags">658</int>
 							<reference key="NSVScroller" ref="532945116"/>
 							<reference key="NSHScroller" ref="198888455"/>
 							<reference key="NSContentView" ref="250855273"/>
-							<bytes key="NSScrollAmts">QSAAAEEgAABBmAAAQZgAAA</bytes>
+							<bytes key="NSScrollAmts">QSAAAEEgAABCCAAAQggAAA</bytes>
 						</object>
 					</object>
 					<string key="NSFrameSize">{271, 555}</string>
@@ -3020,7 +3021,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">473</int>
+			<int key="maxID">474</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">

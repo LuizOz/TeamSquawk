@@ -448,8 +448,12 @@
     [data getBytes:&channelID range:NSMakeRange(byteIndex, 4)];
     byteIndex += 4;
     
-    // two blank bytes
-    byteIndex += 4;
+    // skip two bytes
+    byteIndex += 2;
+    
+    unsigned short playerExtendedFlags;
+    [data getBytes:&playerExtendedFlags range:NSMakeRange(byteIndex, 2)];
+    byteIndex += 2;
     
     unsigned short flags = 0;
     [data getBytes:&flags range:NSMakeRange(byteIndex, 2)];
@@ -469,6 +473,7 @@
                                       [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                       [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
                                       [NSNumber numberWithUnsignedShort:flags], @"SLPlayerFlags",
+                                      [NSNumber numberWithUnsignedShort:playerExtendedFlags], @"SLPlayerExtendedFlags",
                                       nick, @"SLPlayerNick",
                                       nil];
     [players addObject:playerDictionary];
