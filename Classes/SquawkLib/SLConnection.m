@@ -17,6 +17,8 @@
 @synthesize clientMajorVersion;
 @synthesize clientMinorVersion;
 
+@synthesize clientID;
+
 @synthesize delegate;
 
 - (id)initWithHost:(NSString*)host withError:(NSError**)error
@@ -35,6 +37,8 @@
     
     textFragments = nil;
     audioSequenceCounter = 0;
+    isDisconnecting = NO;
+    hasFinishedDisconnecting = NO;
     
     BOOL connected = [socket connectToHost:host onPort:port error:error];
     if (!connected)
@@ -62,13 +66,22 @@
 {
   // intended to be run on the socket's thread
   [socket sendData:data withTimeout:20 tag:0];
-  [socket maybeDequeueSend];
 }
 
 - (void)queueReceiveData
 {
   // queue up a recieve
   [socket receiveWithTimeout:20 tag:0];
+}
+
+- (void)waitForSend
+{
+  [socket maybeDequeueSend];
+}
+
+- (void)waitForReceive
+{
+  [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
 }
 
 #pragma mark Commands
@@ -105,8 +118,17 @@
     pingTimer = nil;
   }
   
+  isDisconnecting = YES;
+  
   NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber++];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  
+  while (!hasFinishedDisconnecting)
+  {
+    [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
+    [self performSelector:@selector(waitForReceive) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  }
   
   if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:)])
   {
@@ -257,18 +279,25 @@
       }
       case PACKET_TYPE_NEW_PLAYER:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:)])
+        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:extendedFlags:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
           unsigned int channelID = [[packet objectForKey:@"SLChannelID"] unsignedIntValue];
+          unsigned int extendedFlags = [[packet objectForKey:@"SLPlayerExtendedFlags"] unsignedIntValue];
           NSString *nick = [packet objectForKey:@"SLNickname"];
           
-          [[self delegate] connection:self receivedNewPlayerNotification:playerID channel:channelID nickname:nick];
+          [[self delegate] connection:self receivedNewPlayerNotification:playerID channel:channelID nickname:nick extendedFlags:extendedFlags];
         }
         break;
       }
       case PACKET_TYPE_PLAYER_LEFT:
       {
+        // this could be us!
+        if (isDisconnecting)
+        {
+          hasFinishedDisconnecting = YES;
+        }
+        
         if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
         {
           [[self delegate] connection:self receivedPlayerLeftNotification:[[packet objectForKey:@"SLPlayerID"] unsignedIntValue]];
@@ -301,7 +330,7 @@
       default:
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }
-    
+       
     [sock receiveWithTimeout:20 tag:0];
     [pool release];
     return YES;
@@ -367,6 +396,17 @@
                                                                                    sequenceID:sequenceNumber++
                                                                                  newChannelID:newChannel
                                                                                      password:password];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [pool release];
+}
+
+- (void)changeStatusTo:(unsigned short)flags
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildChangePlayerStatusMessageWithConnectionID:connectionID
+                                                                                          clientID:clientID
+                                                                                        sequenceID:sequenceNumber++
+                                                                                    newStatusFlags:flags];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
   [pool release];
 }

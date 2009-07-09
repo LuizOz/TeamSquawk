@@ -18,6 +18,11 @@
 
 - (void)awakeFromNib
 {
+  NSDictionary *defaults = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSArray array], @"RecentServers",
+                            nil];
+  [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
+  
   // setup the outline view
   [mainWindowOutlineView setDelegate:self];
   [mainWindowOutlineView setDataSource:self];
@@ -25,6 +30,18 @@
   [mainWindowOutlineView setTarget:self];
   //[mainWindowOutlineView setIndentationPerLevel:0.0];
   
+  // setup the toolbar
+  toolbar = [[NSToolbar alloc] initWithIdentifier:@"MainWindowToolbar"];
+  [toolbar setDelegate:self];
+  [toolbar setDisplayMode:NSToolbarDisplayModeIconOnly];
+  [toolbar setSizeMode:NSToolbarSizeModeSmall];
+  [mainWindow setToolbar:toolbar];
+  
+  // setup the toolbar view
+  [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Graphite"]];
+  [toolbarViewNicknameField setStringValue:@"TeamSquawk"];
+  [self setupDisconnectedToolbarStatusPopupButton];
+
   sharedTextFieldCell = [[NSTextFieldCell alloc] init];
   sharedPlayerCell = [[TSPlayerCell alloc] init];
   
@@ -148,34 +165,46 @@
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forPlayer:(TSPlayer*)player
 {
-  if ([player isTalking])
+
+}
+
+#pragma mark Toolbar Delegates
+
+- (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)aToolbar
+{
+  return [NSArray arrayWithObjects:@"TSControllerToolbarView", nil];
+}
+
+- (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar *)aToolbar
+{
+  return [self toolbarAllowedItemIdentifiers:aToolbar];
+}
+
+- (NSToolbarItem *)toolbar:(NSToolbar *)toolbar itemForItemIdentifier:(NSString *)itemIdentifier willBeInsertedIntoToolbar:(BOOL)flag
+{
+  if ([itemIdentifier isEqualToString:@"TSControllerToolbarView"])
   {
-    [cell setImage:[NSImage imageNamed:@"Green"]];
+    NSToolbarItem *item = [[[NSToolbarItem alloc] initWithItemIdentifier:@"TSControllerToolbarView"] autorelease];
+    [item setView:toolbarView];
+    [item setMinSize:[toolbarView frame].size];
+    [item setMaxSize:NSMakeSize(FLT_MAX, [toolbarView frame].size.height)];
+    return item;
   }
-  else
-  {
-    [cell setImage:[NSImage imageNamed:@"Blue"]];
-  }
+  return nil;
 }
 
 #pragma mark Menu Items
 
 - (IBAction)connectMenuAction:(id)sender
 {  
-  // this is going to be somewhat place holdery
-  NSError *error = nil;
+  [connectionWindowUsernameField setEnabled:([[connectionWindowTypeMatrix selectedCell] tag] == 0)];
+  [connectionWindowServerTextField setStringValue:@""];
+  [connectionWindowNicknameTextField setStringValue:@""];
+  [connectionWindowUsernameField setStringValue:@""];
+  [connectionWindowPasswordField setStringValue:@""];
   
-  // create a connection
-  teamspeakConnection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
-  [teamspeakConnection setDelegate:self];
-  
-  // setup some basic things about this client
-  [teamspeakConnection setClientName:@"TeamSquawk"];
-  [teamspeakConnection setClientOperatingSystem:@"Mac OS X"];
-  [teamspeakConnection setClientMajorVersion:1];
-  [teamspeakConnection setClientMinorVersion:0];
-  
-  [teamspeakConnection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"TeamSquawk" isRegistered:NO];
+  [connectionWindow center];
+  [connectionWindow makeKeyAndOrderFront:sender];
 }
 
 - (IBAction)disconnectMenuAction:(id)sender
@@ -184,6 +213,19 @@
   {
     [teamspeakConnection disconnect];
   }
+}
+
+- (IBAction)connectToHistoryAction:(id)sender
+{
+  NSMenuItem *item = sender;
+  NSDictionary *server = [item representedObject];
+  
+  [self loginToServer:[server objectForKey:@"ServerAddress"] 
+                 port:[[server objectForKey:@"Port"] intValue]
+             nickname:[server objectForKey:@"Nickname"]
+           registered:[[server objectForKey:@"Registered"] boolValue]
+             username:([[server objectForKey:@"Registered"] boolValue] ? [server objectForKey:@"Username"] : nil)
+             password:[server objectForKey:@"Password"]];
 }
 
 - (IBAction)doubleClickOutlineView:(id)sender
@@ -195,6 +237,233 @@
     [teamspeakConnection changeChannelTo:[(TSChannel*)item channelID] withPassword:nil];
   }
   
+}
+
+- (IBAction)changeUserStatusAction:(id)sender
+{
+  NSMenuItem *item = sender;
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  unsigned short currentFlags = ([player playerFlags] & 0xffff);
+  
+  switch ([item tag])
+  {
+    case TSControllerPlayerActive:
+    {
+      currentFlags &= ~(TSPlayerIsMuted | TSPlayerHasMutedMicrophone);
+      [teamspeakConnection changeStatusTo:currentFlags];
+      break;
+    }
+    case TSControllerPlayerMuteMic:
+    {
+      currentFlags &= ~(TSPlayerIsMuted | TSPlayerHasMutedMicrophone);
+      currentFlags |= TSPlayerHasMutedMicrophone;
+      [teamspeakConnection changeStatusTo:currentFlags];
+      break;
+    }
+    case TSControllerPlayerMute:
+    {
+      currentFlags &= ~(TSPlayerIsMuted | TSPlayerHasMutedMicrophone);
+      currentFlags |= TSPlayerIsMuted;
+      [teamspeakConnection changeStatusTo:currentFlags];      
+    }
+    default:
+      break;
+  }
+}
+
+- (IBAction)toggleAway:(id)sender
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  unsigned short currentFlags = [player playerFlags] & 0xffff, newFlags;
+  
+  newFlags = currentFlags;
+  newFlags &= ~TSPlayerIsAway;
+  newFlags |= ~(currentFlags & TSPlayerIsAway) & TSPlayerIsAway;
+  
+  [teamspeakConnection changeStatusTo:newFlags];
+}
+
+- (IBAction)toggleChannelCommander:(id)sender
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  unsigned short currentFlags = [player playerFlags] & 0xffff, newFlags;
+  
+  newFlags = currentFlags;
+  newFlags &= ~TSPlayerChannelCommander;
+  newFlags |= ~(currentFlags & TSPlayerChannelCommander) & TSPlayerChannelCommander;
+  
+  [teamspeakConnection changeStatusTo:newFlags];
+}
+
+- (IBAction)toggleBlockWhispers:(id)sender
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  unsigned short currentFlags = [player playerFlags] & 0xffff, newFlags;
+  
+  newFlags = currentFlags;
+  newFlags &= ~TSPlayerBlockWhispers;
+  newFlags |= ~(currentFlags & TSPlayerBlockWhispers) & TSPlayerBlockWhispers;
+  
+  [teamspeakConnection changeStatusTo:newFlags];
+}
+
+#pragma mark Connection Window Actions
+
+- (IBAction)connectionWindowUpdateType:(id)sender
+{
+  [connectionWindowUsernameField setEnabled:([[connectionWindowTypeMatrix selectedCell] tag] == 0)];
+}
+
+- (IBAction)connectionWindowOKAction:(id)sender
+{
+  [connectionWindow orderOut:sender];
+  
+  [self loginToServer:[connectionWindowServerTextField stringValue] 
+                 port:8767 
+             nickname:[connectionWindowNicknameTextField stringValue] 
+           registered:([[connectionWindowTypeMatrix selectedCell] tag] == 0)
+             username:(([[connectionWindowTypeMatrix selectedCell] tag] == 0) ? [connectionWindowUsernameField stringValue] : nil)
+             password:[connectionWindowPasswordField stringValue]];
+}
+
+- (IBAction)connectionWindowCancelAction:(id)sender
+{
+  [connectionWindow orderOut:sender];
+}
+
+#pragma mark Player Status View
+
+- (void)updatePlayerStatusView
+{
+  if (isConnected)
+  {
+    TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+    
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerIsMuted)) == 0)];
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMuteMic] setState:[player hasMutedMicrophone]];
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMute] setState:[player isMuted]];
+    
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerAway] setState:[player isAway]];
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerChannelCommander] setState:[player isChannelCommander]];
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerBlockWhispers] setState:[player shouldBlockWhispers]];
+
+    if ([player isMuted])
+    {
+      [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Mute"]];
+    }
+    else if ([player isAway])
+    {
+      [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Away"]];
+    }
+    else if ([player hasMutedMicrophone])
+    {
+      [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Orange"]];
+    }
+    else
+    {
+      [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Green"]];
+    }
+    
+    if ([player isChannelCommander])
+    {
+      [toolbarViewStatusImageView setImage:[NSImage imageNamed:@"TransmitBlue"]];
+    }
+    else
+    {
+      [toolbarViewStatusImageView setImage:[NSImage imageNamed:@"TransmitGreen"]];
+    }
+  }
+  else
+  {
+    [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Graphite"]];
+    [toolbarViewStatusImageView setImage:[NSImage imageNamed:@"TransmitGray"]];
+  }
+}
+
+#pragma mark Connection Menu
+
+- (void)setupDisconnectedToolbarStatusPopupButton
+{
+  NSMenu *menu = [[NSMenu alloc] init];
+  [menu addItemWithTitle:@"Sacrificial Menu Item?" action:nil keyEquivalent:@""];
+  [[menu addItemWithTitle:@"Connect..." action:@selector(connectMenuAction:) keyEquivalent:@""] setTarget:self];;
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  NSArray *recentServers = [[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"];
+  
+  if ([recentServers count] > 0)
+  {
+    for (NSDictionary *server in recentServers)
+    {
+      NSString *serverTitle = [NSString stringWithFormat:@"%@ @ %@", [server objectForKey:@"Nickname"], [server objectForKey:@"ServerAddress"]];
+      NSMenuItem *recentServer = [menu addItemWithTitle:serverTitle action:@selector(connectToHistoryAction:) keyEquivalent:@""];
+      [recentServer setTarget:self];
+      [recentServer setImage:([[server objectForKey:@"Registered"] boolValue] ? [NSImage imageNamed:@"Blue"] : [NSImage imageNamed:@"Green"])];
+      [recentServer setRepresentedObject:server];
+    }
+  }
+  else
+  {
+    [[menu addItemWithTitle:@"No Recent Servers" action:@selector(unusedSelfDisablingAction:) keyEquivalent:@""] setTarget:self];;
+  }
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  [[menu addItemWithTitle:@"Edit Server List..." action:nil keyEquivalent:@""] setTarget:self];
+  
+  [toolbarViewStatusPopupButton setMenu:menu];
+  [menu release];
+  
+  [toolbarViewStatusPopupButton setTitle:@"Offline"];
+}
+
+- (void)setupConnectedToolbarStatusPopupButton
+{
+  NSMenu *menu = [[NSMenu alloc] init];
+  
+  [menu addItemWithTitle:@"Sacrificial Menu Item?" action:nil keyEquivalent:@""];
+  [[menu addItemWithTitle:@"Disconnect..." action:@selector(disconnectMenuAction:) keyEquivalent:@""] setTarget:self];
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  NSMenuItem *activeMenuItem = [menu addItemWithTitle:@"Active" action:@selector(changeUserStatusAction:) keyEquivalent:@""];
+  [activeMenuItem setTarget:self];
+  [activeMenuItem setTag:TSControllerPlayerActive];
+  [activeMenuItem setImage:[NSImage imageNamed:@"Green"]];
+  [activeMenuItem setState:YES];
+  
+  NSMenuItem *muteMicrophoneItem = [menu addItemWithTitle:@"Mute Microphone" action:@selector(changeUserStatusAction:) keyEquivalent:@""];
+  [muteMicrophoneItem setTarget:self];
+  [muteMicrophoneItem setTag:TSControllerPlayerMuteMic];
+  [muteMicrophoneItem setImage:[NSImage imageNamed:@"Orange"]];
+  
+  NSMenuItem *muteBothItem = [menu addItemWithTitle:@"Mute Mic + Speakers" action:@selector(changeUserStatusAction:) keyEquivalent:@""];
+  [muteBothItem setTarget:self];
+  [muteBothItem setTag:TSControllerPlayerMute];
+  [muteBothItem setImage:[NSImage imageNamed:@"Mute"]];
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  NSMenuItem *awayItem = [menu addItemWithTitle:@"Away" action:@selector(toggleAway:) keyEquivalent:@""];
+  [awayItem setTarget:self];
+  [awayItem setTag:TSControllerPlayerAway];
+  [awayItem setImage:[NSImage imageNamed:@"Away"]];
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  NSMenuItem *channelCommanderItem = [menu addItemWithTitle:@"Channel Commander" action:@selector(toggleChannelCommander:) keyEquivalent:@""];
+  [channelCommanderItem setTarget:self];
+  [channelCommanderItem setTag:TSControllerPlayerChannelCommander];
+  [channelCommanderItem setImage:[NSImage imageNamed:@"ChannelCommander"]];
+  
+  NSMenuItem *blockWhispersItem = [menu addItemWithTitle:@"Block Whispers" action:@selector(toggleBlockWhispers:) keyEquivalent:@""];
+  [blockWhispersItem setTarget:self];
+  [blockWhispersItem setTag:TSControllerPlayerBlockWhispers];
+  [blockWhispersItem setImage:[NSImage imageNamed:@"BlockWhispers"]];
+  
+  [toolbarViewStatusPopupButton setMenu:menu];
+  [menu release];
 }
    
 #pragma mark Menu Validation
@@ -209,8 +478,73 @@
   {
     return isConnected;
   }
+  else if ([anItem action] == @selector(unusedSelfDisablingAction:))
+  {
+    // never let this one enable
+    return NO;
+  }
   
   return YES;
+}
+
+#pragma mark SLConnection Calls
+
+- (void)loginToServer:(NSString*)server port:(int)port nickname:(NSString*)nickname registered:(BOOL)registered username:(NSString*)username password:(NSString*)password
+{
+  NSError *error = nil;
+  
+  // create our recent servers entry
+  NSDictionary *recentServer = [NSDictionary dictionaryWithObjectsAndKeys:
+                                server, @"ServerAddress",
+                                nickname, @"Nickname",
+                                [NSNumber numberWithInt:port], @"Port",
+                                [NSNumber numberWithBool:registered], @"Registered",
+                                password, @"Password",
+                                // should always come last, then nil username will stop the array
+                                username, @"Username",
+                                nil];
+  NSArray *recentServers = [[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"];
+  BOOL alreadyInRecentServers = NO;
+  
+  for (NSDictionary *server in recentServers)
+  {
+    if ([[server objectForKey:@"ServerAddress"] isEqual:[recentServer objectForKey:@"ServerAddress"]] &&
+        [[server objectForKey:@"Nickname"] isEqual:[recentServer objectForKey:@"Nickname"]] &&
+        [[server objectForKey:@"Port"] isEqual:[recentServer objectForKey:@"Port"]] &&
+        [[server objectForKey:@"Registered"] isEqual:[recentServer objectForKey:@"Registered"]] &&
+        [[server objectForKey:@"Password"] isEqual:[recentServer objectForKey:@"Password"]])
+    {
+      if (([[recentServer objectForKey:@"Registered"] boolValue] && 
+           [[server objectForKey:@"Username"] isEqual:[recentServer objectForKey:@"Username"]]) || 
+          ![[recentServer objectForKey:@"Registered"] boolValue])
+      {
+        alreadyInRecentServers = YES;
+        break;
+      }
+    }
+  }
+  
+  if (!alreadyInRecentServers)
+  {
+    recentServers = [recentServers arrayByAddingObject:recentServer];
+    [[NSUserDefaults standardUserDefaults] setObject:recentServers forKey:@"RecentServers"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+  }
+    
+  currentServerAddress = [server retain];
+  [toolbarViewStatusPopupButton setTitle:@"Connecting..."];
+    
+  // create a connection
+  teamspeakConnection = [[SLConnection alloc] initWithHost:currentServerAddress withPort:port withError:&error];
+  [teamspeakConnection setDelegate:self];
+    
+  // setup some basic things about this client
+  [teamspeakConnection setClientName:@"TeamSquawk"];
+  [teamspeakConnection setClientOperatingSystem:@"Mac OS X"];
+  [teamspeakConnection setClientMajorVersion:1];
+  [teamspeakConnection setClientMinorVersion:0];
+    
+  [teamspeakConnection beginAsynchronousLogin:username password:password nickName:nickname isRegistered:registered];
 }
 
 #pragma mark SLConnection Delegates
@@ -224,6 +558,11 @@
 - (void)connectionFinishedLogin:(SLConnection*)connection
 {
   isConnected = YES;
+    
+  // do some UI sugar
+  [self setupConnectedToolbarStatusPopupButton];
+  [self updatePlayerStatusView];
+  [toolbarViewStatusPopupButton setTitle:currentServerAddress];
   
   [mainWindowOutlineView reloadData];
   [mainWindowOutlineView expandItem:nil expandChildren:YES];
@@ -232,11 +571,15 @@
 - (void)connectionFailedToLogin:(SLConnection*)connection
 {
   isConnected = NO;
+  [self setupDisconnectedToolbarStatusPopupButton];
+  [self updatePlayerStatusView];
 }
 
 - (void)connectionDisconnected:(SLConnection*)connection
 {
   isConnected = NO;
+  [self setupDisconnectedToolbarStatusPopupButton];
+  [self updatePlayerStatusView];
   
   [sortedChannels release];
   sortedChannels = nil;
@@ -317,7 +660,7 @@
   }
 }
 
-- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)extendedFlags
 {
   TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
   
@@ -325,6 +668,7 @@
   [player setPlayerName:nickname];
   [player setChannelID:channelID];
   [player setPlayerFlags:0];
+  [player setExtendedFlags:extendedFlags];
   
   [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
   
@@ -350,6 +694,12 @@
 {
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   [player setPlayerFlags:flags];
+  
+  // if this is us, update some menu stuff
+  if (playerID == [teamspeakConnection clientID])
+  {
+    [self updatePlayerStatusView];
+  }
   
   [mainWindowOutlineView reloadItem:player];
 }
@@ -397,85 +747,6 @@
   }
 }
 
-#pragma mark Old Shit
-
-//- (void)awakeFromNib2
-//{
-//  NSError *error = nil;
-//  
-//  [NSApp setDelegate:self];
-//  
-//  speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
-//  speexEncoder = [[SpeexEncoder alloc] initWithMode:SpeexEncodeWideBandMode];
-//  connection = [[SLConnection alloc] initWithHost:@"ts.deadcodeelimination.com" withError:&error];
-//  [connection setDelegate:self];
-//  
-//  if (!connection)
-//  {
-//    NSLog(@"%@", error);
-//  }
-//  
-//  [connection setClientName:@"TeamSquawk"];
-//  [connection setClientOperatingSystem:@"Mac OS X"];
-//  [connection setClientMajorVersion:1];
-//  [connection setClientMinorVersion:0];
-//    
-//  // get the output form that we need
-//  MTCoreAudioStreamDescription *outputDesc = [[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
-//  MTCoreAudioStreamDescription *inputDesc = [[MTCoreAudioStreamDescription alloc] initWithAudioStreamBasicDescription:[outputDesc audioStreamBasicDescription]];
-//  [inputDesc setSampleRate:[speex sampleRate]];
-//  [inputDesc setFormatFlags:kAudioFormatFlagIsSignedInteger|kAudioFormatFlagIsPacked|kAudioFormatFlagsNativeEndian];
-//  [inputDesc setChannelsPerFrame:1];
-//  [inputDesc setBitsPerChannel:sizeof(short) * 8];
-//  [inputDesc setBytesPerFrame:sizeof(short) * [inputDesc channelsPerFrame]];
-//  [inputDesc setBytesPerPacket:[inputDesc bytesPerFrame]];
-//
-//  converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:inputDesc andOutputStreamDescription:outputDesc];
-//  if (!converter)
-//  {
-//    return;
-//  }
-//  
-//  player = [[TSCoreAudioPlayer alloc] initWithOutputDevice:[MTCoreAudioDevice defaultOutputDevice]];
-//  [self performSelectorInBackground:@selector(audioPlayerThread) withObject:nil];
-//  //[self performSelectorInBackground:@selector(audioDecoderThread) withObject:nil];
-//  
-//  [connection beginAsynchronousLogin:nil password:@"lionftw" nickName:@"Shamlion" isRegistered:NO];
-//}
-
-//- (void)connectionFinishedLogin:(SLConnection*)connection
-//{
-//  //[self performSelectorInBackground:@selector(audioDecoderThread2) withObject:nil];
-//  //[NSThread detachNewThreadSelector:@selector(audioDecoderThread2) toTarget:self withObject:nil];
-//}
-
-//- (void)audioPlayerThread
-//{
-//  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-//  [player setIsRunning:YES];
-//  [pool release];
-//}
-
-//- (void)audioDecoderThread
-//{
-//  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];  
-//  TSAudioExtraction *extraction = [[TSAudioExtraction alloc] initWithFilename:@"/Users/matt/Music/iTunes/iTunes Music/Level 70 Elite Tauren Chieftain/[non-album tracks]/02 Rogues Do It From Behind.mp3"];
-//    
-//  MTCoreAudioStreamDescription *streamDescription = [[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
-//  [extraction setOutputStreamDescription:streamDescription];
-//  
-//  while ([extraction position] < [extraction numOfFrames])
-//  {
-//    // decode a second at a time
-//    unsigned long samples = [streamDescription sampleRate];
-//    AudioBufferList *audio = [extraction extractNumberOfFrames:samples];
-//    [player queueAudioBufferList:audio count:samples];
-//    MTAudioBufferListDispose(audio);    
-//  }
-//  
-//  [pool release];
-//}
-
 //- (void)audioDecoderThread2
 //{
 //  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -518,30 +789,6 @@
 //  }
 //  
 //  [pool release];
-//}
-
-//- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count
-//{  
-//  unsigned int frames;
-//  NSData *audioData = [speex audioDataForEncodedData:audioCodecData framesDecoded:&frames];
-//  
-//  // convert our audio data to an ABL
-//  AudioBufferList *abl = MTAudioBufferListNew(1, frames * [speex frameSize], NO);
-//  
-//  // copy in the audio
-//  abl->mBuffers[0].mNumberChannels = 1;
-//  abl->mBuffers[0].mDataByteSize = [audioData length];
-//  [audioData getBytes:abl->mBuffers[0].mData length:[audioData length]];
-//  
-//  // convert
-//  unsigned int outputFrameCount = 0;
-//  AudioBufferList *convertedABL = [converter audioBufferListByConvertingList:abl framesConverted:&outputFrameCount];
-//  [player queueAudioBufferList:convertedABL count:outputFrameCount];
-//  
-//  NSLog(@"%d", [speex bitrate]);
-//  
-//  MTAudioBufferListDispose(abl);
-//  MTAudioBufferListDispose(convertedABL);
 //}
 
 @end

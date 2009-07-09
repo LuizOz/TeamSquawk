@@ -36,9 +36,23 @@
   return self;
 }
 
+- (id)_init
+{
+  if (self = [super init])
+  {
+    speex = nil;
+    coreAudio = nil;
+    converter = nil;
+    decodeQueue = nil;
+    playerName = nil;
+  }
+  return self;
+}
+
 - (id)copyWithZone:(NSZone *)zone
 {
-  TSPlayer *copyPlayer = [[TSPlayer allocWithZone:zone] init];
+  TSPlayer *copyPlayer = [[[self class] allocWithZone:zone] _init];
+  
   copyPlayer->speex = [speex retain];
   copyPlayer->coreAudio = [coreAudio retain];
   copyPlayer->converter = [converter retain];
@@ -95,6 +109,16 @@
   
   unsigned int convertedFrameCount = 0;
   AudioBufferList *resampledBufferList = [[self converter] audioBufferListByConvertingList:decodedBufferList framesConverted:&convertedFrameCount];
+  
+  if ([coreAudio activeFramesInBuffer] == 0)
+  {
+    // we've no audio, i'd like to lead the audio by 0.25s just to give us some jitter room
+    unsigned int sampleRate = (unsigned int)[[[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] sampleRate];
+    AudioBufferList *blankFrames = MTAudioBufferListNew(1, sampleRate / 4, NO);
+    [[self coreAudioPlayer] queueAudioBufferList:blankFrames count:(sampleRate / 4)];
+    MTAudioBufferListDispose(blankFrames);
+  }
+  
   [[self coreAudioPlayer] queueAudioBufferList:resampledBufferList count:convertedFrameCount];
   
   MTAudioBufferListDispose(resampledBufferList);

@@ -518,7 +518,9 @@
   unsigned int channelID;
   [data getBytes:&channelID range:NSMakeRange(28, 4)];
   
-  // 6 btyes here of unknown crap. 2 bytes of it might be player status.
+  // 2 bytes of crap, then the player extended flags and then two more I don't know about eyt
+  unsigned short extendedFlags;
+  [data getBytes:&extendedFlags range:NSMakeRange(34, 2)];
   
   unsigned char nickLen;
   char nickBuffer[29];
@@ -536,6 +538,7 @@
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
+                                    [NSNumber numberWithUnsignedInt:extendedFlags], @"SLPlayerExtendedFlags",
                                     nick, @"SLNickname",
                                     nil];
   

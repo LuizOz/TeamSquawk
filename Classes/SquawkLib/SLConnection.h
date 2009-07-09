@@ -37,6 +37,9 @@ typedef enum {
   NSString *clientName;
   NSString *clientOperatingSystem;
   
+  BOOL isDisconnecting;
+  BOOL hasFinishedDisconnecting;
+  
   id delegate;
 }
 
@@ -45,6 +48,7 @@ typedef enum {
 @property (retain) NSString *clientOperatingSystem;
 @property (assign) int clientMajorVersion;
 @property (assign) int clientMinorVersion;
+@property (readonly) unsigned int clientID;
 
 - (id)initWithHost:(NSString*)host withError:(NSError**)error;
 - (id)initWithHost:(NSString*)host withPort:(int)port withError:(NSError**)error;
@@ -74,6 +78,7 @@ typedef enum {
 #pragma mark Channel/Status
 
 - (void)changeChannelTo:(unsigned int)newChannel withPassword:(NSString*)password;
+- (void)changeStatusTo:(unsigned short)flags;
 
 @end
 
@@ -89,7 +94,7 @@ typedef enum {
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
 
-- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname;
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)eFlags;
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID;
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;

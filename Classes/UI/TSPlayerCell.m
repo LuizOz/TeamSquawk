@@ -23,10 +23,24 @@
 
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 { 
+  TSPlayer *player = [self objectValue];
+  
   // draw the transmission logo
   {
     NSRect transmissionRect;
-    NSImage *image = [NSImage imageNamed:@"TransmitBlue"];
+    NSImage *image;
+    float opacity;
+    
+    if ([player isTalking])
+    {
+      image = [NSImage imageNamed:@"TransmitOrange"];
+      opacity = 1.0;
+    }
+    else
+    {
+      image = [NSImage imageNamed:@"TransmitGray"];
+      opacity = 0.25;
+    }
     
     NSDivideRect(cellFrame, &transmissionRect, &cellFrame, [image size].width + 5, NSMaxXEdge);
     transmissionRect.origin.y -= ceil((transmissionRect.size.height - [image size].height) / 2);
@@ -37,13 +51,38 @@
     else
       transmissionRect.origin.y += ceil((cellFrame.size.height - transmissionRect.size.height) / 2);
 
-    [image compositeToPoint:transmissionRect.origin operation:NSCompositeSourceOver];
+    [image compositeToPoint:transmissionRect.origin operation:NSCompositeSourceOver fraction:opacity];
   }
   
   // draw the light
   {
     NSRect userLightRect;
-    NSImage *image = [NSImage imageNamed:@"Green"];
+    NSImage *image;
+    
+    if ([player isMuted])
+    {
+      image = [NSImage imageNamed:@"Mute"];
+    }
+    else if ([player isAway])
+    {
+      image = [NSImage imageNamed:@"Away"];
+    }
+    else if ([player hasMutedMicrophone])
+    {
+      image = [NSImage imageNamed:@"Orange"];
+    }
+    else if ([player isChannelCommander])
+    {
+      image = [NSImage imageNamed:@"Blue"];
+    }
+    else if ([player isServerAdmin])
+    {
+      image = [NSImage imageNamed:@"Purple"];
+    }
+    else
+    {
+      image = [NSImage imageNamed:@"Green"];
+    }
     
     NSDivideRect(cellFrame, &userLightRect, &cellFrame, [image size].width + 5, NSMinXEdge);
     
@@ -102,7 +141,7 @@
     {
       NSColor *whiteColor = [NSColor whiteColor];
       [playerName addAttribute:NSForegroundColorAttributeName value:whiteColor range:NSMakeRange(0, [playerName length])];
-      [statusText addAttribute:NSForegroundColorAttributeName value:whiteColor range:NSMakeRange(0, [playerName length])];
+      [statusText addAttribute:NSForegroundColorAttributeName value:whiteColor range:NSMakeRange(0, [statusText length])];
     }
     
     [playerName drawInRect:playerNameDrawRect];

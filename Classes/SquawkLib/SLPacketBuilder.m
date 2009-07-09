@@ -96,7 +96,7 @@
   [packetData appendBytes:unknownChunk length:2];
   
   // Are we registered or anonymous
-  unsigned short registeredChunk = (isRegistered ? 0x02 : 0x01);
+  unsigned char registeredChunk[] = { 0x01, (isRegistered ? 0x02 : 0x01) };
   [packetData appendBytes:&registeredChunk length:2];
   
   // Login name
@@ -396,6 +396,35 @@
   [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
   
   return packetData;
+}
+
+- (NSData*)buildChangePlayerStatusMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID newStatusFlags:(unsigned short)statusFlags
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // packet header
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0x30, 0x01 };
+  [packetData appendBytes:&headerChunk length:4];
+  
+  // connection id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  [packetData appendBytes:&sequenceID length:4];
+  
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [packetData appendBytes:&resendCount length:2];
+  [packetData appendBytes:&fragmentCount length:2];
+  
+  unsigned int crc = 0, crcPosition = [packetData length];
+  [packetData appendBytes:&crc length:4];
+  
+  [packetData appendBytes:&statusFlags length:2];
+  
+  unsigned int crc32 = [packetData crc32];
+  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  
+  return packetData;  
 }
 
 @end
