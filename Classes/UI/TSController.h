@@ -11,6 +11,8 @@
 #import "TSCoreAudioPlayer.h"
 #import "TSAudioConverter.h"
 #import "TSPlayerCell.h"
+#import "TSHotkeyManager.h"
+#import "TSTransmission.h"
 
 #import "SpeexEncoder.h"
 #import "SpeexDecoder.h"
@@ -68,11 +70,10 @@ typedef enum {
   
   SLConnection *teamspeakConnection;
   
-//  TSCoreAudioPlayer *player;
-//  TSAudioConverter *converter;
+  // transmission stuff
   
-  SpeexDecoder *speex;
-  SpeexEncoder *speexEncoder;
+  TSTransmission *transmission;
+  
 }
 
 - (void)awakeFromNib;
@@ -103,6 +104,7 @@ typedef enum {
 
 - (IBAction)connectMenuAction:(id)sender;
 - (IBAction)disconnectMenuAction:(id)sender;
+- (IBAction)preferencesMenuAction:(id)sender;
 - (IBAction)doubleClickOutlineView:(id)sender;
 - (IBAction)changeUserStatusAction:(id)sender;
 - (IBAction)toggleAway:(id)sender;

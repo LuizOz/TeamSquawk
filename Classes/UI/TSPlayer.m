@@ -23,13 +23,17 @@
   if (self = [super init])
   {
     speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
-    // for now
-    coreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:[MTCoreAudioDevice defaultOutputDevice]];
-    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
+    
+    NSString *outputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputDeviceUID"];
+    MTCoreAudioDevice *outputDevice = (outputDeviceUID ? [MTCoreAudioDevice deviceWithUID:outputDeviceUID] : [MTCoreAudioDevice defaultOutputDevice]);
+    
+    coreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:outputDevice];
+    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[outputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
     decodeQueue = [[NSOperationQueue alloc] init];
     [decodeQueue setMaxConcurrentOperationCount:1];
     
     [self performSelectorInBackground:@selector(_setIsRunningThread) withObject:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_outputDeviceChanged:) name:@"TSOutputDeviceChanged" object:nil];
     
     playerName = nil;
   }
@@ -92,6 +96,24 @@
   [coreAudio setIsRunning:YES];
   [[NSRunLoop currentRunLoop] run];
   [pool release];
+}
+
+- (void)_outputDeviceChanged:(NSNotification*)notification
+{
+  [coreAudio setIsRunning:NO];
+  [coreAudio autorelease];
+  [converter autorelease];
+  
+  NSString *outputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputDeviceUID"];
+  MTCoreAudioDevice *outputDevice = (outputDeviceUID ? [MTCoreAudioDevice deviceWithUID:outputDeviceUID] : [MTCoreAudioDevice defaultOutputDevice]);
+  
+  TSCoreAudioPlayer *newCoreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:outputDevice];
+  TSAudioConverter *newConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[outputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
+  
+  coreAudio = newCoreAudio;
+  converter = newConverter;
+  
+  [self performSelectorInBackground:@selector(_setIsRunningThread) withObject:nil];
 }
 
 - (void)backgroundDecodeData:(NSData*)audioCodecData

@@ -30,17 +30,27 @@
 {
   if (self = [super init])
   {
-    socket = [[AsyncUdpSocket alloc] initWithDelegate:self];
-    connectionThread = [[NSThread currentThread] retain];
+    connectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(spawnThread) object:nil];
+    [connectionThread start];
     
-    [socket setRunLoopModes:[NSArray arrayWithObjects:NSRunLoopCommonModes, nil]];
+    [self performSelector:@selector(initSocketOnThread) onThread:connectionThread withObject:nil waitUntilDone:YES];
     
     textFragments = nil;
     audioSequenceCounter = 0;
     isDisconnecting = NO;
     hasFinishedDisconnecting = NO;
+
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[socket methodSignatureForSelector:@selector(connectToHost:onPort:error:)]];
+    [invocation setTarget:socket];
+    [invocation setSelector:@selector(connectToHost:onPort:error:)];
+    [invocation setArgument:&host atIndex:2];
+    [invocation setArgument:&port atIndex:3];
+    [invocation setArgument:&error atIndex:4];
+    [invocation performSelector:@selector(invoke) onThread:connectionThread withObject:nil waitUntilDone:YES];
     
-    BOOL connected = [socket connectToHost:host onPort:port error:error];
+    BOOL connected;
+    [invocation getReturnValue:&connected];
+    
     if (!connected)
     {
       NSLog(@"%@", *error);
@@ -54,6 +64,7 @@
 
 - (void)dealloc
 {
+  [connectionThread cancel];
   [socket release];
   [connectionThread release];
   [textFragments release];
@@ -61,6 +72,24 @@
 }
 
 #pragma mark Threading
+    
+- (void)spawnThread
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  while (![[NSThread currentThread] isCancelled])
+  {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+  }
+  [pool release];
+}
+
+- (void)initSocketOnThread
+{
+  socket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+  connectionThread = [[NSThread currentThread] retain];
+  
+  [socket setRunLoopModes:[NSArray arrayWithObjects:NSRunLoopCommonModes, nil]];
+}
 
 - (void)sendData:(NSData*)data
 {

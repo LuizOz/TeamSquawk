@@ -8,7 +8,7 @@
 
 #import <MTCoreAudio/MTCoreAudio.h>
 
-
+#import "TSPreferencesController.h"
 #import "TSController.h"
 #import "TSAudioExtraction.h"
 #import "TSPlayer.h"
@@ -20,6 +20,11 @@
 {
   NSDictionary *defaults = [NSDictionary dictionaryWithObjectsAndKeys:
                             [NSArray array], @"RecentServers",
+                            [NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                       [NSNumber numberWithInt:TSHotkeyPushToTalk], @"HotkeyAction",
+                                                       [NSNumber numberWithInt:0], @"HotkeyKeycode",
+                                                       [NSNumber numberWithInt:0], @"HotkeyModifiers",
+                                                       nil], nil], @"Hotkeys",
                             nil];
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
   
@@ -213,6 +218,11 @@
   {
     [teamspeakConnection disconnect];
   }
+}
+
+- (IBAction)preferencesMenuAction:(id)sender
+{
+  [[TSPreferencesController sharedPrefsWindowController] showWindow:nil];
 }
 
 - (IBAction)connectToHistoryAction:(id)sender
@@ -735,6 +745,18 @@
 {
   TSPlayer *player = [timer userInfo];
   [mainWindowOutlineView reloadItem:player];
+}
+
+#pragma mark Hotkeys
+
+- (void)hotkeyPressed:(TSHotkey*)hotkey
+{
+  NSLog(@"hotkey pressed: %@", hotkey);
+}
+
+- (void)hotkeyReleased:(TSHotkey*)hotkey
+{
+  NSLog(@"hotkey released: %@", hotkey);
 }
 
 #pragma mark NSApplication Delegate

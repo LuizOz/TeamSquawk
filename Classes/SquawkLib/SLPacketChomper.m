@@ -246,6 +246,7 @@
   [data getBytes:&badLogin range:NSMakeRange(88, 4)];
   
   // 80 bytes of crap, so advance the pointer from 92 upto 172
+  NSLog(@"%@", [data subdataWithRange:NSMakeRange(92, 80)]);
   
   // session key
   unsigned int newConnectionID = 0;
