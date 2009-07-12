@@ -21,12 +21,12 @@
 
 typedef enum {
   TSControllerPlayerActive = 1,
-  TSControllerPlayerMuteMic,
-  TSControllerPlayerMute,
+  TSControllerPlayerMuteMic = 2,
+  TSControllerPlayerMute = 3,
 
-  TSControllerPlayerAway,
-  TSControllerPlayerChannelCommander,
-  TSControllerPlayerBlockWhispers,
+  TSControllerPlayerAway = 100,
+  TSControllerPlayerChannelCommander = 200,
+  TSControllerPlayerBlockWhispers = 300,
 } TSControllerPlayerStatus;
 
 @interface TSController : NSObject {
@@ -36,6 +36,8 @@ typedef enum {
   IBOutlet NSWindow *mainWindow;
   IBOutlet NSOutlineView *mainWindowOutlineView;
   IBOutlet NSToolbar *toolbar;
+  IBOutlet NSMenu *fileMenu;
+  IBOutlet NSMenu *statusMenu;
   
   // connection window
   IBOutlet NSWindow *connectionWindow;
@@ -127,6 +129,7 @@ typedef enum {
 
 - (void)recentServersChanged:(NSNotification*)notification;
 - (IBAction)editServerListAction:(id)sender;
+- (void)setupRecentServersMenu;
 - (void)setupDisconnectedToolbarStatusPopupButton;
 - (void)setupConnectedToolbarStatusPopupButton;
 

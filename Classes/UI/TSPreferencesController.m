@@ -9,6 +9,8 @@
 #import "TSPreferencesController.h"
 #import "SLConnection.h"
 
+NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
+
 @implementation TSPreferencesController
 
 - (void)setupToolbar
@@ -29,6 +31,8 @@
   [serversTableView setDelegate:self];
   [serversTableView setTarget:self];
   [serversTableView setDoubleAction:@selector(doubleClickServersTableView:)];
+  
+  [serversTableView registerForDraggedTypes:[NSArray arrayWithObjects:TSPreferencesServersDragType, nil]];
   
   [serversTableView reloadData];
 }
@@ -259,6 +263,61 @@
   NSDictionary *server = [recentServers objectAtIndex:rowIndex];
 
   [(NSCell*)aCell setImage:([[server objectForKey:@"Registered"] boolValue] ? [NSImage imageNamed:@"Blue"] : [NSImage imageNamed:@"Green"])];
+}
+
+- (BOOL)serversTableView:(NSTableView *)tv writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard*)pboard
+{
+  NSData *data = [NSKeyedArchiver archivedDataWithRootObject:rowIndexes];
+  [pboard declareTypes:[NSArray arrayWithObjects:TSPreferencesServersDragType, nil] owner:self];
+  [pboard setData:data forType:TSPreferencesServersDragType];
+  return YES;
+}
+
+- (NSDragOperation)serversTableView:(NSTableView*)tv validateDrop:(id <NSDraggingInfo>)info proposedRow:(int)row proposedDropOperation:(NSTableViewDropOperation)op
+{
+  if ([[[info draggingPasteboard] types] containsObject:TSPreferencesServersDragType] && (op == NSTableViewDropAbove))
+  {
+    return YES;
+  }
+  return NO;
+}
+
+- (BOOL)serversTableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(int)row dropOperation:(NSTableViewDropOperation)operation
+{
+  if ([[[info draggingPasteboard] types] containsObject:TSPreferencesServersDragType])
+  {
+    NSIndexSet *indexes = [NSKeyedUnarchiver unarchiveObjectWithData:[[info draggingPasteboard] dataForType:TSPreferencesServersDragType]];
+    if ([indexes count] > 1)
+    {
+      return NO;
+    }
+    
+    int rowIndex = [indexes firstIndex];
+    NSMutableArray *recentServers = [[[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"] mutableCopy];
+    
+    // if we're about to remove a row thats below this one, we need to change the index
+    if (row > rowIndex)
+    {
+      row--;
+    }
+    
+    NSDictionary *interestingRow = [[recentServers objectAtIndex:rowIndex] retain];
+    [recentServers removeObject:interestingRow];
+    [recentServers insertObject:interestingRow atIndex:row];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:recentServers forKey:@"RecentServers"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    [interestingRow release];
+    [recentServers release];
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"TSRecentServersDidChange" object:nil];
+    [serversTableView reloadData];
+    
+    return YES;
+  }
+  
+  return NO;
 }
 
 #pragma mark Sound Toolbar
@@ -590,6 +649,33 @@
   {
     [self serversTableView:aTableView willDisplayCell:aCell forTableColumn:aTableColumn row:rowIndex];
   }
+}
+
+- (BOOL)tableView:(NSTableView *)tv writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard*)pboard
+{
+  if ([tv isEqualTo:serversTableView])
+  {
+    return [self serversTableView:tv writeRowsWithIndexes:rowIndexes toPasteboard:pboard];
+  }
+  return NO;
+}
+
+- (NSDragOperation)tableView:(NSTableView*)tv validateDrop:(id <NSDraggingInfo>)info proposedRow:(int)row proposedDropOperation:(NSTableViewDropOperation)op
+{
+  if ([tv isEqual:serversTableView])
+  {
+    return [self serversTableView:tv validateDrop:info proposedRow:row proposedDropOperation:op];
+  }
+  return NSDragOperationNone;
+}
+
+- (BOOL)tableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(int)row dropOperation:(NSTableViewDropOperation)operation
+{
+  if ([aTableView isEqual:serversTableView])
+  {
+    return [self serversTableView:aTableView acceptDrop:info row:row dropOperation:operation];
+  }
+  return NO;
 }
 
 @end

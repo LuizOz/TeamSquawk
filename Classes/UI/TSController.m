@@ -34,6 +34,7 @@
   [self hotkeyMappingsChanged:nil];
   
   [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(recentServersChanged:) name:@"TSRecentServersDidChange" object:nil];
+  [self setupRecentServersMenu];
   
   // setup the outline view
   [mainWindowOutlineView setDelegate:self];
@@ -362,12 +363,22 @@
     [toolbarViewNicknameField setStringValue:[player playerName]];
     
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerIsMuted)) == 0)];
+    [[statusMenu itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerIsMuted)) == 0)];
+    
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMuteMic] setState:[player hasMutedMicrophone]];
+    [[statusMenu itemWithTag:TSControllerPlayerMuteMic] setState:[player hasMutedMicrophone]];
+    
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMute] setState:[player isMuted]];
+    [[statusMenu itemWithTag:TSControllerPlayerMute] setState:[player isMuted]];
     
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerAway] setState:[player isAway]];
+    [[statusMenu itemWithTag:TSControllerPlayerAway] setState:[player isAway]];
+    
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerChannelCommander] setState:[player isChannelCommander]];
+    [[statusMenu itemWithTag:TSControllerPlayerChannelCommander] setState:[player isChannelCommander]];
+    
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerBlockWhispers] setState:[player shouldBlockWhispers]];
+    [[statusMenu itemWithTag:TSControllerPlayerBlockWhispers] setState:[player shouldBlockWhispers]];
 
     if ([player isMuted])
     {
@@ -414,6 +425,7 @@
   if (!isConnected)
   {
     [self setupDisconnectedToolbarStatusPopupButton];
+    [self setupRecentServersMenu];
   }
 }
 
@@ -421,6 +433,54 @@
 {
   [[TSPreferencesController sharedPrefsWindowController] showWindow:sender];
   [[TSPreferencesController sharedPrefsWindowController] displayViewForIdentifier:@"Servers" animate:YES];
+}
+
+- (void)setupRecentServersMenu
+{
+  int recentServersIndex = -1;
+  
+  for (NSMenuItem *item in [fileMenu itemArray])
+  {
+    if ([item tag] == -1)
+    {
+      recentServersIndex = [fileMenu indexOfItem:item] + 1;
+      break;
+    }
+  }
+  
+  while ([[fileMenu itemAtIndex:recentServersIndex] tag] != -1)
+  {
+    [fileMenu removeItemAtIndex:recentServersIndex];
+  }
+  
+  NSArray *recentServers = [[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"];
+  if ([recentServers count] > 0)
+  {
+    unsigned int connectionNumber = 1;
+    
+    for (NSDictionary *server in recentServers)
+    {
+      NSString *serverTitle = [NSString stringWithFormat:@"%@ @ %@", [server objectForKey:@"Nickname"], [server objectForKey:@"ServerAddress"]];
+      NSString *keyEquivalent = @"";
+      
+      if (connectionNumber < 10)
+      {
+        keyEquivalent = [NSString stringWithFormat:@"%d", connectionNumber++];
+      }
+      
+      NSMenuItem *recentServer = [[[NSMenuItem alloc] initWithTitle:serverTitle action:@selector(connectToHistoryAction:) keyEquivalent:keyEquivalent] autorelease];
+      [recentServer setTarget:self];
+      [recentServer setImage:([[server objectForKey:@"Registered"] boolValue] ? [NSImage imageNamed:@"Blue"] : [NSImage imageNamed:@"Green"])];
+      [recentServer setRepresentedObject:server];
+      [fileMenu insertItem:recentServer atIndex:recentServersIndex++];
+    }
+  }
+  else
+  {
+    NSMenuItem *recentServer = [[[NSMenuItem alloc] initWithTitle:@"No Recent Servers" action:@selector(unusedSelfDisablingAction:) keyEquivalent:@""] autorelease];
+    [recentServer setTarget:self];
+    [fileMenu insertItem:recentServer atIndex:recentServersIndex++];
+  }
 }
 
 - (void)setupDisconnectedToolbarStatusPopupButton
@@ -524,6 +584,17 @@
     // never let this one enable
     return NO;
   }
+  else if ([anItem action] == @selector(connectToHistoryAction:))
+  {
+    return !isConnected;
+  }
+  else if (([anItem action] == @selector(changeUserStatusAction:)) ||
+           ([anItem action] == @selector(toggleAway:)) ||
+           ([anItem action] == @selector(toggleChannelCommander:)) ||
+           ([anItem action] == @selector(toggleBlockWhispers:)))
+  {
+    return isConnected;
+  }
   
   return YES;
 }
@@ -571,6 +642,8 @@
     [[NSUserDefaults standardUserDefaults] setObject:recentServers forKey:@"RecentServers"];
     [[NSUserDefaults standardUserDefaults] synchronize];
   }
+  
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"TSRecentServersDidChange" object:nil];
     
   currentServerAddress = [server retain];
   [toolbarViewStatusPopupButton setTitle:@"Connecting..."];
