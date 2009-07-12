@@ -17,6 +17,7 @@
   unsigned int hotkeyID;
   
   EventHotKeyRef hotkeyRef;
+  id context;
 }
 
 @property (retain) id target;
@@ -24,6 +25,7 @@
 @property (assign) unsigned int keyCode;
 @property (assign) unsigned int hotkeyID;
 @property (readonly) EventHotKeyRef *hotkeyRef;
+@property (assign) id context;
 
 - (id)init;
 - (void)dealloc;
@@ -41,8 +43,10 @@
 - (id)init;
 - (void)dealloc;
 - (unsigned int)nextHotkeyID;
+- (NSMutableDictionary*)hotkeys;
 - (void)addHotkey:(TSHotkey*)hotkey;
 - (void)removeHotkey:(TSHotkey*)hotkey;
+- (void)removeAllHotkeys;
 
 @end
 

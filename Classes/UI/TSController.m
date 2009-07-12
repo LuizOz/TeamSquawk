@@ -19,14 +19,19 @@
 - (void)awakeFromNib
 {
   NSDictionary *defaults = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [NSNumber numberWithFloat:1.0], @"InputGain",
+                            [NSNumber numberWithFloat:1.0], @"OutputGain",
                             [NSArray array], @"RecentServers",
                             [NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys:
                                                        [NSNumber numberWithInt:TSHotkeyPushToTalk], @"HotkeyAction",
-                                                       [NSNumber numberWithInt:0], @"HotkeyKeycode",
+                                                       [NSNumber numberWithInt:-1], @"HotkeyKeycode",
                                                        [NSNumber numberWithInt:0], @"HotkeyModifiers",
                                                        nil], nil], @"Hotkeys",
                             nil];
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(hotkeyMappingsChanged:) name:@"TSHotkeysDidChange" object:nil];
+  [self hotkeyMappingsChanged:nil];
   
   // setup the outline view
   [mainWindowOutlineView setDelegate:self];
@@ -56,9 +61,12 @@
   channels = [[NSMutableDictionary alloc] init];
   flattenedChannels = [[NSMutableDictionary alloc] init];
   sortedChannels = nil;
+  transmission = nil;
   
   // point NSApp here
   [NSApp setDelegate:self];
+  
+  [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(idleAudioCheck:) userInfo:nil repeats:YES];
 }
 
 #pragma mark OutlineView DataSource
@@ -349,6 +357,8 @@
   {
     TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
     
+    [toolbarViewNicknameField setStringValue:[player playerName]];
+    
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerIsMuted)) == 0)];
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMuteMic] setState:[player hasMutedMicrophone]];
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMute] setState:[player isMuted]];
@@ -374,7 +384,11 @@
       [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Green"]];
     }
     
-    if ([player isChannelCommander])
+    if (transmission && [transmission isTransmitting])
+    {
+      [toolbarViewStatusImageView setImage:[NSImage imageNamed:@"TransmitOrange"]];
+    }
+    else if ([player isChannelCommander])
     {
       [toolbarViewStatusImageView setImage:[NSImage imageNamed:@"TransmitBlue"]];
     }
@@ -385,6 +399,7 @@
   }
   else
   {
+    [toolbarViewNicknameField setStringValue:@"TeamSquawk"];
     [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Graphite"]];
     [toolbarViewStatusImageView setImage:[NSImage imageNamed:@"TransmitGray"]];
   }
@@ -574,6 +589,29 @@
   [self updatePlayerStatusView];
   [toolbarViewStatusPopupButton setTitle:currentServerAddress];
   
+  // find what channel we ended up in
+  for (TSChannel *channel in [flattenedChannels allValues])
+  {
+    for (TSPlayer *player in [channel players])
+    {
+      if ([player playerID] == [teamspeakConnection clientID])
+      {
+        currentChannel = [channel retain];
+        break;
+      }
+    }
+  }
+  
+  // double check
+  if (!currentChannel)
+  {
+    [[NSException exceptionWithName:@"ChannelFail" reason:@"Teamspeak connection established but failed to find user in any channel." userInfo:nil] raise];
+    return;
+  }
+  
+  // setup transmission
+  transmission = [[TSTransmission alloc] initWithConnection:teamspeakConnection codec:[currentChannel codec] voiceActivated:NO];
+  
   [mainWindowOutlineView reloadData];
   [mainWindowOutlineView expandItem:nil expandChildren:YES];
 }
@@ -593,6 +631,11 @@
   
   [sortedChannels release];
   sortedChannels = nil;
+  
+  [transmission setIsTransmitting:NO];
+  [transmission close];
+  [transmission release];
+  transmission = nil;
   
   [flattenedChannels removeAllObjects];
   [channels removeAllObjects];
@@ -723,6 +766,13 @@
   [oldChannel removePlayer:player];
   [newChannel addPlayer:player];
   
+  if ([player playerID] == [teamspeakConnection clientID])
+  {
+    [currentChannel autorelease];
+    currentChannel = [newChannel retain];
+    [transmission setCodec:[currentChannel codec]];
+  }
+  
   [mainWindowOutlineView reloadItem:oldChannel reloadChildren:YES];
   [mainWindowOutlineView reloadItem:newChannel reloadChildren:YES];
   [mainWindowOutlineView expandItem:newChannel];
@@ -730,33 +780,124 @@
 
 #pragma mark Audio
 
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count
 {
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  
+  // out-of-band, I know, least messy way though
+  [player setIsTalkingOnCommandChannel:command];
+  
   NSInvocationOperation *invocation = [[NSInvocationOperation alloc] initWithTarget:player selector:@selector(backgroundDecodeData:) object:[audioCodecData retain]];
   [[player decodeQueue] addOperation:invocation];
   [invocation release];
 
   [mainWindowOutlineView reloadItem:player];
-  [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(idleAudioCheck:) userInfo:player repeats:NO];
 }
 
 - (void)idleAudioCheck:(NSTimer*)timer
 {
-  TSPlayer *player = [timer userInfo];
-  [mainWindowOutlineView reloadItem:player];
+  [mainWindowOutlineView reloadData];
 }
 
 #pragma mark Hotkeys
 
 - (void)hotkeyPressed:(TSHotkey*)hotkey
 {
-  NSLog(@"hotkey pressed: %@", hotkey);
+  NSDictionary *hotkeyDictionary = [hotkey context];
+  
+  switch ([[hotkeyDictionary objectForKey:@"HotkeyAction"] intValue])
+  {
+    case TSHotkeyPushToTalk:
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      [transmission setTransmitOnCommandChannel:NO];
+      [transmission setIsTransmitting:YES];
+      [me setIsTalkingOnCommandChannel:NO];
+      [me setIsTransmitting:YES];
+      
+      [self updatePlayerStatusView];
+      [mainWindowOutlineView reloadItem:me];
+      break;
+    }
+    case TSHotkeyCommandChannel:
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      if ([me isChannelCommander])
+      {
+        [transmission setTransmitOnCommandChannel:YES];
+        [transmission setIsTransmitting:YES];
+        [me setIsTalkingOnCommandChannel:YES];
+        [me setIsTransmitting:YES];
+        
+        [self updatePlayerStatusView];
+        [mainWindowOutlineView reloadItem:me];
+      }
+      break;
+    }
+    default:
+      break;
+  }
 }
 
 - (void)hotkeyReleased:(TSHotkey*)hotkey
 {
-  NSLog(@"hotkey released: %@", hotkey);
+  NSDictionary *hotkeyDictionary = [hotkey context];
+  
+  NSLog(@"%d", [[hotkeyDictionary objectForKey:@"HotkeyAction"] intValue]);
+  switch ([[hotkeyDictionary objectForKey:@"HotkeyAction"] intValue])
+  {
+    case TSHotkeyPushToTalk:
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      [transmission setIsTransmitting:NO];
+      [me setIsTransmitting:NO];
+      
+      [self updatePlayerStatusView];
+      [mainWindowOutlineView reloadItem:me];
+      break;
+    }
+    case TSHotkeyCommandChannel:
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      [transmission setTransmitOnCommandChannel:NO];
+      [transmission setIsTransmitting:NO];
+      [me setIsTransmitting:NO];
+      
+      [self updatePlayerStatusView];
+      [mainWindowOutlineView reloadItem:me];
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+- (void)hotkeyMappingsChanged:(NSNotification*)notification
+{
+  [[TSHotkeyManager globalManager] removeAllHotkeys];
+  
+  NSArray *savedHotkeys = [[NSUserDefaults standardUserDefaults] arrayForKey:@"Hotkeys"];
+  
+  for (NSDictionary *hotkeyDict in savedHotkeys)
+  {
+    int keycode = [[hotkeyDict objectForKey:@"HotkeyKeycode"] intValue];
+    int action = [[hotkeyDict objectForKey:@"HotkeyAction"] intValue];
+    
+    if (keycode == 0 || keycode == -1 || action == -1)
+    {
+      continue;
+    }
+    
+    TSHotkey *hotkey = [[[TSHotkey alloc] init] autorelease];
+    [hotkey setHotkeyID:[[TSHotkeyManager globalManager] nextHotkeyID]];
+    [hotkey setTarget:self];
+    [hotkey setModifiers:[[hotkeyDict objectForKey:@"HotkeyModifiers"] unsignedIntValue]];
+    [hotkey setKeyCode:keycode];
+    [hotkey setContext:hotkeyDict];
+    
+    NSLog(@"hotkey mapped");
+    [[TSHotkeyManager globalManager] addHotkey:hotkey];
+  }
 }
 
 #pragma mark NSApplication Delegate

@@ -17,6 +17,8 @@
 @synthesize decodeQueue;
 @synthesize lastVoicePacketCount;
 @synthesize extendedFlags;
+@synthesize isTransmitting;
+@synthesize isTalkingOnCommandChannel;
 
 - (id)init
 {
@@ -68,7 +70,9 @@
   [copyPlayer setChannelID:[self channelID]];
   [copyPlayer setLastVoicePacketCount:[self lastVoicePacketCount]];
   [copyPlayer setExtendedFlags:[self extendedFlags]];
-
+  [copyPlayer setIsTransmitting:[self isTransmitting]];
+  [copyPlayer setIsTalkingOnCommandChannel:[self isTalkingOnCommandChannel]];
+  
   return copyPlayer;
 }
 
@@ -197,7 +201,7 @@
 
 - (BOOL)isTalking
 {
-  return ([coreAudio activeFramesInBuffer] > 0);
+  return (([coreAudio activeFramesInBuffer] > 0) || [self isTransmitting]);
 }
 
 - (BOOL)isRegistered

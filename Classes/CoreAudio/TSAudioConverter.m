@@ -22,11 +22,21 @@
     OSStatus err = AudioConverterNew(&inputBasicDesc, &outputBasicDesc, &audioConverterRef);
     if (err != noErr)
     {
+      NSLog(@"input format: %@, output format: %@", anInputDesc, anOutputDesc);
       NSLog(@"AudioConverterNew failed with %d. %@", err, [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
       [self release];
       return nil;
     }
     
+//    unsigned int value = kAudioConverterQuality_Max;
+//    err = AudioConverterSetProperty(audioConverterRef, kAudioConverterSampleRateConverterQuality, sizeof(unsigned int), &value);
+//    if (err != noErr)
+//    {
+//      NSLog(@"AudioConverterSetProperty failed with %d. %@", err, [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
+//      [self release];
+//      return nil;
+//    }
+        
     inputStreamDescription = [anInputDesc retain];
     outputStreamDescription = [anOutputDesc retain];
   }
@@ -55,6 +65,7 @@ OSStatus AudioConverterInput(AudioConverterRef inAudioConverter, UInt32*ioNumber
     ioData->mBuffers[0].mNumberChannels = userData->audioBufferList->mBuffers[0].mNumberChannels;
     
     // stop us coming here again
+    userData->bytesRemaining -= ioData->mBuffers[0].mDataByteSize;
     userData->audioBufferList = 0;
   }
   else
@@ -78,6 +89,7 @@ OSStatus AudioConverterInput(AudioConverterRef inAudioConverter, UInt32*ioNumber
   TSAudioConverterProc userData;
   userData.audioBufferList = inputList;
   userData.streamDesc = inputStreamDescription;
+  userData.bytesRemaining = inputList->mBuffers[0].mDataByteSize;
 
   OSStatus err = AudioConverterFillComplexBuffer(audioConverterRef, AudioConverterInput, &userData, &outputFrameCount, outputList, NULL);
   if (err != noErr)
@@ -86,7 +98,7 @@ OSStatus AudioConverterInput(AudioConverterRef inAudioConverter, UInt32*ioNumber
     MTAudioBufferListDispose(outputList);
     return nil;
   }
-  
+    
   *frames = (unsigned int)(outputFrameCount & 0xffff);
   return outputList;
 }

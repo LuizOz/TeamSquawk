@@ -14,6 +14,7 @@
 typedef struct {
   AudioBufferList *audioBufferList;
   MTCoreAudioStreamDescription *streamDesc;
+  unsigned int bytesRemaining;
 } TSAudioConverterProc;
 
 @interface TSAudioConverter : NSObject {

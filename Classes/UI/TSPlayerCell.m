@@ -31,7 +31,12 @@
     NSImage *image;
     float opacity;
     
-    if ([player isTalking])
+    if ([player isTalking] && [player isTalkingOnCommandChannel])
+    {
+      image = [NSImage imageNamed:@"TransmitBlue"];
+      opacity = 1.0;
+    }
+    else if ([player isTalking])
     {
       image = [NSImage imageNamed:@"TransmitOrange"];
       opacity = 1.0;

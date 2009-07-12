@@ -9,8 +9,9 @@
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
 			<integer value="526"/>
-			<integer value="24"/>
 			<integer value="372"/>
+			<integer value="475"/>
+			<integer value="24"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -1190,6 +1191,7 @@
 				<string key="NSWindowTitle">Connect</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
+				<string key="NSWindowContentMaxSize">{3.40282e+38, 3.40282e+38}</string>
 				<object class="NSView" key="NSWindowView" id="208501858">
 					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
@@ -1567,10 +1569,9 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						<int key="NSvFlags">266</int>
 						<string key="NSFrame">{{22, 25}, {113, 17}}</string>
 						<reference key="NSSuperview" ref="601045553"/>
-						<reference key="NSWindow"/>
 						<bool key="NSEnabled">YES</bool>
 						<object class="NSTextFieldCell" key="NSCell" id="560545158">
-							<int key="NSCellFlags">338820672</int>
+							<int key="NSCellFlags">68288064</int>
 							<int key="NSCellFlags2">272630784</int>
 							<string key="NSContents">Label</string>
 							<reference key="NSSupport" ref="1050593127"/>
@@ -1596,7 +1597,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						</object>
 						<string key="NSFrame">{{1, 15}, {16, 16}}</string>
 						<reference key="NSSuperview" ref="601045553"/>
-						<reference key="NSWindow"/>
 						<bool key="NSEnabled">YES</bool>
 						<object class="NSImageCell" key="NSCell" id="991344269">
 							<int key="NSCellFlags">130560</int>
@@ -1613,7 +1613,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						<int key="NSvFlags">266</int>
 						<string key="NSFrame">{{25, 2}, {111, 22}}</string>
 						<reference key="NSSuperview" ref="601045553"/>
-						<reference key="NSWindow"/>
 						<bool key="NSEnabled">YES</bool>
 						<object class="NSPopUpButtonCell" key="NSCell" id="35566045">
 							<int key="NSCellFlags">-2076049856</int>
@@ -1693,7 +1692,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						</object>
 						<string key="NSFrame">{{144, 11}, {24, 24}}</string>
 						<reference key="NSSuperview" ref="601045553"/>
-						<reference key="NSWindow"/>
 						<bool key="NSEnabled">YES</bool>
 						<object class="NSImageCell" key="NSCell" id="479679427">
 							<int key="NSCellFlags">130560</int>
@@ -1712,7 +1710,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				</object>
 				<string key="NSFrameSize">{168, 44}</string>
 				<reference key="NSSuperview"/>
-				<reference key="NSWindow"/>
 				<string key="NSClassName">NSView</string>
 			</object>
 		</object>
@@ -3719,7 +3716,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<string>522.IBPluginDependency</string>
 					<string>523.IBPluginDependency</string>
 					<string>525.IBEditorWindowLastContentRect</string>
-					<string>525.IBPluginDependency</string>
 					<string>525.IBWindowTemplateEditedContentRect</string>
 					<string>525.NSWindowTemplate.visibleAtLaunch</string>
 					<string>526.IBPluginDependency</string>
@@ -3734,6 +3730,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<string>535.IBPluginDependency</string>
 					<string>536.IBPluginDependency</string>
 					<string>538.IBPluginDependency</string>
+					<string>539.IBPluginDependency</string>
 					<string>540.IBPluginDependency</string>
 					<string>541.IBPluginDependency</string>
 					<string>542.IBPluginDependency</string>
@@ -3971,9 +3968,9 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>{{570, 624}, {480, 214}}</string>
-					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>{{570, 624}, {480, 214}}</string>
 					<boolean value="NO"/>
+					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -4101,6 +4098,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>changeUserStatusAction:</string>
 							<string>connectMenuAction:</string>
+							<string>connectToHistoryAction:</string>
 							<string>connectionWindowCancelAction:</string>
 							<string>connectionWindowOKAction:</string>
 							<string>connectionWindowUpdateType:</string>
@@ -4113,6 +4111,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>

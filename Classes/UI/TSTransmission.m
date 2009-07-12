@@ -11,14 +11,18 @@
 
 @implementation TSTransmission
 
-- (id)initWithConnection:(SLConnection*)connection bitrate:(unsigned int)bitrate voiceActivated:(BOOL)voiceActivated
+@synthesize transmitOnCommandChannel;
+
+- (id)initWithConnection:(SLConnection*)aConnection codec:(unsigned short)aCodec voiceActivated:(BOOL)voiceActivated
 {
   if (self = [super init])
   {
     transmissionLock = [[NSLock alloc] init];
+    connection = [aConnection retain];
+    codec = aCodec;
     
     encoder = [[SpeexEncoder alloc] initWithMode:SpeexEncodeWideBandMode];
-    [encoder setBitrate:bitrate];
+    [encoder setBitrate:[SLConnection bitrateForCodec:codec]];
     
     NSString *inputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"InputDeviceUID"];
     inputDevice = [(inputDeviceUID ? [MTCoreAudioDevice deviceWithUID:inputDeviceUID] : [MTCoreAudioDevice defaultInputDevice]) retain];
@@ -26,16 +30,22 @@
     {
       inputDevice = [[MTCoreAudioDevice defaultInputDevice] retain];
     }
+
+    // allocate enough buffer stream for five speex frames
+    inputDeviceStreamDescription = [[inputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDeviceRecordDirection] retain];
+    [encoder setInputSampleRate:[inputDeviceStreamDescription sampleRate]];
+    fragmentBuffer = [[MTByteBuffer alloc] initWithCapacity:((([encoder frameSize] * sizeof(short) * [encoder inputSampleRate]) / [encoder sampleRate]) * 5)];
+    
     [inputDevice setIOTarget:self withSelector:@selector(ioCycleForDevice:timeStamp:inputData:inputTime:outputData:outputTime:clientData:) withClientData:nil];
     [inputDevice setDevicePaused:NO];
     
-    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[inputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDeviceRecordDirection] andOutputStreamDescription:[encoder encoderStreamDescription]];
+    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:inputDeviceStreamDescription andOutputStreamDescription:[encoder encoderStreamDescription]];
     if (!converter)
     {
       [self release];
       return nil;
     }
-    
+
     // start the thread
     transmissionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_transmissionThread) object:nil];
     [transmissionThread start];
@@ -45,9 +55,8 @@
 
 - (void)dealloc
 {
-  [self performSelector:@selector(_stopTransmitting) onThread:transmissionThread withObject:nil waitUntilDone:YES];
-  [transmissionThread cancel];
-  
+  [fragmentBuffer release];
+  [connection release];
   [converter release];
   [inputDevice release];
   [encoder release];
@@ -57,12 +66,18 @@
 
 - (void)_transmissionThread
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+  // put at timer on this thread so that we don't spin in the runloop
+  [NSTimer scheduledTimerWithTimeInterval:[[NSDate distantFuture] timeIntervalSinceNow] target:nil selector:nil userInfo:nil repeats:NO];
+  
   while (![[NSThread currentThread] isCancelled])
   {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
     [pool release];
+    pool = [[NSAutoreleasePool alloc] init];
   }
+  [pool release];
 }
 
 - (void)_startTransmitting
@@ -80,11 +95,38 @@
   return isTransmitting;
 }
 
+- (void)close
+{
+  [inputDevice removeIOTarget];
+  [transmissionThread cancel];
+}
+
 - (void)setIsTransmitting:(BOOL)flag
 {
   [transmissionLock lock];
+  if (flag && (flag != isTransmitting))
+  {
+    [self performSelector:@selector(_startTransmitting) onThread:transmissionThread withObject:nil waitUntilDone:YES];
+  }
+  else if (!flag && (flag != isTransmitting))
+  {
+    [self performSelector:@selector(_stopTransmitting) onThread:transmissionThread withObject:nil waitUntilDone:YES];
+    [fragmentBuffer flush];
+  }
   isTransmitting = flag;
   [transmissionLock unlock];
+}
+
+- (unsigned short)codec
+{
+  return codec;
+}
+
+- (void)setCodec:(unsigned short)newCodec
+{
+  codec = newCodec;
+  [encoder setBitrate:[SLConnection bitrateForCodec:codec]];
+  [encoder resetEncoder];
 }
 
 - (OSStatus) ioCycleForDevice:(MTCoreAudioDevice *)theDevice
@@ -95,7 +137,45 @@
                    outputTime:(const AudioTimeStamp *)inOutputTime
                    clientData:(void *)inClientData
 {
-  NSLog(@"foo");
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  unsigned int outFrames = 0, i, inFramesCount = (inInputData->mBuffers[0].mDataByteSize / [inputDeviceStreamDescription bytesPerFrame]);
+  float inputGain = [[[NSUserDefaults standardUserDefaults] objectForKey:@"InputGain"] floatValue];
+  
+  // do the input gain now
+  for (i=0; i<inFramesCount; i++)
+  {
+    ((float*)inInputData->mBuffers[0].mData)[i] *= inputGain;
+  }
+  
+  AudioBufferList *downsampledBufferList = [converter audioBufferListByConvertingList:(AudioBufferList*)inInputData framesConverted:&outFrames];
+  unsigned int copiedBytes = [fragmentBuffer writeFromBytes:downsampledBufferList->mBuffers[0].mData count:downsampledBufferList->mBuffers[0].mDataByteSize waitForRoom:NO];
+  
+  if (copiedBytes < downsampledBufferList->mBuffers[0].mDataByteSize)
+  {  
+    // we've filled the fragment buffer. we need to compress it, send it and stash the remaining fragment.
+    unsigned int encodedPackets = 0, frameInBytes = (([encoder frameSize] * sizeof(short) * [encoder inputSampleRate]) / [encoder sampleRate]);
+    AudioBufferList *compressionBuffer = MTAudioBufferListNew(1, frameInBytes / 4, NO);
+    [encoder resetEncoder];
+    
+    while ([fragmentBuffer count] >= frameInBytes)
+    {
+      [fragmentBuffer readToBytes:compressionBuffer->mBuffers[0].mData count:frameInBytes waitForData:NO];
+      [encoder encodeAudioBufferList:compressionBuffer];
+      encodedPackets++;
+    }
+    
+    NSData *encodedData = [encoder encodedData];
+    [connection sendVoiceMessage:encodedData frames:encodedPackets commanderChannel:[self transmitOnCommandChannel] packetCount:packetCount++ codec:codec];
+    
+    // now before we're too late, clear the compression buffer and copy the spare frames into it, then into the fragment buffer
+    [fragmentBuffer writeFromBytes:(downsampledBufferList->mBuffers[0].mData + copiedBytes) count:(downsampledBufferList->mBuffers[0].mDataByteSize - copiedBytes) waitForRoom:NO];    
+    MTAudioBufferListDispose(compressionBuffer);
+  }
+    
+  MTAudioBufferListDispose(downsampledBufferList);
+  
+  [pool release];
+  return noErr;
 }
 
 @end

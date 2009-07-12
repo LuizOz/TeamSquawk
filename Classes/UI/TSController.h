@@ -66,6 +66,8 @@ typedef enum {
   NSMutableDictionary *flattenedChannels;
   NSArray *sortedChannels;
   
+  TSChannel *currentChannel;
+  
   // background stuff
   
   SLConnection *teamspeakConnection;
@@ -73,7 +75,6 @@ typedef enum {
   // transmission stuff
   
   TSTransmission *transmission;
-  
 }
 
 - (void)awakeFromNib;
@@ -105,6 +106,7 @@ typedef enum {
 - (IBAction)connectMenuAction:(id)sender;
 - (IBAction)disconnectMenuAction:(id)sender;
 - (IBAction)preferencesMenuAction:(id)sender;
+- (IBAction)connectToHistoryAction:(id)sender;
 - (IBAction)doubleClickOutlineView:(id)sender;
 - (IBAction)changeUserStatusAction:(id)sender;
 - (IBAction)toggleAway:(id)sender;
@@ -151,6 +153,12 @@ typedef enum {
 
 - (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count;
 - (void)idleAudioCheck:(NSTimer*)timer;
+
+#pragma mark Hotkeys
+
+- (void)hotkeyPressed:(TSHotkey*)hotkey;
+- (void)hotkeyReleased:(TSHotkey*)hotkey;
+- (void)hotkeyMappingsChanged:(NSNotification*)notification;
 
 #pragma mark NSApplication Delegate
 

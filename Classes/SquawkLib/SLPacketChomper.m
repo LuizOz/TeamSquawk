@@ -112,7 +112,7 @@
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:20 tag:0];
       [socket maybeDequeueSend];
-      return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:packetType], @"SLPacketType", nil];
+      return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:packetType], @"SLPacketType", [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber", nil];
     }
     case PACKET_TYPE_PING_REPLY:
     {
@@ -135,6 +135,14 @@
     case PACKET_TYPE_VOICE_SPEEX_16_3:
     case PACKET_TYPE_VOICE_SPEEX_19_5:
     case PACKET_TYPE_VOICE_SPEEX_25_9:
+    case PACKET_TYPE_CVOICE_SPEEX_3_4:
+    case PACKET_TYPE_CVOICE_SPEEX_5_2:
+    case PACKET_TYPE_CVOICE_SPEEX_7_2:
+    case PACKET_TYPE_CVOICE_SPEEX_9_3:
+    case PACKET_TYPE_CVOICE_SPEEX_12_3:
+    case PACKET_TYPE_CVOICE_SPEEX_16_3:
+    case PACKET_TYPE_CVOICE_SPEEX_19_5:
+    case PACKET_TYPE_CVOICE_SPEEX_25_9:
     {
       NSDictionary *chompedPacket = [self chompVoiceMessage:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
@@ -294,9 +302,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -328,6 +335,7 @@
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:numberOfChannels], @"SLNumberOfChannels",
                                     channels, @"SLChannels",
                                     nil];
@@ -402,9 +410,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -435,6 +442,7 @@
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:numberOfPlayers], @"SLNumberOfPlayers",
                                     players, @"SLPlayers",
                                     nil];
@@ -492,9 +500,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -537,6 +544,7 @@
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
                                     [NSNumber numberWithUnsignedInt:extendedFlags], @"SLPlayerExtendedFlags",
@@ -553,9 +561,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -585,6 +592,7 @@
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     nil];
   
@@ -598,9 +606,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -635,6 +642,7 @@
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedInt:previousChannelID], @"SLPreviousChannelID",
                                     [NSNumber numberWithUnsignedInt:newChannelID], @"SLNewChannelID",
@@ -650,9 +658,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -684,6 +691,7 @@
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedShort:playerFlags], @"SLPlayerFlags",
                                     nil];
@@ -707,9 +715,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -762,6 +769,7 @@
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     nick, @"SLNickname",
                                     message, @"SLMessage",
                                     nil];
@@ -778,9 +786,8 @@
   [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
   [data getBytes:&clientID range:NSMakeRange(8, 4)];
   
-  // multiple packet channel names come in more than one blob
-  unsigned int packetCounter = 0;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 4)];
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
@@ -827,8 +834,10 @@
 
 - (NSDictionary*)chompVoiceMessage:(NSData*)data
 {
-  unsigned int packetType = 0;
+  unsigned int packetType;
   [data getBytes:&packetType range:NSMakeRange(0, 4)];
+  
+  BOOL commanderChannel = (((packetType >> 16) & 0xff) == 0x01);
   
   unsigned int connectionID, clientID;
   [data getBytes:&connectionID range:NSMakeRange(4, 4)];
@@ -858,6 +867,7 @@
                                     [NSNumber numberWithUnsignedShort:serverData], @"SLServerData",
                                     [NSNumber numberWithUnsignedInt:senderID], @"SLSenderID",
                                     [NSNumber numberWithUnsignedShort:senderCounter], @"SLSenderCounter",
+                                    [NSNumber numberWithBool:commanderChannel], @"SLCommandChannel",
                                     audioCodecData, @"SLAudioCodecData",
                                     nil];
   

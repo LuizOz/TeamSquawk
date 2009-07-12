@@ -18,19 +18,30 @@
   SpeexEncoder *encoder;
   TSAudioConverter *converter;
   MTCoreAudioDevice *inputDevice;
+  MTCoreAudioStreamDescription *inputDeviceStreamDescription;
+  MTByteBuffer *fragmentBuffer;
+  SLConnection *connection;
   
   BOOL isTransmitting;  
   BOOL isVoiceActivated;
+  BOOL transmitOnCommandChannel;
+  unsigned int packetCount;
+  unsigned short codec;
   
   NSLock *transmissionLock;
-  
   NSThread *transmissionThread;
 }
 
-- (id)initWithConnection:(SLConnection*)connection bitrate:(unsigned int)bitrate voiceActivated:(BOOL)voiceActivated;
+@property (assign) BOOL transmitOnCommandChannel;
+
+- (id)initWithConnection:(SLConnection*)connection codec:(unsigned short)codec voiceActivated:(BOOL)voiceActivated;
 - (void)dealloc;
 
 - (BOOL)isTransmitting;
 - (void)setIsTransmitting:(BOOL)flag;
+- (void)close;
+
+- (unsigned short)codec;
+- (void)setCodec:(unsigned short)codec;
 
 @end

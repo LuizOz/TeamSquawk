@@ -34,6 +34,15 @@
 #define PACKET_TYPE_VOICE_SPEEX_19_5  0x0b00bef3
 #define PACKET_TYPE_VOICE_SPEEX_25_9  0x0c00bef3
 
+#define PACKET_TYPE_CVOICE_SPEEX_3_4  0x0501bef3
+#define PACKET_TYPE_CVOICE_SPEEX_5_2  0x0601bef3
+#define PACKET_TYPE_CVOICE_SPEEX_7_2  0x0701bef3
+#define PACKET_TYPE_CVOICE_SPEEX_9_3  0x0801bef3
+#define PACKET_TYPE_CVOICE_SPEEX_12_3 0x0901bef3
+#define PACKET_TYPE_CVOICE_SPEEX_16_3 0x0a01bef3
+#define PACKET_TYPE_CVOICE_SPEEX_19_5 0x0b01bef3
+#define PACKET_TYPE_CVOICE_SPEEX_25_9 0x0c01bef3
+
 @interface SLPacketChomper : NSObject {
   AsyncUdpSocket *socket;
   NSDictionary *fragment;

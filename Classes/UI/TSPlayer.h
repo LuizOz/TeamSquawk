@@ -36,6 +36,9 @@ typedef enum {
   unsigned int playerID;
   unsigned int channelID;
   unsigned int lastVoicePacketCount;
+  
+  BOOL isTransmitting;
+  BOOL isTalkingOnCommandChannel;
 }
 
 @property (readonly) SpeexDecoder *decoder;
@@ -44,6 +47,8 @@ typedef enum {
 @property (readonly) NSOperationQueue *decodeQueue;
 @property (assign) unsigned int lastVoicePacketCount;
 @property (assign) unsigned int extendedFlags;
+@property (assign) BOOL isTransmitting;
+@property (assign) BOOL isTalkingOnCommandChannel;
 
 - (id)copyWithZone:(NSZone *)zone;
 

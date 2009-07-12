@@ -21,6 +21,31 @@
 
 @synthesize delegate;
 
++ (unsigned int)bitrateForCodec:(unsigned int)codec
+{
+  switch (codec)
+  {
+    case SLCodecSpeex_3_4:
+      return 3400;
+    case SLCodecSpeex_5_2:
+      return 5200;
+    case SLCodecSpeex_7_2:
+      return 7200;
+    case SLCodecSpeex_9_3:
+      return 9300;
+    case SLCodecSpeex_12_3:
+      return 12300;
+    case SLCodecSpeex_16_3:
+      return 16300;
+    case SLCodecSpeex_19_5:
+      return 19500;
+    case SLCodecSpeex_25_9:
+      return 25900;
+    default:
+      return 0;
+  }
+}
+
 - (id)initWithHost:(NSString*)host withError:(NSError**)error
 {
   return [self initWithHost:host withPort:8767 withError:error];
@@ -39,6 +64,12 @@
     audioSequenceCounter = 0;
     isDisconnecting = NO;
     hasFinishedDisconnecting = NO;
+    pendingReceive = NO;
+    
+    connectionSequenceNumber = 0;
+    standardSequenceNumber = 0;
+    serverConnectionSequenceNumber = 0;
+    serverStandardSequenceNumber = 0;
 
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[socket methodSignatureForSelector:@selector(connectToHost:onPort:error:)]];
     [invocation setTarget:socket];
@@ -76,9 +107,13 @@
 - (void)spawnThread
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  [NSTimer scheduledTimerWithTimeInterval:[[NSDate distantFuture] timeIntervalSinceNow] target:nil selector:nil userInfo:nil repeats:NO];
+  
   while (![[NSThread currentThread] isCancelled])
   {
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+    [pool release];
+    pool = [[NSAutoreleasePool alloc] init];
   }
   [pool release];
 }
@@ -108,9 +143,14 @@
   [socket maybeDequeueSend];
 }
 
-- (void)waitForReceive
+- (void)queueReceiveDataAndWait
 {
-  [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  pendingReceive = YES;
+  [socket receiveWithTimeout:20 tag:0];
+  while (pendingReceive)
+  {
+    [[NSRunLoop currentRunLoop] runMode:NSRunLoopCommonModes beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
 }
 
 #pragma mark Commands
@@ -118,10 +158,10 @@
 - (void)beginAsynchronousLogin:(NSString*)username password:(NSString*)password nickName:(NSString*)nickName isRegistered:(BOOL)isRegistered
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  sequenceNumber = 1;
+  connectionSequenceNumber = 1;
   
   SLPacketBuilder *packetBuilder = [SLPacketBuilder packetBuilder];
-  NSData *packet = [packetBuilder buildLoginPacketWithSequenceID:sequenceNumber
+  NSData *packet = [packetBuilder buildLoginPacketWithSequenceID:connectionSequenceNumber
                                                       clientName:[self clientName]
                                              operatingSystemName:[self clientOperatingSystem]
                                               clientVersionMajor:[self clientMajorVersion]
@@ -149,14 +189,16 @@
   
   isDisconnecting = YES;
   
-  NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber++];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:standardSequenceNumber++];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
   [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
   
+  // we get a player packet here, we need to queue a send then close waiting for receive. then poll till we're closed
+  [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  
   while (!hasFinishedDisconnecting)
   {
-    [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
-    [self performSelector:@selector(waitForReceive) onThread:connectionThread withObject:nil waitUntilDone:YES];
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
   
   if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:)])
@@ -172,6 +214,8 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
   
+  pendingReceive = NO;
+  
   if (textFragments && ([[textFragments objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0))
   {
     // we've got leftovers from the last part of the text message. let the chomper glue them
@@ -183,15 +227,42 @@
   
   if (packet)
   {
-    switch ([[packet objectForKey:@"SLPacketType"] unsignedIntValue])
+    unsigned int packetType = [[packet objectForKey:@"SLPacketType"] unsignedIntValue];
+    
+    if ([packet objectForKey:@"SLSequenceNumber"])
+    {
+      unsigned int seq = [[packet objectForKey:@"SLSequenceNumber"] unsignedIntValue];
+      
+      if ((packetType & 0x0000ffff) == 0x0000bef4)
+      {
+        // connection sequence
+        if (seq <= serverConnectionSequenceNumber)
+        {
+          return NO;
+        }
+        serverConnectionSequenceNumber = seq;
+      }
+      else if ((packetType & 0x0000ffff) == 0x0000bef0)
+      {
+        // standard sequence
+        if (seq <= serverStandardSequenceNumber)
+        {
+          return NO;
+        }
+        serverStandardSequenceNumber = seq;
+      }
+    }
+    
+    switch (packetType)
     {
       case PACKET_TYPE_LOGIN_REPLY:
       {
         BOOL isBadLogin = [[packet objectForKey:@"SLBadLogin"] boolValue];
-        
+        standardSequenceNumber = 1;
+
         if (isBadLogin)
         {
-          if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:)])
+          if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:)])
           {
             [[self delegate] connectionFailedToLogin:self];
           }
@@ -204,12 +275,13 @@
           
           NSData *newPacket = [[SLPacketBuilder packetBuilder] buildLoginResponsePacketWithConnectionID:connectionID
                                                                                                clientID:clientID
-                                                                                             sequenceID:sequenceNumber++
+                                                                                             sequenceID:standardSequenceNumber++
                                                                                               lastCRC32:lastCRC32];
           // this only gets called form the socket's thread. so should be thread safe.
           [sock sendData:newPacket withTimeout:20 tag:0];
+          [sock maybeDequeueSend];
           
-          if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:didLoginTo:port:serverName:platform:majorVersion:minorVersion:subLevelVersion:subsubLevelVersion:welcomeMessage:)])
+          if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:didLoginTo:port:serverName:platform:majorVersion:minorVersion:subLevelVersion:subsubLevelVersion:welcomeMessage:)])
           {
             [[self delegate] connection:self
                              didLoginTo:host
@@ -228,7 +300,7 @@
       }
       case PACKET_TYPE_CHANNEL_LIST:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
         {
           [[self delegate] connection:self receivedChannelList:packet];
         }
@@ -236,7 +308,7 @@
       }
       case PACKET_TYPE_PLAYER_LIST:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerList:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerList:)])
         {
           [[self delegate] connection:self receivedPlayerList:packet];
         }
@@ -244,10 +316,13 @@
       }
       case PACKET_TYPE_LOGIN_END:
       {
+        // reset the sequence ids
+        connectionSequenceNumber = 0;
+        
         // we should probably schedule some auto-pings here
         pingTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
         
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
         {
           [[self delegate] connectionFinishedLogin:self];
         }
@@ -256,7 +331,7 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
         {
           [[self delegate] connectionPingReply:self];
         }
@@ -276,7 +351,7 @@
         [textFragments release];
         textFragments = nil;
         
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedTextMessage:fromNickname:playerID:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedTextMessage:fromNickname:playerID:)])
         {
           [[self delegate] connection:self
                   receivedTextMessage:[packet objectForKey:@"SLMessage"] 
@@ -294,21 +369,30 @@
       case PACKET_TYPE_VOICE_SPEEX_16_3:
       case PACKET_TYPE_VOICE_SPEEX_19_5:
       case PACKET_TYPE_VOICE_SPEEX_25_9:
+      case PACKET_TYPE_CVOICE_SPEEX_3_4:
+      case PACKET_TYPE_CVOICE_SPEEX_5_2:
+      case PACKET_TYPE_CVOICE_SPEEX_7_2:
+      case PACKET_TYPE_CVOICE_SPEEX_9_3:
+      case PACKET_TYPE_CVOICE_SPEEX_12_3:
+      case PACKET_TYPE_CVOICE_SPEEX_16_3:
+      case PACKET_TYPE_CVOICE_SPEEX_19_5:
+      case PACKET_TYPE_CVOICE_SPEEX_25_9:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedVoiceMessage:codec:playerID:senderPacketCounter:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedVoiceMessage:codec:playerID:commandChannel:senderPacketCounter:)])
         {
           NSData *data = [packet objectForKey:@"SLAudioCodecData"];
-          SLAudioCodecType codec = (([[packet objectForKey:@"SLPacketType"] unsignedIntValue] >> 6) & 0xff);
+          SLAudioCodecType codec = (([[packet objectForKey:@"SLPacketType"] unsignedIntValue] >> 24) & 0xff);
           unsigned int playerID = [[packet objectForKey:@"SLSenderID"] unsignedIntValue];
           unsigned short count = [[packet objectForKey:@"SLSenderCounter"] unsignedShortValue];
+          BOOL commandChannel = [[packet objectForKey:@"SLCommandChannel"] boolValue];
           
-          [[self delegate] connection:self receivedVoiceMessage:data codec:codec playerID:playerID senderPacketCounter:count];
+          [[self delegate] connection:self receivedVoiceMessage:data codec:codec playerID:playerID commandChannel:commandChannel senderPacketCounter:count];
         }
         break;
       }
       case PACKET_TYPE_NEW_PLAYER:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:extendedFlags:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:extendedFlags:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
           unsigned int channelID = [[packet objectForKey:@"SLChannelID"] unsignedIntValue];
@@ -327,7 +411,7 @@
           hasFinishedDisconnecting = YES;
         }
         
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
         {
           [[self delegate] connection:self receivedPlayerLeftNotification:[[packet objectForKey:@"SLPlayerID"] unsignedIntValue]];
         }
@@ -335,7 +419,7 @@
       }
       case PACKET_TYPE_CHANNEL_CHANGE:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelChangeNotification:fromChannel:toChannel:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelChangeNotification:fromChannel:toChannel:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
           unsigned int oldChannelID = [[packet objectForKey:@"SLPreviousChannelID"] unsignedIntValue];
@@ -347,7 +431,7 @@
       }
       case PACKET_TYPE_PLAYER_UPDATE:
       {
-        if ([self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerUpdateNotification:flags:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerUpdateNotification:flags:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
           unsigned short playerFlags = [[packet objectForKey:@"SLPlayerFlags"] unsignedShortValue];
@@ -359,7 +443,7 @@
       default:
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }
-       
+    
     [sock receiveWithTimeout:20 tag:0];
     [pool release];
     return YES;
@@ -374,14 +458,20 @@
   [sock receiveWithTimeout:20 tag:0];
 }
 
+- (void)onUdpSocketDidClose:(AsyncUdpSocket *)sock
+{
+  NSLog(@"i'm closed");
+}
+
 #pragma mark Ping Timer
 
 - (void)pingTimer:(NSTimer*)timer
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   // fire a ping every time this goes off
-  NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:1];
+  NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:connectionSequenceNumber++];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:data waitUntilDone:YES];
+  [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
   [pool release];
 }
 
@@ -392,7 +482,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildTextMessagePacketWithConnectionID:connectionID
                                                                                   clientID:clientID
-                                                                                sequenceID:sequenceNumber++
+                                                                                sequenceID:standardSequenceNumber++
                                                                                   playerID:playerID
                                                                                    message:message];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
@@ -422,10 +512,10 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildSwitchChannelMessageWithConnectionID:connectionID
                                                                                      clientID:clientID
-                                                                                   sequenceID:sequenceNumber++
+                                                                                   sequenceID:standardSequenceNumber++
                                                                                  newChannelID:newChannel
                                                                                      password:password];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
   [pool release];
 }
 
@@ -434,9 +524,9 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildChangePlayerStatusMessageWithConnectionID:connectionID
                                                                                           clientID:clientID
-                                                                                        sequenceID:sequenceNumber++
+                                                                                        sequenceID:standardSequenceNumber++
                                                                                     newStatusFlags:flags];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
   [pool release];
 }
 

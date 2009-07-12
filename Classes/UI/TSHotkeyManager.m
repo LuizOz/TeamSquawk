@@ -50,18 +50,21 @@ static TSHotkeyManager *globalHotkeyManager = nil;
 @synthesize modifiers;
 @synthesize keyCode;
 @synthesize hotkeyID;
+@synthesize context;
 
 - (id)init
 {
   if (self = [super init])
   {
     target = nil;
+    context = nil;
   }
   return self;
 }
 
 - (void)dealloc
 {
+  [context release];
   [target release];
   [super dealloc];
 }
@@ -121,6 +124,11 @@ static TSHotkeyManager *globalHotkeyManager = nil;
   return ++nextHotkeyID;
 }
 
+- (NSMutableDictionary*)hotkeys
+{
+  return hotkeys;
+}
+
 - (void)addHotkey:(TSHotkey*)hotkey
 {
   EventHotKeyID hotkeyID;
@@ -147,6 +155,16 @@ static TSHotkeyManager *globalHotkeyManager = nil;
     return;
   }
   [hotkeys removeObjectForKey:[NSNumber numberWithUnsignedInt:[hotkey hotkeyID]]];
+}
+
+- (void)removeAllHotkeys
+{
+  NSMutableDictionary *removals = [hotkeys copy];
+  for (TSHotkey *hotkey in removals)
+  {
+    [self removeHotkey:hotkey];
+  }
+  [removals release];
 }
 
 @end

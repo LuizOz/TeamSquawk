@@ -29,7 +29,12 @@ typedef enum {
 
   unsigned int connectionID;
   unsigned int clientID;
-  unsigned int sequenceNumber;
+  
+  unsigned int connectionSequenceNumber;
+  unsigned int standardSequenceNumber;
+  
+  unsigned int serverConnectionSequenceNumber;
+  unsigned int serverStandardSequenceNumber;
   
   unsigned short audioSequenceCounter;
   
@@ -39,6 +44,7 @@ typedef enum {
   
   BOOL isDisconnecting;
   BOOL hasFinishedDisconnecting;
+  BOOL pendingReceive;
   
   id delegate;
 }
@@ -50,6 +56,7 @@ typedef enum {
 @property (assign) int clientMinorVersion;
 @property (readonly) unsigned int clientID;
 
++ (unsigned int)bitrateForCodec:(unsigned int)codec;
 - (id)initWithHost:(NSString*)host withError:(NSError**)error;
 - (id)initWithHost:(NSString*)host withPort:(int)port withError:(NSError**)error;
 
@@ -102,7 +109,7 @@ typedef enum {
 - (void)connectionPingReply:(SLConnection*)connection;
 
 - (void)connection:(SLConnection*)connection receivedTextMessage:(NSString*)message fromNickname:(NSString*)nickname playerID:(unsigned int)playerID;
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count;
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count;
 
 @end
 
