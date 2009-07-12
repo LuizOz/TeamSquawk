@@ -13,11 +13,24 @@
 
 - (void)setupToolbar
 {
+  [self addView:serversPreferencesView label:@"Servers" image:[NSImage imageNamed:@"Servers"]];
+  [self setupServersPreferences];
+  
   [self addView:soundPreferencesView label:@"Sound" image:[NSImage imageNamed:@"Mic"]];
   [self setupSoundPreferences];
   
   [self addView:hotkeysPreferencesView label:@"HotKeys" image:[NSImage imageNamed:@"Keyboard"]];
   [self setupHotkeyPreferences];
+}
+
+- (void)setupServersPreferences
+{
+  [serversTableView setDataSource:self];
+  [serversTableView setDelegate:self];
+  [serversTableView setTarget:self];
+  [serversTableView setDoubleAction:@selector(doubleClickServersTableView:)];
+  
+  [serversTableView reloadData];
 }
 
 - (void)setupSoundPreferences
@@ -114,6 +127,138 @@
   [hotkeyTableView setDoubleAction:@selector(doubleClickHotkeyTableView:)];
   
   [hotkeyTableView reloadData];
+}
+
+#pragma mark Servers Toolbar
+
+- (IBAction)addServerAction:(id)sender
+{
+  [connectionEditorServerTextField setStringValue:@""];
+  [connectionEditorNicknameTextField setStringValue:@""];
+  [connectionEditorTypeMatrix selectCellWithTag:1];
+  [connectionEditorUsernameTextField setStringValue:@""];
+  [connectionEditorPasswordTextField setStringValue:@""];
+  
+  [self connectionEditorWindowUpdateType:self];
+  
+  [NSApp beginSheet:connectionEditorWindow
+     modalForWindow:[self window]
+      modalDelegate:self
+     didEndSelector:@selector(connectionEditorSheetDidEnd:returnCode:contextInfo:)
+        contextInfo:nil];
+}
+
+- (IBAction)deleteServerAction:(id)sender
+{
+  NSMutableArray *recentServers = [[[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"] mutableCopy];
+  int row = [serversTableView selectedRow];      
+
+  [recentServers removeObjectAtIndex:row];
+  [[NSUserDefaults standardUserDefaults] setObject:recentServers forKey:@"RecentServers"];
+  [[NSUserDefaults standardUserDefaults] synchronize];
+
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"TSRecentServersDidChange" object:nil];
+  [serversTableView reloadData];
+
+  [recentServers release];
+}
+
+- (IBAction)doubleClickServersTableView:(id)sender
+{
+  if ([serversTableView selectedRow] > -1)
+  {
+    NSArray *recentServers = [[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"];
+    NSDictionary *server = [recentServers objectAtIndex:[serversTableView selectedRow]];
+    
+    [connectionEditorServerTextField setStringValue:[server objectForKey:@"ServerAddress"]];
+    [connectionEditorNicknameTextField setStringValue:[server objectForKey:@"Nickname"]];
+    [connectionEditorTypeMatrix selectCellWithTag:([[server objectForKey:@"Registered"] boolValue] ? 0 : 1)];
+    [connectionEditorUsernameTextField setStringValue:([server objectForKey:@"Username"] ? [server objectForKey:@"Username"] : @"")];
+    [connectionEditorPasswordTextField setStringValue:[server objectForKey:@"Password"]];
+    
+    [self connectionEditorWindowUpdateType:self];
+    
+    [NSApp beginSheet:connectionEditorWindow
+       modalForWindow:[self window]
+        modalDelegate:self
+       didEndSelector:@selector(connectionEditorSheetDidEnd:returnCode:contextInfo:)
+          contextInfo:server];
+  }
+}
+
+- (IBAction)connectionEditorWindowUpdateType:(id)sender
+{
+  [connectionEditorUsernameTextField setEnabled:([[connectionEditorTypeMatrix selectedCell] tag] == 0)];
+}
+
+- (IBAction)connectionEditorWindowOKAction:(id)sender
+{
+  [NSApp endSheet:connectionEditorWindow returnCode:NSOKButton];
+}
+
+- (IBAction)connectionEditorWindowCancelAction:(id)sender
+{
+  [NSApp endSheet:connectionEditorWindow returnCode:NSCancelButton];
+}
+
+- (void)connectionEditorSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
+{
+  [sheet orderOut:self];
+  
+  if (returnCode == NSOKButton)
+  {
+    NSDictionary *server = [NSDictionary dictionaryWithObjectsAndKeys:
+                            [connectionEditorServerTextField stringValue], @"ServerAddress",
+                            [connectionEditorNicknameTextField stringValue], @"Nickname",
+                            [NSNumber numberWithInt:8767], @"Port",
+                            [NSNumber numberWithBool:([[connectionEditorTypeMatrix selectedCell] tag] == 0)], @"Registered",
+                            [connectionEditorPasswordTextField stringValue], @"Password",
+                            // should always come last, then nil username will stop the array
+                            (([[connectionEditorTypeMatrix selectedCell] tag] == 0) ? [connectionEditorUsernameTextField stringValue] : nil), @"Username",
+                            nil];
+
+    NSMutableArray *recentServers = [[[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"] mutableCopy];
+    
+    // if we've got a contextinfo then we were editing. not creating.
+    if (contextInfo)
+    {
+      int row = [serversTableView selectedRow];      
+      [recentServers replaceObjectAtIndex:row withObject:server];
+      [[NSUserDefaults standardUserDefaults] setObject:recentServers forKey:@"RecentServers"];
+    }
+    else
+    {
+      [recentServers addObject:server];
+      [[NSUserDefaults standardUserDefaults] setObject:recentServers forKey:@"RecentServers"];
+    }
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"TSRecentServersDidChange" object:nil];
+    [serversTableView reloadData];
+    
+    [recentServers release];
+  }
+}
+
+- (NSInteger)serversNumberOfRowsInTableView:(NSTableView *)aTableView
+{
+  return [[[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"] count];
+}
+
+- (id)serversTableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+{
+  NSArray *recentServers = [[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"];
+  NSDictionary *server = [recentServers objectAtIndex:rowIndex];
+  
+  return [NSString stringWithFormat:@"%@ @ %@", [server objectForKey:@"Nickname"], [server objectForKey:@"ServerAddress"]];
+}
+
+- (void)serversTableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+{
+  NSArray *recentServers = [[NSUserDefaults standardUserDefaults] arrayForKey:@"RecentServers"];
+  NSDictionary *server = [recentServers objectAtIndex:rowIndex];
+
+  [(NSCell*)aCell setImage:([[server objectForKey:@"Registered"] boolValue] ? [NSImage imageNamed:@"Blue"] : [NSImage imageNamed:@"Green"])];
 }
 
 #pragma mark Sound Toolbar
@@ -367,12 +512,13 @@
   }
 }
 
-- (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
+- (NSInteger)hotkeysNumberOfRowsInTableView:(NSTableView*)aTableview
 {
   return [[[NSUserDefaults standardUserDefaults] arrayForKey:@"Hotkeys"] count];
+
 }
 
-- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+- (id)hotkeysTableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
 {
   NSArray *hotkeys = [[NSUserDefaults standardUserDefaults] arrayForKey:@"Hotkeys"];
   NSDictionary *hotkeyDict = [hotkeys objectAtIndex:rowIndex];
@@ -408,6 +554,42 @@
     }
   }
   return nil;
+}
+
+#pragma mark Shared Delegate Methods
+
+- (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView
+{
+  if ([aTableView isEqualTo:hotkeyTableView])
+  {
+    return [self hotkeysNumberOfRowsInTableView:aTableView];
+  }
+  else if ([aTableView isEqualTo:serversTableView])
+  {
+    return [self serversNumberOfRowsInTableView:aTableView];
+  }
+  return 0;
+}
+
+- (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+{
+  if ([aTableView isEqualTo:hotkeyTableView])
+  {
+    return [self hotkeysTableView:aTableView objectValueForTableColumn:aTableColumn row:rowIndex];
+  }
+  else if ([aTableView isEqualTo:serversTableView])
+  {
+    return [self serversTableView:aTableView objectValueForTableColumn:aTableColumn row:rowIndex];
+  }
+  return nil;
+}
+
+- (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex
+{
+  if ([aTableView isEqualTo:serversTableView])
+  {
+    [self serversTableView:aTableView willDisplayCell:aCell forTableColumn:aTableColumn row:rowIndex];
+  }
 }
 
 @end

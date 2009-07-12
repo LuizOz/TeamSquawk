@@ -80,6 +80,8 @@
 		C9E2D50B1007265000ED920D /* deleteWidgetPressed.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2D5071007265000ED920D /* deleteWidgetPressed.png */; };
 		C9E2D50C1007265000ED920D /* deleteWidget.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2D5081007265000ED920D /* deleteWidget.png */; };
 		C9E2D515100726B600ED920D /* Keyboard.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2D514100726B600ED920D /* Keyboard.png */; };
+		C9E2E0801009667E00ED920D /* Servers.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2E07F1009667E00ED920D /* Servers.png */; };
+		C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C9E2E0B31009698700ED920D /* RPImageAndTextCell.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -456,6 +458,9 @@
 		C9E2D5071007265000ED920D /* deleteWidgetPressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = deleteWidgetPressed.png; sourceTree = "<group>"; };
 		C9E2D5081007265000ED920D /* deleteWidget.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = deleteWidget.png; sourceTree = "<group>"; };
 		C9E2D514100726B600ED920D /* Keyboard.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Keyboard.png; sourceTree = "<group>"; };
+		C9E2E07F1009667E00ED920D /* Servers.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Servers.png; sourceTree = "<group>"; };
+		C9E2E0B21009698700ED920D /* RPImageAndTextCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RPImageAndTextCell.h; sourceTree = "<group>"; };
+		C9E2E0B31009698700ED920D /* RPImageAndTextCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RPImageAndTextCell.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -615,6 +620,8 @@
 				C9E2D1AC10065F2400ED920D /* TSHotkeyManager.m */,
 				C9E2D280100674FB00ED920D /* TSPreferencesController.h */,
 				C9E2D281100674FB00ED920D /* TSPreferencesController.m */,
+				C9E2E0B21009698700ED920D /* RPImageAndTextCell.h */,
+				C9E2E0B31009698700ED920D /* RPImageAndTextCell.m */,
 				C9E2D294100676EA00ED920D /* Preferences.xib */,
 			);
 			path = UI;
@@ -1202,6 +1209,7 @@
 				C9E2CA1E10032ACB00ED920D /* Red.tiff */,
 				C9E2CF5610053DE300ED920D /* Mute.tiff */,
 				C9E2D2B210067ED000ED920D /* Mic.png */,
+				C9E2E07F1009667E00ED920D /* Servers.png */,
 			);
 			path = Images;
 			sourceTree = "<group>";
@@ -1302,6 +1310,7 @@
 				C9E2D50B1007265000ED920D /* deleteWidgetPressed.png in Resources */,
 				C9E2D50C1007265000ED920D /* deleteWidget.png in Resources */,
 				C9E2D515100726B600ED920D /* Keyboard.png in Resources */,
+				C9E2E0801009667E00ED920D /* Servers.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1366,6 +1375,7 @@
 				C9E2D27F1006744300ED920D /* DBPrefsWindowController.m in Sources */,
 				C9E2D282100674FB00ED920D /* TSPreferencesController.m in Sources */,
 				C9E2D4D01006BCBA00ED920D /* TSTransmission.m in Sources */,
+				C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

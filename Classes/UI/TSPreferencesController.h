@@ -23,8 +23,18 @@ typedef enum {
 
 @interface TSPreferencesController : DBPrefsWindowController {
   IBOutlet NSView *generalPreferencesView;
+  IBOutlet NSView *serversPreferencesView;
   IBOutlet NSView *soundPreferencesView;
   IBOutlet NSView *hotkeysPreferencesView;
+  
+  // servers
+  IBOutlet NSTableView *serversTableView;
+  IBOutlet NSWindow *connectionEditorWindow;
+  IBOutlet NSTextField *connectionEditorServerTextField;
+  IBOutlet NSTextField *connectionEditorNicknameTextField;
+  IBOutlet NSMatrix *connectionEditorTypeMatrix;
+  IBOutlet NSTextField *connectionEditorUsernameTextField;
+  IBOutlet NSTextField *connectionEditorPasswordTextField;
   
   // sound
   IBOutlet NSPopUpButton *inputSoundDeviceButton;
@@ -55,8 +65,22 @@ typedef enum {
 }
 
 - (void)setupToolbar;
+- (void)setupServersPreferences;
 - (void)setupSoundPreferences;
 - (void)setupHotkeyPreferences;
+
+#pragma mark Servers Toolbar
+
+- (IBAction)addServerAction:(id)sender;
+- (IBAction)deleteServerAction:(id)sender;
+- (IBAction)doubleClickServersTableView:(id)sender;
+- (IBAction)connectionEditorWindowUpdateType:(id)sender;
+- (IBAction)connectionEditorWindowOKAction:(id)sender;
+- (IBAction)connectionEditorWindowCancelAction:(id)sender;
+- (void)connectionEditorSheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;;
+- (NSInteger)serversNumberOfRowsInTableView:(NSTableView *)aTableView;
+- (id)serversTableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
+- (void)serversTableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
 
 #pragma mark Sound Toolbar
 
@@ -76,7 +100,13 @@ typedef enum {
 - (IBAction)doubleClickHotkeyTableView:(id)sender;
 - (IBAction)hotkeyEditorButtonAction:(id)sender;
 - (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;;
+- (NSInteger)hotkeysNumberOfRowsInTableView:(NSTableView*)aTableview;
+- (id)hotkeysTableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
+
+#pragma mark Shared Delegate Methods
+
 - (NSInteger)numberOfRowsInTableView:(NSTableView *)aTableView;
 - (id)tableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
+- (void)tableView:(NSTableView *)aTableView willDisplayCell:(id)aCell forTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
 
 @end

@@ -33,6 +33,8 @@
   [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(hotkeyMappingsChanged:) name:@"TSHotkeysDidChange" object:nil];
   [self hotkeyMappingsChanged:nil];
   
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(recentServersChanged:) name:@"TSRecentServersDidChange" object:nil];
+  
   // setup the outline view
   [mainWindowOutlineView setDelegate:self];
   [mainWindowOutlineView setDataSource:self];
@@ -407,6 +409,20 @@
 
 #pragma mark Connection Menu
 
+- (void)recentServersChanged:(NSNotification*)notification
+{
+  if (!isConnected)
+  {
+    [self setupDisconnectedToolbarStatusPopupButton];
+  }
+}
+
+- (IBAction)editServerListAction:(id)sender
+{
+  [[TSPreferencesController sharedPrefsWindowController] showWindow:sender];
+  [[TSPreferencesController sharedPrefsWindowController] displayViewForIdentifier:@"Servers" animate:YES];
+}
+
 - (void)setupDisconnectedToolbarStatusPopupButton
 {
   NSMenu *menu = [[NSMenu alloc] init];
@@ -435,7 +451,7 @@
   
   [menu addItem:[NSMenuItem separatorItem]];
   
-  [[menu addItemWithTitle:@"Edit Server List..." action:nil keyEquivalent:@""] setTarget:self];
+  [[menu addItemWithTitle:@"Edit Server List..." action:@selector(editServerListAction:) keyEquivalent:@""] setTarget:self];
   
   [toolbarViewStatusPopupButton setMenu:menu];
   [menu release];

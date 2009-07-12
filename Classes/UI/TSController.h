@@ -125,6 +125,8 @@ typedef enum {
 
 #pragma mark Connection Menu
 
+- (void)recentServersChanged:(NSNotification*)notification;
+- (IBAction)editServerListAction:(id)sender;
 - (void)setupDisconnectedToolbarStatusPopupButton;
 - (void)setupConnectedToolbarStatusPopupButton;
 
@@ -151,7 +153,7 @@ typedef enum {
 
 #pragma mark Audio
 
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID senderPacketCounter:(unsigned short)count;
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count;
 - (void)idleAudioCheck:(NSTimer*)timer;
 
 #pragma mark Hotkeys
