@@ -11,7 +11,8 @@
 
 @implementation TSTransmission
 
-@synthesize transmitOnCommandChannel;
+@synthesize whisperRecipients;
+@synthesize isWhispering;
 
 - (id)initWithConnection:(SLConnection*)aConnection codec:(unsigned short)aCodec voiceActivated:(BOOL)voiceActivated
 {
@@ -20,6 +21,9 @@
     transmissionLock = [[NSLock alloc] init];
     connection = [aConnection retain];
     codec = aCodec;
+    whisperRecipients = nil;
+    packetCount = 0;
+    transmissionCount = 0;
     
     encoder = [[SpeexEncoder alloc] initWithMode:SpeexEncodeWideBandMode];
     [encoder setBitrate:[SLConnection bitrateForCodec:codec]];
@@ -83,6 +87,7 @@
 - (void)_startTransmitting
 {
   [inputDevice deviceStart];
+  transmissionCount++;
 }
 
 - (void)_stopTransmitting
@@ -165,7 +170,17 @@
     }
     
     NSData *encodedData = [encoder encodedData];
-    [connection sendVoiceMessage:encodedData frames:encodedPackets commanderChannel:[self transmitOnCommandChannel] packetCount:packetCount++ codec:codec];
+    if (isWhispering)
+    {
+      if (whisperRecipients && ([whisperRecipients count] > 0))
+      {
+        [connection sendVoiceWhisper:encodedData frames:encodedPackets packetCount:packetCount++ transmissionID:transmissionCount codec:codec recipients:whisperRecipients];
+      }
+    }
+    else
+    {
+      [connection sendVoiceMessage:encodedData frames:encodedPackets packetCount:packetCount++ transmissionID:transmissionCount codec:codec];
+    }
     
     // now before we're too late, clear the compression buffer and copy the spare frames into it, then into the fragment buffer
     [fragmentBuffer writeFromBytes:(downsampledBufferList->mBuffers[0].mData + copiedBytes) count:(downsampledBufferList->mBuffers[0].mDataByteSize - copiedBytes) waitForRoom:NO];    

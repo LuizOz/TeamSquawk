@@ -329,12 +329,12 @@
 
 #pragma mark Voice Messages
 
-- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount audioData:(NSData*)data audioFrames:(unsigned char)frames commandChannel:(BOOL)command
+- (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID audioData:(NSData*)data audioFrames:(unsigned char)frames
 {
   NSMutableData *packetData = [NSMutableData data];
   
   // packet header
-  unsigned char headerChunk[] = { 0xf2, 0xbe, (command ? 0x01 : 0x00), codec };
+  unsigned char headerChunk[] = { 0xf2, 0xbe, 0x00, codec };
   [packetData appendBytes:&headerChunk length:4];
   
   // conenction id + client id
@@ -344,9 +344,55 @@
   // packet count
   [packetData appendBytes:&packetCount length:2];
   
-  // unknown data
-  unsigned char unknown[] = { 0x01, 0x00 };
-  [packetData appendBytes:unknown length:2];
+  // tranmission id
+  [packetData appendBytes:&transmissionID length:2];
+  
+  // number of frames
+  [packetData appendBytes:&frames length:1];
+  
+  // audio data
+  [packetData appendData:data];
+  
+  return packetData;
+}
+
+- (NSData*)buildVoiceWhisperWithConnectionID:(unsigned int)connectionID
+                                    clientID:(unsigned int)clientID
+                                       codec:(unsigned char)codec
+                                 packetCount:(unsigned short)packetCount
+                              transmissionID:(unsigned short)transmissionID
+                                   audioData:(NSData*)data 
+                                 audioFrames:(unsigned char)frames
+                                  recipients:(NSArray*)recipientIDs
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // packet header
+  unsigned char headerChunk[] = { 0xf2, 0xbe, 0x01, codec };
+  [packetData appendBytes:&headerChunk length:4];
+  
+  // conenction id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  // packet count
+  [packetData appendBytes:&packetCount length:2];
+  
+  // some kind of transmission count?
+  [packetData appendBytes:&transmissionID length:2];
+  
+  unsigned char numOfRecipients = [recipientIDs count];
+  [packetData appendBytes:&numOfRecipients length:1];
+  
+  for (NSNumber *recipient in recipientIDs)
+  {
+    // something odd?
+    unsigned char odd = 0x01;
+    [packetData appendBytes:&odd length:1];
+    
+    unsigned int recipientID = [recipient unsignedIntValue];
+    [packetData appendBytes:&recipientID length:4];
+  }
   
   // number of frames
   [packetData appendBytes:&frames length:1];

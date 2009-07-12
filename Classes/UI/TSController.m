@@ -874,7 +874,7 @@
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   
   // out-of-band, I know, least messy way though
-  [player setIsTalkingOnCommandChannel:command];
+  [player setIsWhispering:NO];
   
   NSInvocationOperation *invocation = [[NSInvocationOperation alloc] initWithTarget:player selector:@selector(backgroundDecodeData:) object:[audioCodecData retain]];
   [[player decodeQueue] addOperation:invocation];
@@ -899,9 +899,10 @@
     case TSHotkeyPushToTalk:
     {
       TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
-      [transmission setTransmitOnCommandChannel:NO];
+      [transmission setWhisperRecipients:nil];
+      [transmission setIsWhispering:NO];
       [transmission setIsTransmitting:YES];
-      [me setIsTalkingOnCommandChannel:NO];
+      [me setIsWhispering:NO];
       [me setIsTransmitting:YES];
       
       [self updatePlayerStatusView];
@@ -913,9 +914,12 @@
       TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
       if ([me isChannelCommander])
       {
-        [transmission setTransmitOnCommandChannel:YES];
+        NSArray *channelCommanders = [[[players allValues] filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"(isChannelCommander == YES) AND (playerID != %d)", [teamspeakConnection clientID]]] valueForKeyPath:@"playerID"];
+        
+        [transmission setWhisperRecipients:channelCommanders];
+        [transmission setIsWhispering:YES];
         [transmission setIsTransmitting:YES];
-        [me setIsTalkingOnCommandChannel:YES];
+        [me setIsWhispering:YES];
         [me setIsTransmitting:YES];
         
         [self updatePlayerStatusView];
@@ -932,7 +936,6 @@
 {
   NSDictionary *hotkeyDictionary = [hotkey context];
   
-  NSLog(@"%d", [[hotkeyDictionary objectForKey:@"HotkeyAction"] intValue]);
   switch ([[hotkeyDictionary objectForKey:@"HotkeyAction"] intValue])
   {
     case TSHotkeyPushToTalk:
@@ -948,8 +951,9 @@
     case TSHotkeyCommandChannel:
     {
       TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
-      [transmission setTransmitOnCommandChannel:NO];
       [transmission setIsTransmitting:NO];
+      [transmission setIsWhispering:NO];
+      [transmission setWhisperRecipients:nil];
       [me setIsTransmitting:NO];
       
       [self updatePlayerStatusView];
@@ -984,7 +988,6 @@
     [hotkey setKeyCode:keycode];
     [hotkey setContext:hotkeyDict];
     
-    NSLog(@"hotkey mapped");
     [[TSHotkeyManager globalManager] addHotkey:hotkey];
   }
 }

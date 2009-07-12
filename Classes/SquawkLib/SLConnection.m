@@ -491,16 +491,31 @@
 
 #pragma mark Voice Message
 
-- (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames commanderChannel:(BOOL)command packetCount:(unsigned short)packetCount codec:(SLAudioCodecType)codec
+- (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID codec:(SLAudioCodecType)codec
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildVoiceMessageWithConnectionID:connectionID
                                                                              clientID:clientID
                                                                                 codec:(codec & 0xff)
                                                                           packetCount:packetCount
+                                                                       transmissionID:transmissionID
+                                                                            audioData:audioCodecData
+                                                                          audioFrames:frames];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [pool release];
+}
+
+- (void)sendVoiceWhisper:(NSData*)audioCodecData frames:(unsigned char)frames packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID codec:(SLAudioCodecType)codec recipients:(NSArray*)recipients;
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildVoiceWhisperWithConnectionID:connectionID
+                                                                             clientID:clientID 
+                                                                                codec:(codec & 0xff) 
+                                                                          packetCount:packetCount 
+                                                                       transmissionID:transmissionID
                                                                             audioData:audioCodecData
                                                                           audioFrames:frames
-                                                                       commandChannel:command];
+                                                                           recipients:recipients];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
   [pool release];
 }

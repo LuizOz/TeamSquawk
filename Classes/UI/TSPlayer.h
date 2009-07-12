@@ -38,7 +38,7 @@ typedef enum {
   unsigned int lastVoicePacketCount;
   
   BOOL isTransmitting;
-  BOOL isTalkingOnCommandChannel;
+  BOOL isWhispering;
 }
 
 @property (readonly) SpeexDecoder *decoder;
@@ -48,7 +48,7 @@ typedef enum {
 @property (assign) unsigned int lastVoicePacketCount;
 @property (assign) unsigned int extendedFlags;
 @property (assign) BOOL isTransmitting;
-@property (assign) BOOL isTalkingOnCommandChannel;
+@property (assign) BOOL isWhispering;
 
 - (id)copyWithZone:(NSZone *)zone;
 

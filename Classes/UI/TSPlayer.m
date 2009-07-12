@@ -18,7 +18,7 @@
 @synthesize lastVoicePacketCount;
 @synthesize extendedFlags;
 @synthesize isTransmitting;
-@synthesize isTalkingOnCommandChannel;
+@synthesize isWhispering;
 
 - (id)init
 {
@@ -71,7 +71,7 @@
   [copyPlayer setLastVoicePacketCount:[self lastVoicePacketCount]];
   [copyPlayer setExtendedFlags:[self extendedFlags]];
   [copyPlayer setIsTransmitting:[self isTransmitting]];
-  [copyPlayer setIsTalkingOnCommandChannel:[self isTalkingOnCommandChannel]];
+  [copyPlayer setIsWhispering:[self isWhispering]];
   
   return copyPlayer;
 }

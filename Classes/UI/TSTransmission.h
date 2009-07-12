@@ -22,17 +22,20 @@
   MTByteBuffer *fragmentBuffer;
   SLConnection *connection;
   
+  NSArray *whisperRecipients;
   BOOL isTransmitting;  
   BOOL isVoiceActivated;
-  BOOL transmitOnCommandChannel;
+  BOOL isWhispering;
   unsigned int packetCount;
+  unsigned int transmissionCount;
   unsigned short codec;
   
   NSLock *transmissionLock;
   NSThread *transmissionThread;
 }
 
-@property (assign) BOOL transmitOnCommandChannel;
+@property (retain) NSArray *whisperRecipients;
+@property (assign) BOOL isWhispering;
 
 - (id)initWithConnection:(SLConnection*)connection codec:(unsigned short)codec voiceActivated:(BOOL)voiceActivated;
 - (void)dealloc;

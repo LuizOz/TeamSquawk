@@ -85,4 +85,6 @@
 
 - (NSDictionary*)chompVoiceMessage:(NSData*)data;
 
+#pragma mark Channels
+
 @end
