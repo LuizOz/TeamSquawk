@@ -40,6 +40,7 @@ typedef enum {
   IBOutlet NSToolbar *toolbar;
   IBOutlet NSMenu *fileMenu;
   IBOutlet NSMenu *statusMenu;
+  IBOutlet NSMenu *channelsMenu;
   
   // connection window
   IBOutlet NSWindow *connectionWindow;

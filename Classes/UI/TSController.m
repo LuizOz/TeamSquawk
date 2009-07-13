@@ -364,6 +364,11 @@ void UncaughtExceptionHandler(NSException *exception)
   [teamspeakConnection changeStatusTo:newFlags];
 }
 
+- (IBAction)menuChangeChannelAction:(id)sender
+{
+  [teamspeakConnection changeChannelTo:[sender tag] withPassword:nil];
+}
+
 #pragma mark Connection Window Actions
 
 - (IBAction)connectionWindowUpdateType:(id)sender
@@ -523,11 +528,40 @@ void UncaughtExceptionHandler(NSException *exception)
   }
 }
 
+- (void)setupChannelsMenu
+{
+  ASSERT_UI_THREAD_SAFETY();
+  for (NSMenuItem *item in [[[channelsMenu itemArray] copy] autorelease])
+  {
+    [channelsMenu removeItem:item];
+  }  
+  
+  if (isConnected)
+  {
+    TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+        
+    for (TSChannel *channel in sortedChannels)
+    {
+      NSMenuItem *item = [channelsMenu addItemWithTitle:[channel channelName] action:@selector(menuChangeChannelAction:) keyEquivalent:@""];
+      [item setTarget:self];
+      [item setTag:[channel channelID]];
+      if ([[channel players] containsObject:me])
+      {
+        [item setState:YES];
+      }
+    }
+  }
+  else
+  {
+    [channelsMenu addItemWithTitle:@"Not Connected" action:nil keyEquivalent:@""];
+  }
+}
+
 - (void)setupDisconnectedToolbarStatusPopupButton
 {
   ASSERT_UI_THREAD_SAFETY();
   NSMenu *menu = [[NSMenu alloc] init];
-  [menu addItemWithTitle:@"Sacrificial Menu Item?" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Offline" action:nil keyEquivalent:@""];
   [[menu addItemWithTitle:@"Connect..." action:@selector(connectMenuAction:) keyEquivalent:@""] setTarget:self];;
   
   [menu addItem:[NSMenuItem separatorItem]];
@@ -565,7 +599,7 @@ void UncaughtExceptionHandler(NSException *exception)
   ASSERT_UI_THREAD_SAFETY();
   NSMenu *menu = [[NSMenu alloc] init];
   
-  [menu addItemWithTitle:@"Sacrificial Menu Item?" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Connected" action:nil keyEquivalent:@""];
   [[menu addItemWithTitle:@"Disconnect..." action:@selector(disconnectMenuAction:) keyEquivalent:@""] setTarget:self];
   
   [menu addItem:[NSMenuItem separatorItem]];
@@ -720,6 +754,7 @@ void UncaughtExceptionHandler(NSException *exception)
   // do some UI sugar
   [self performSelectorOnMainThread:@selector(setupConnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
   [toolbarViewStatusPopupButton setTitle:currentServerAddress];
   
   // find what channel we ended up in
@@ -764,6 +799,7 @@ void UncaughtExceptionHandler(NSException *exception)
   isConnecting = NO;
   [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
   
   if (error)
@@ -778,6 +814,7 @@ void UncaughtExceptionHandler(NSException *exception)
   isConnecting = NO;
   [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
   
   [sortedChannels release];
   sortedChannels = nil;
@@ -844,6 +881,8 @@ void UncaughtExceptionHandler(NSException *exception)
                               [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],
                               nil];
   sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
+  
+  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary
@@ -946,7 +985,9 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
   [invocation setArgument:&newChannel atIndex:2];
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:newChannel waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
 }
 
 #pragma mark Audio
