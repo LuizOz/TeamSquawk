@@ -94,6 +94,7 @@
 		C9E2D515100726B600ED920D /* Keyboard.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2D514100726B600ED920D /* Keyboard.png */; };
 		C9E2E0801009667E00ED920D /* Servers.png in Resources */ = {isa = PBXBuildFile; fileRef = C9E2E07F1009667E00ED920D /* Servers.png */; };
 		C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */ = {isa = PBXBuildFile; fileRef = C9E2E0B31009698700ED920D /* RPImageAndTextCell.m */; };
+		C9E2E452100ABB2000ED920D /* ExceptionHandling.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E2E42C100AB95600ED920D /* ExceptionHandling.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,7 +102,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 8D1107260486CEB800E47090 /* TeamSquawk */;
+			remoteGlobalIDString = 8D1107260486CEB800E47090;
 			remoteInfo = TeamSquawk;
 		};
 /* End PBXContainerItemProxy section */
@@ -483,6 +484,7 @@
 		C9E2E07F1009667E00ED920D /* Servers.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Servers.png; sourceTree = "<group>"; };
 		C9E2E0B21009698700ED920D /* RPImageAndTextCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RPImageAndTextCell.h; sourceTree = "<group>"; };
 		C9E2E0B31009698700ED920D /* RPImageAndTextCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RPImageAndTextCell.m; sourceTree = "<group>"; };
+		C9E2E42C100AB95600ED920D /* ExceptionHandling.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ExceptionHandling.framework; path = System/Library/Frameworks/ExceptionHandling.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -497,6 +499,7 @@
 				C9BD028A0FFC96DC00FC280A /* AudioToolbox.framework in Frameworks */,
 				C9BD028E0FFC96E200FC280A /* QuickTime.framework in Frameworks */,
 				C9E2D1B1100662B700ED920D /* Carbon.framework in Frameworks */,
+				C9E2E452100ABB2000ED920D /* ExceptionHandling.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -556,6 +559,7 @@
 				C9BD02890FFC96DC00FC280A /* AudioToolbox.framework */,
 				C9BD028D0FFC96E200FC280A /* QuickTime.framework */,
 				C9E2D1B0100662B700ED920D /* Carbon.framework */,
+				C9E2E42C100AB95600ED920D /* ExceptionHandling.framework */,
 			);
 			name = TeamSquawk;
 			sourceTree = "<group>";

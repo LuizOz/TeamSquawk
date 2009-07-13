@@ -19,6 +19,8 @@
 
 @class RPImageAndTextCell, TSPlayer, TSChannel;
 
+#define ASSERT_UI_THREAD_SAFETY() NSAssert2([[NSThread mainThread] isEqual:[NSThread currentThread]], @"[%@ %@]: [NSThread mainThread] != [NSThread currentThread], unsafe behaviour for UI updates", [self className], NSStringFromSelector(_cmd))
+
 typedef enum {
   TSControllerPlayerActive = 1,
   TSControllerPlayerMuteMic = 2,

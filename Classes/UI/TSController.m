@@ -7,6 +7,7 @@
 //
 
 #import <MTCoreAudio/MTCoreAudio.h>
+#import <ExceptionHandling/ExceptionHandling.h>
 
 #import "TSPreferencesController.h"
 #import "TSController.h"
@@ -14,10 +15,37 @@
 #import "TSPlayer.h"
 #import "TSChannel.h"
 
+void UncaughtExceptionHandler(NSException *exception)
+{
+  if ([exception callStackReturnAddresses]) 
+  {
+    NSTask *ls = [[NSTask alloc] init];
+    NSString *pid = [[NSNumber numberWithInt:[[NSProcessInfo processInfo] processIdentifier]] stringValue];
+    NSMutableArray *args = [NSMutableArray arrayWithCapacity:20];
+    
+    [args addObject:@"-p"];
+    [args addObject:pid];
+    [args addObjectsFromArray:[[exception callStackReturnAddresses] valueForKeyPath:@"stringValue"]];
+    // Note: function addresses are separated by double spaces, not a single space.
+    
+    [ls setLaunchPath:@"/usr/bin/atos"];
+    [ls setArguments:args];
+    [ls launch];
+    [ls release];
+    
+  } 
+  else 
+  {
+    NSLog(@"No stack trace available.");
+  }
+}
+
 @implementation TSController
 
 - (void)awakeFromNib
-{
+{  
+  NSSetUncaughtExceptionHandler(&UncaughtExceptionHandler);
+  
   NSDictionary *defaults = [NSDictionary dictionaryWithObjectsAndKeys:
                             [NSNumber numberWithFloat:1.0], @"InputGain",
                             [NSNumber numberWithFloat:1.0], @"OutputGain",
@@ -76,6 +104,7 @@
 
 - (id)outlineView:(NSOutlineView *)outlineView child:(NSInteger)index ofItem:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
   if (item == nil)
   {
     return [sortedChannels objectAtIndex:index];
@@ -89,6 +118,7 @@
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isItemExpandable:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
   if (item == nil)
   {
     return YES;
@@ -102,6 +132,7 @@
 
 - (NSInteger)outlineView:(NSOutlineView *)outlineView numberOfChildrenOfItem:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
   if (item == nil)
   {
     return [sortedChannels count];
@@ -115,6 +146,8 @@
 
 - (id)outlineView:(NSOutlineView *)outlineView objectValueForTableColumn:(NSTableColumn *)tableColumn byItem:(id)item
 {
+  // assert thread safety here, if someone's called reloadItem/reloadData badly we'll know about it.
+  ASSERT_UI_THREAD_SAFETY();
   if (item == nil)
   {
     return @"Foo";
@@ -161,6 +194,8 @@
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(id)cell forTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
+  
   // This is a hack but I can't seem to get the view to paint properly without it
   [outlineView sizeToFit];
   
@@ -356,6 +391,7 @@
 
 - (void)updatePlayerStatusView
 {
+  ASSERT_UI_THREAD_SAFETY();
   if (isConnected)
   {
     TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
@@ -422,6 +458,7 @@
 
 - (void)recentServersChanged:(NSNotification*)notification
 {
+  ASSERT_UI_THREAD_SAFETY();
   if (!isConnected)
   {
     [self setupDisconnectedToolbarStatusPopupButton];
@@ -431,12 +468,14 @@
 
 - (IBAction)editServerListAction:(id)sender
 {
+  ASSERT_UI_THREAD_SAFETY();
   [[TSPreferencesController sharedPrefsWindowController] showWindow:sender];
   [[TSPreferencesController sharedPrefsWindowController] displayViewForIdentifier:@"Servers" animate:YES];
 }
 
 - (void)setupRecentServersMenu
 {
+  ASSERT_UI_THREAD_SAFETY();
   int recentServersIndex = -1;
   
   for (NSMenuItem *item in [fileMenu itemArray])
@@ -485,6 +524,7 @@
 
 - (void)setupDisconnectedToolbarStatusPopupButton
 {
+  ASSERT_UI_THREAD_SAFETY();
   NSMenu *menu = [[NSMenu alloc] init];
   [menu addItemWithTitle:@"Sacrificial Menu Item?" action:nil keyEquivalent:@""];
   [[menu addItemWithTitle:@"Connect..." action:@selector(connectMenuAction:) keyEquivalent:@""] setTarget:self];;
@@ -521,6 +561,7 @@
 
 - (void)setupConnectedToolbarStatusPopupButton
 {
+  ASSERT_UI_THREAD_SAFETY();
   NSMenu *menu = [[NSMenu alloc] init];
   
   [menu addItemWithTitle:@"Sacrificial Menu Item?" action:nil keyEquivalent:@""];
@@ -674,8 +715,8 @@
   isConnected = YES;
     
   // do some UI sugar
-  [self setupConnectedToolbarStatusPopupButton];
-  [self updatePlayerStatusView];
+  [self performSelectorOnMainThread:@selector(setupConnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
   [toolbarViewStatusPopupButton setTitle:currentServerAddress];
   
   // find what channel we ended up in
@@ -701,22 +742,31 @@
   // setup transmission
   transmission = [[TSTransmission alloc] initWithConnection:teamspeakConnection codec:[currentChannel codec] voiceActivated:NO];
   
-  [mainWindowOutlineView reloadData];
-  [mainWindowOutlineView expandItem:nil expandChildren:YES];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+
+  id item = nil;
+  BOOL expandChildren = YES;
+  
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(expandItem:expandChildren:)]];
+  [invocation setSelector:@selector(expandItem:expandChildren:)];
+  [invocation setArgument:&item atIndex:2];
+  [invocation setArgument:&expandChildren atIndex:3];
+  
+  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
 }
 
 - (void)connectionFailedToLogin:(SLConnection*)connection
 {
   isConnected = NO;
-  [self setupDisconnectedToolbarStatusPopupButton];
-  [self updatePlayerStatusView];
+  [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
 }
 
 - (void)connectionDisconnected:(SLConnection*)connection
 {
   isConnected = NO;
-  [self setupDisconnectedToolbarStatusPopupButton];
-  [self updatePlayerStatusView];
+  [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
+  [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
   
   [sortedChannels release];
   sortedChannels = nil;
@@ -730,7 +780,7 @@
   [channels removeAllObjects];
   [players removeAllObjects];
   
-  [mainWindowOutlineView reloadData];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
@@ -816,9 +866,14 @@
   
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
   [channel addPlayer:player];
-  
-  [mainWindowOutlineView reloadItem:channel reloadChildren:YES];
-  [mainWindowOutlineView expandItem:channel];
+
+  BOOL reloadChildren = YES;
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
+  [invocation setSelector:@selector(reloadItem:reloadChildren:)];
+  [invocation setArgument:&channel atIndex:2];
+  [invocation setArgument:&reloadChildren atIndex:3];
+  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:channel waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID
@@ -829,7 +884,12 @@
   [channel removePlayer:player];
   [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   
-  [mainWindowOutlineView reloadItem:channel reloadChildren:YES];
+  BOOL reloadChildren = YES;
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
+  [invocation setSelector:@selector(reloadItem:reloadChildren:)];
+  [invocation setArgument:&channel atIndex:2];
+  [invocation setArgument:&reloadChildren atIndex:3];
+  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags
@@ -840,10 +900,10 @@
   // if this is us, update some menu stuff
   if (playerID == [teamspeakConnection clientID])
   {
-    [self updatePlayerStatusView];
+    [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
   }
   
-  [mainWindowOutlineView reloadItem:player];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID
@@ -862,9 +922,15 @@
     [transmission setCodec:[currentChannel codec]];
   }
   
-  [mainWindowOutlineView reloadItem:oldChannel reloadChildren:YES];
-  [mainWindowOutlineView reloadItem:newChannel reloadChildren:YES];
-  [mainWindowOutlineView expandItem:newChannel];
+  BOOL reloadChildren = YES;
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
+  [invocation setSelector:@selector(reloadItem:reloadChildren:)];
+  [invocation setArgument:&oldChannel atIndex:2];
+  [invocation setArgument:&reloadChildren atIndex:3];
+  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  [invocation setArgument:&newChannel atIndex:2];
+  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:newChannel waitUntilDone:YES];
 }
 
 #pragma mark Audio
@@ -880,12 +946,12 @@
   [[player decodeQueue] addOperation:invocation];
   [invocation release];
 
-  [mainWindowOutlineView reloadItem:player];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
 }
 
 - (void)idleAudioCheck:(NSTimer*)timer
 {
-  [mainWindowOutlineView reloadData];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
 }
 
 #pragma mark Hotkeys
