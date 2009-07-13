@@ -20,11 +20,18 @@ typedef enum {
   SLCodecSpeex_25_9 = 0x0c,
 } SLAudioCodecType;
 
+enum {
+  SLConnectionErrorTimedOut = 1,
+  SLConnectionErrorPingTimeout = 2,
+  SLConnectionErrorBadLogin = 3,
+};
+
 @interface SLConnection : NSObject {
   AsyncUdpSocket *socket;
   NSThread *connectionThread;
   
   NSTimer *pingTimer;
+  NSTimer *connectionTimer;
   NSDictionary *textFragments;
 
   unsigned int connectionID;
@@ -45,6 +52,7 @@ typedef enum {
   BOOL isDisconnecting;
   BOOL hasFinishedDisconnecting;
   BOOL pendingReceive;
+  BOOL pingReplyPending;
   
   id delegate;
 }
@@ -69,6 +77,8 @@ typedef enum {
 
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port;
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error;
+
+- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error;
 
 #pragma mark Ping Timer
 
@@ -96,8 +106,8 @@ typedef enum {
       majorVersion:(int)majorVersion minorVersion:(int)minorVersion subLevelVersion:(int)subLevelVersion subsubLevelVersion:(int)subsubLevelVersion welcomeMessage:(NSString*)welcomeMessage;
 
 - (void)connectionFinishedLogin:(SLConnection*)connection;
-- (void)connectionFailedToLogin:(SLConnection*)connection;
-- (void)connectionDisconnected:(SLConnection*)connection;
+- (void)connectionFailedToLogin:(SLConnection*)connection withError:(NSError*)error;
+- (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error;
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;

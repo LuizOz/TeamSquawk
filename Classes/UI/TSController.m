@@ -88,6 +88,7 @@ void UncaughtExceptionHandler(NSException *exception)
   
   // reset our internal state
   isConnected = NO;
+  isConnecting = NO;
   players = [[NSMutableDictionary alloc] init];
   channels = [[NSMutableDictionary alloc] init];
   flattenedChannels = [[NSMutableDictionary alloc] init];
@@ -614,11 +615,11 @@ void UncaughtExceptionHandler(NSException *exception)
 {
   if ([anItem action] == @selector(connectMenuAction:))
   {
-    return !isConnected;
+    return (!isConnected && !isConnecting);
   }
   else if ([anItem action] == @selector(disconnectMenuAction:))
   {
-    return isConnected;
+    return (isConnected && !isConnecting);
   }
   else if ([anItem action] == @selector(unusedSelfDisablingAction:))
   {
@@ -627,7 +628,7 @@ void UncaughtExceptionHandler(NSException *exception)
   }
   else if ([anItem action] == @selector(connectToHistoryAction:))
   {
-    return !isConnected;
+    return (!isConnected && !isConnecting);
   }
   else if (([anItem action] == @selector(changeUserStatusAction:)) ||
            ([anItem action] == @selector(toggleAway:)) ||
@@ -685,9 +686,10 @@ void UncaughtExceptionHandler(NSException *exception)
   }
   
   [[NSNotificationCenter defaultCenter] postNotificationName:@"TSRecentServersDidChange" object:nil];
-    
+  
   currentServerAddress = [server retain];
   [toolbarViewStatusPopupButton setTitle:@"Connecting..."];
+  isConnecting = YES;
     
   // create a connection
   teamspeakConnection = [[SLConnection alloc] initWithHost:currentServerAddress withPort:port withError:&error];
@@ -713,6 +715,7 @@ void UncaughtExceptionHandler(NSException *exception)
 - (void)connectionFinishedLogin:(SLConnection*)connection
 {
   isConnected = YES;
+  isConnecting = NO;
     
   // do some UI sugar
   [self performSelectorOnMainThread:@selector(setupConnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
@@ -755,16 +758,24 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
 }
 
-- (void)connectionFailedToLogin:(SLConnection*)connection
+- (void)connectionFailedToLogin:(SLConnection*)connection withError:(NSError*)error
 {
   isConnected = NO;
+  isConnecting = NO;
   [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+  
+  if (error)
+  {
+    [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
+  }
 }
 
-- (void)connectionDisconnected:(SLConnection*)connection
+- (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error
 {
   isConnected = NO;
+  isConnecting = NO;
   [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
   
@@ -781,6 +792,11 @@ void UncaughtExceptionHandler(NSException *exception)
   [players removeAllObjects];
   
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+  
+  if (error)
+  {
+    [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
+  }
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
@@ -1056,6 +1072,13 @@ void UncaughtExceptionHandler(NSException *exception)
     
     [[TSHotkeyManager globalManager] addHotkey:hotkey];
   }
+}
+
+#pragma mark NSAlert Sheet Delegate
+
+- (void)alertDidEnd:(NSAlert *)alert returnCode:(int)returnCode contextInfo:(void *)contextInfo
+{
+  [[alert window] orderOut:self];
 }
 
 #pragma mark NSApplication Delegate

@@ -43,6 +43,9 @@
 #define PACKET_TYPE_CVOICE_SPEEX_19_5 0x0b01bef3
 #define PACKET_TYPE_CVOICE_SPEEX_25_9 0x0c01bef3
 
+#define TRANSMIT_TIMEOUT  10
+#define RECEIVE_TIMEOUT 10
+
 @interface SLPacketChomper : NSObject {
   AsyncUdpSocket *socket;
   NSDictionary *fragment;

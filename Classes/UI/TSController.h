@@ -61,7 +61,7 @@ typedef enum {
   TSPlayerCell *sharedPlayerCell;
   
   // state
-  
+  BOOL isConnecting;
   BOOL isConnected;
   NSString *currentServerAddress;
   
@@ -147,8 +147,8 @@ typedef enum {
 
 - (void)connection:(SLConnection*)connection didLoginTo:(NSString*)host port:(int)port serverName:(NSString*)serverName platform:(NSString*)platform majorVersion:(int)majorVersion minorVersion:(int)minorVersion subLevelVersion:(int)subLevelVersion subsubLevelVersion:(int)subsubLevelVersion welcomeMessage:(NSString*)welcomeMessage;
 - (void)connectionFinishedLogin:(SLConnection*)connection;
-- (void)connectionFailedToLogin:(SLConnection*)connection;
-- (void)connectionDisconnected:(SLConnection*)connection;
+- (void)connectionFailedToLogin:(SLConnection*)connection withError:(NSError*)error;
+- (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error;
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
 - (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)extendedFlags;

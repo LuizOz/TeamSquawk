@@ -65,6 +65,7 @@
     isDisconnecting = NO;
     hasFinishedDisconnecting = NO;
     pendingReceive = NO;
+    pingReplyPending = NO;
     
     connectionSequenceNumber = 0;
     standardSequenceNumber = 0;
@@ -95,6 +96,16 @@
 
 - (void)dealloc
 {
+  // clear the connection timeout timer
+  [connectionTimer invalidate];
+  [connectionTimer release];
+  connectionTimer = nil;
+  
+  // clear the ping timer
+  [pingTimer invalidate];
+  [pingTimer release];
+  pingTimer = nil;
+  
   [connectionThread cancel];
   [socket release];
   [connectionThread release];
@@ -129,13 +140,13 @@
 - (void)sendData:(NSData*)data
 {
   // intended to be run on the socket's thread
-  [socket sendData:data withTimeout:20 tag:0];
+  [socket sendData:data withTimeout:TRANSMIT_TIMEOUT tag:0];
 }
 
 - (void)queueReceiveData
 {
   // queue up a recieve
-  [socket receiveWithTimeout:20 tag:0];
+  [socket receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
 }
 
 - (void)waitForSend
@@ -146,7 +157,7 @@
 - (void)queueReceiveDataAndWait
 {
   pendingReceive = YES;
-  [socket receiveWithTimeout:20 tag:0];
+  [socket receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
   while (pendingReceive)
   {
     [[NSRunLoop currentRunLoop] runMode:NSRunLoopCommonModes beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
@@ -175,6 +186,9 @@
   
   // queue up a read
   [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  
+  connectionTimer = [[NSTimer scheduledTimerWithTimeInterval:TRANSMIT_TIMEOUT target:self selector:@selector(connectionTimer:) userInfo:nil repeats:NO] retain];
+  
   [pool release];
 }
 
@@ -201,9 +215,9 @@
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
   
-  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:)])
+  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
   {
-    [[self delegate] connectionDisconnected:self];
+    [[self delegate] connectionDisconnected:self withError:nil];
   }
 }
 
@@ -262,9 +276,15 @@
 
         if (isBadLogin)
         {
-          if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:)])
+          if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:withError:)])
           {
-            [[self delegate] connectionFailedToLogin:self];
+            NSError *error = [NSError errorWithDomain:@"SLConnectionError" 
+                                                 code:SLConnectionErrorBadLogin 
+                                             userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                       @"Server returned \"Bad Login\"", NSLocalizedDescriptionKey,
+                                                       @"Please check your username and password and try again.", NSLocalizedRecoverySuggestionErrorKey,
+                                                       nil]];
+            [[self delegate] connectionFailedToLogin:self withError:error];
           }
         }
         else
@@ -278,8 +298,13 @@
                                                                                              sequenceID:standardSequenceNumber++
                                                                                               lastCRC32:lastCRC32];
           // this only gets called form the socket's thread. so should be thread safe.
-          [sock sendData:newPacket withTimeout:20 tag:0];
+          [sock sendData:newPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
           [sock maybeDequeueSend];
+          
+          // setup a new timeout
+          [connectionTimer invalidate];
+          [connectionTimer release];
+          connectionTimer = [[NSTimer scheduledTimerWithTimeInterval:TRANSMIT_TIMEOUT target:self selector:@selector(connectionTimer:) userInfo:nil repeats:NO] retain];
           
           if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:didLoginTo:port:serverName:platform:majorVersion:minorVersion:subLevelVersion:subsubLevelVersion:welcomeMessage:)])
           {
@@ -319,8 +344,13 @@
         // reset the sequence ids
         connectionSequenceNumber = 0;
         
+        // clear the connection timeout timer
+        [connectionTimer invalidate];
+        [connectionTimer release];
+        connectionTimer = nil;
+        
         // we should probably schedule some auto-pings here
-        pingTimer = [[NSTimer scheduledTimerWithTimeInterval:1.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
+        pingTimer = [[NSTimer scheduledTimerWithTimeInterval:5.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
         
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
         {
@@ -331,6 +361,7 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
+        pingReplyPending = NO;
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
         {
           [[self delegate] connectionPingReply:self];
@@ -444,7 +475,7 @@
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }
     
-    [sock receiveWithTimeout:20 tag:0];
+    [sock receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
     [pool release];
     return YES;
   }
@@ -455,12 +486,17 @@
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error
 {
   // for now, just queue up again
-  [sock receiveWithTimeout:20 tag:0];
+  [sock receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
 }
 
-- (void)onUdpSocketDidClose:(AsyncUdpSocket *)sock
+- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error
 {
-  NSLog(@"i'm closed");
+  // we couldn't send a packet? this is pretty bad, especially for UDP where the only reportable errors are to do
+  // with local sending.
+  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:withError:)])
+  {
+    [[self delegate] connectionDisconnected:self withError:error];
+  }
 }
 
 #pragma mark Ping Timer
@@ -468,11 +504,52 @@
 - (void)pingTimer:(NSTimer*)timer
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
+  if (pingReplyPending)
+  {
+    // if we've got a reply pending then we've probably timed out.
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
+    {
+      NSError *error = [NSError errorWithDomain:@"SLConnectionError" 
+                                           code:SLConnectionErrorPingTimeout 
+                                       userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                 @"Ping to server timed out.", NSLocalizedDescriptionKey,
+                                                 @"The remote server failed to respond to ping requests, your connection has timed out.", NSLocalizedRecoverySuggestionErrorKey,
+                                                 nil]];
+      [[self delegate] connectionDisconnected:self withError:error];
+    }
+    
+    [pingTimer invalidate];
+    [pingTimer release];
+    pingTimer = nil;
+    
+    return;
+  }
+  
   // fire a ping every time this goes off
   NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:connectionSequenceNumber++];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:data waitUntilDone:YES];
   [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  
+  pingReplyPending = YES;
+  
   [pool release];
+}
+
+- (void)connectionTimer:(NSTimer*)timer
+{
+  // if we hit this then we've got a connection timeout. UDP can't tell us if a packet came in or not, we just have to setup our
+  // own timer and guess when its taken too long.
+  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:withError:)])
+  {
+    NSError *error = [NSError errorWithDomain:@"SLConnectionError" 
+                                         code:SLConnectionErrorTimedOut 
+                                     userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
+                                               @"Connection timed out", NSLocalizedDescriptionKey, 
+                                               @"A timeout occured whilst trying to connect to the server, your server may be down or not be responding.", NSLocalizedRecoverySuggestionErrorKey,
+                                               nil]];
+    [[self delegate] connectionFailedToLogin:self withError:error];
+  }
 }
 
 #pragma mark Text Message
