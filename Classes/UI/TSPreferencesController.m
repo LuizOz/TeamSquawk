@@ -111,7 +111,7 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   
   // setup the IO converters  
   inputConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[inputPreviewDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDeviceRecordDirection] andOutputStreamDescription:[encoder encoderStreamDescription]];
-  outputConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[decoder decoderStreamDescription] andOutputStreamDescription:[(MTCoreAudioDevice*)[[inputSoundDeviceButton selectedItem] representedObject] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
+  outputConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[decoder decoderStreamDescription] andOutputStreamDescription:[(MTCoreAudioDevice*)[[outputSoundDeviceButton selectedItem] representedObject] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
   
   // get the buffers made
   preEncodingBuffer = [[MTByteBuffer alloc] initWithCapacity:(([encoder frameSize] * sizeof(short) * [encoder inputSampleRate]) / [encoder sampleRate]) * 5];
