@@ -39,6 +39,7 @@
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		C90586E31000DFFC003BD88A /* TSPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C90586E21000DFFC003BD88A /* TSPlayer.m */; };
 		C90587301000E813003BD88A /* TSChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = C905872F1000E813003BD88A /* TSChannel.m */; };
+		C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C939E193100D3C61002CBED3 /* TSAUGraphPlayer.m */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
@@ -138,6 +139,8 @@
 		C90586E21000DFFC003BD88A /* TSPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSPlayer.m; sourceTree = "<group>"; };
 		C905872E1000E813003BD88A /* TSChannel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSChannel.h; sourceTree = "<group>"; };
 		C905872F1000E813003BD88A /* TSChannel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSChannel.m; sourceTree = "<group>"; };
+		C939E192100D3C61002CBED3 /* TSAUGraphPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSAUGraphPlayer.h; sourceTree = "<group>"; };
+		C939E193100D3C61002CBED3 /* TSAUGraphPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSAUGraphPlayer.m; sourceTree = "<group>"; };
 		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
@@ -1021,6 +1024,8 @@
 				C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */,
 				C9BD05F40FFD692C00FC280A /* TSAudioConverter.h */,
 				C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */,
+				C939E192100D3C61002CBED3 /* TSAUGraphPlayer.h */,
+				C939E193100D3C61002CBED3 /* TSAUGraphPlayer.m */,
 			);
 			path = CoreAudio;
 			sourceTree = "<group>";
@@ -1416,6 +1421,7 @@
 				C9E2D282100674FB00ED920D /* TSPreferencesController.m in Sources */,
 				C9E2D4D01006BCBA00ED920D /* TSTransmission.m in Sources */,
 				C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */,
+				C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
