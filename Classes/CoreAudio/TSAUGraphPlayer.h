@@ -36,6 +36,7 @@
 
 - (id)initWithAudioDevice:(MTCoreAudioDevice*)device inputStreamDescription:(MTCoreAudioStreamDescription*)streamDesc;
 - (void)dealloc;
+- (void)close;
 
 #pragma mark Threading
 

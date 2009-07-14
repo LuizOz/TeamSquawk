@@ -69,14 +69,23 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (void)dealloc
 {
+  [inputBuffers release];
+  NSLog(@"dealloc");
+  [super dealloc];
+}
+
+- (void)close
+{
   // run dealloc on the render thread
   [self performSelector:@selector(_dealloc) onThread:renderThread withObject:nil waitUntilDone:YES];
   
   // kill the render thread
   [renderThread cancel];
   
-  [inputBuffers release];
-  [super dealloc];
+  while (isInitialised)
+  {
+    [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
 }
 
 #pragma mark Threading
@@ -97,6 +106,8 @@ OSStatus InputRenderCallback(void *inRefCon,
     [pool release];
     pool = [[NSAutoreleasePool alloc] init];
   }
+  
+  isInitialised = NO;
   
   [pool release];
 }
