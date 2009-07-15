@@ -288,6 +288,22 @@ OSStatus InputRenderCallback(void *inRefCon,
   return inputStreamDescription;
 }
 
+#pragma mark Controls
+
+- (float)outputVolume
+{
+  float volume;
+  AudioUnitGetParameter(mixerUnit, kStereoMixerParam_Volume, kAudioUnitScope_Output, 0, &volume);
+  
+  return volume;
+}
+
+- (void)setOutputVolume:(float)volume
+{
+  // set the volume
+  AudioUnitSetParameter(mixerUnit, kStereoMixerParam_Volume, kAudioUnitScope_Input, 0, volume, 0);
+}
+
 #pragma mark Render Callback
 
 - (OSStatus)_inputRenderCallbackWithActionFlags:(AudioUnitRenderActionFlags*)ioActionFlags

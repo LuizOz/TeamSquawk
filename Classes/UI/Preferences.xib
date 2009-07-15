@@ -9,10 +9,10 @@
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
 			<integer value="37"/>
-			<integer value="4"/>
-			<integer value="113"/>
 			<integer value="132"/>
+			<integer value="5"/>
 			<integer value="58"/>
+			<integer value="113"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -356,7 +356,7 @@
 								<string key="NSContents"/>
 								<reference key="NSSupport" ref="26"/>
 								<reference key="NSControlView" ref="922719771"/>
-								<double key="NSMaxValue">5.000000e+00</double>
+								<double key="NSMaxValue">2.000000e+00</double>
 								<double key="NSMinValue">0.000000e+00</double>
 								<double key="NSValue">1.000000e+00</double>
 								<double key="NSAltIncValue">0.000000e+00</double>
@@ -508,6 +508,7 @@
 				<string key="NSWindowTitle">Hotkeys</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
+				<string key="NSWindowContentMaxSize">{3.40282e+38, 3.40282e+38}</string>
 				<object class="NSView" key="NSWindowView" id="727921370">
 					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
@@ -729,6 +730,7 @@
 				<string key="NSWindowTitle">Window</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
+				<string key="NSWindowContentMaxSize">{3.40282e+38, 3.40282e+38}</string>
 				<object class="NSView" key="NSWindowView" id="634285573">
 					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
@@ -862,6 +864,7 @@
 				<string key="NSWindowTitle">Servers</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
+				<string key="NSWindowContentMaxSize">{3.40282e+38, 3.40282e+38}</string>
 				<object class="NSView" key="NSWindowView" id="599999760">
 					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
@@ -2885,10 +2888,12 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						<object class="NSMutableArray" key="dict.sortedKeys">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>addHotkeyAction:</string>
+							<string>addServerAction:</string>
 							<string>connectionEditorWindowCancelAction:</string>
 							<string>connectionEditorWindowOKAction:</string>
 							<string>connectionEditorWindowUpdateType:</string>
 							<string>deleteHotkeyAction:</string>
+							<string>deleteServerAction:</string>
 							<string>doubleClickHotkeyTableView:</string>
 							<string>doubleClickServersTableView:</string>
 							<string>hotkeyEditorButtonAction:</string>
@@ -2901,6 +2906,8 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>

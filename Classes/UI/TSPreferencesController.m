@@ -427,6 +427,8 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   outputGain = [outputSlider floatValue];
   [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithFloat:outputGain] forKey:@"OutputGain"];
   [[NSUserDefaults standardUserDefaults] synchronize];
+  
+  [[NSNotificationCenter defaultCenter] postNotificationName:@"TSOutputGainChanged" object:nil];
 }
 
 - (IBAction)outputDeviceButtonChange:(id)sender

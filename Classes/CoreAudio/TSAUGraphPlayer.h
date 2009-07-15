@@ -56,6 +56,11 @@
 - (unsigned long)numberOfFramesInInputStream:(unsigned int)index;
 - (MTCoreAudioStreamDescription*)audioStreamDescription;
 
+#pragma mark Controls
+
+- (float)outputVolume;
+- (void)setOutputVolume:(float)volume;
+
 #pragma mark Audio Queue
 
 - (unsigned int)writeAudioBufferList:(AudioBufferList*)abl toInputStream:(unsigned int)index withForRoom:(BOOL)waitForRoom;
