@@ -182,6 +182,7 @@ void UncaughtExceptionHandler(NSException *exception)
 
 - (CGFloat)outlineView:(NSOutlineView *)outlineView heightOfRowByItem:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
   if ([item isKindOfClass:[TSChannel class]])
   {
     return 17.0;
@@ -191,6 +192,7 @@ void UncaughtExceptionHandler(NSException *exception)
 
 - (NSCell *)outlineView:(NSOutlineView *)outlineView dataCellForTableColumn:(NSTableColumn *)tableColumn item:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
   if ([item isKindOfClass:[TSPlayer class]])
   {
     return sharedPlayerCell;
@@ -200,6 +202,7 @@ void UncaughtExceptionHandler(NSException *exception)
 
 - (BOOL)outlineView:(NSOutlineView *)outlineView isGroupItem:(id)item
 {
+  ASSERT_UI_THREAD_SAFETY();
   if ([outlineView isEqualTo:mainWindowOutlineView] && [item isKindOfClass:[TSChannel class]])
   {
     return YES;
