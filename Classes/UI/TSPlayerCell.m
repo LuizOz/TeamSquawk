@@ -33,7 +33,7 @@
     
     if ([player isTalking] && [player isWhispering])
     {
-      image = [NSImage imageNamed:@"TransmitBlue"];
+      image = [NSImage imageNamed:@"TransmitRed"];
       opacity = 1.0;
     }
     else if ([player isTalking])
