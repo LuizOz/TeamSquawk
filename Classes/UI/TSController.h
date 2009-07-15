@@ -17,6 +17,8 @@
 #import "SpeexEncoder.h"
 #import "SpeexDecoder.h"
 
+#import "TSOutlineView.h"
+
 @class RPImageAndTextCell, TSPlayer, TSChannel;
 
 #define ASSERT_UI_THREAD_SAFETY() NSAssert2([[NSThread mainThread] isEqual:[NSThread currentThread]], @"[%@ %@]: [NSThread mainThread] != [NSThread currentThread], unsafe behaviour for UI updates", [self className], NSStringFromSelector(_cmd))
@@ -36,7 +38,7 @@ typedef enum {
   // user interface
   
   IBOutlet NSWindow *mainWindow;
-  IBOutlet NSOutlineView *mainWindowOutlineView;
+  IBOutlet TSOutlineView *mainWindowOutlineView;
   IBOutlet NSToolbar *toolbar;
   IBOutlet NSMenu *fileMenu;
   IBOutlet NSMenu *statusMenu;

@@ -8,7 +8,7 @@
 		<string key="IBDocument.HIToolboxVersion">353.00</string>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="372"/>
+			<integer value="456"/>
 			<integer value="526"/>
 			<integer value="593"/>
 			<integer value="475"/>
@@ -659,7 +659,7 @@
 							</object>
 						</object>
 					</object>
-					<object class="NSMenuItem" id="86367543">
+					<object class="NSMenuItem" id="5112009">
 						<reference key="NSMenu" ref="649796088"/>
 						<string key="NSTitle">Channels</string>
 						<string key="NSKeyEquiv"/>
@@ -667,12 +667,12 @@
 						<reference key="NSOnImage" ref="35465992"/>
 						<reference key="NSMixedImage" ref="502551668"/>
 						<string key="NSAction">submenuAction:</string>
-						<object class="NSMenu" key="NSSubmenu" id="434710693">
+						<object class="NSMenu" key="NSSubmenu" id="529765569">
 							<string key="NSTitle">Channels</string>
 							<object class="NSMutableArray" key="NSMenuItems">
 								<bool key="EncodedWithXMLCoder">YES</bool>
-								<object class="NSMenuItem" id="1061730424">
-									<reference key="NSMenu" ref="434710693"/>
+								<object class="NSMenuItem" id="1069971345">
+									<reference key="NSMenu" ref="529765569"/>
 									<string key="NSTitle">Not Connected</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -1980,7 +1980,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">channelsMenu</string>
 						<reference key="source" ref="1009119848"/>
-						<reference key="destination" ref="434710693"/>
+						<reference key="destination" ref="529765569"/>
 					</object>
 					<int key="connectionID">594</int>
 				</object>
@@ -2026,7 +2026,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<reference ref="379814623"/>
 							<reference ref="586577488"/>
 							<reference ref="860700717"/>
-							<reference ref="86367543"/>
+							<reference ref="5112009"/>
 						</object>
 						<reference key="parent" ref="1049"/>
 						<string key="objectName">MainMenu</string>
@@ -2931,26 +2931,26 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">591</int>
-						<reference key="object" ref="86367543"/>
+						<reference key="object" ref="5112009"/>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<reference ref="434710693"/>
+							<reference ref="529765569"/>
 						</object>
 						<reference key="parent" ref="649796088"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">592</int>
-						<reference key="object" ref="434710693"/>
+						<reference key="object" ref="529765569"/>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<reference ref="1061730424"/>
+							<reference ref="1069971345"/>
 						</object>
-						<reference key="parent" ref="86367543"/>
+						<reference key="parent" ref="5112009"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">593</int>
-						<reference key="object" ref="1061730424"/>
-						<reference key="parent" ref="434710693"/>
+						<reference key="object" ref="1069971345"/>
+						<reference key="parent" ref="529765569"/>
 					</object>
 				</object>
 			</object>
@@ -3095,6 +3095,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<string>451.IBPluginDependency</string>
 					<string>452.IBPluginDependency</string>
 					<string>453.IBPluginDependency</string>
+					<string>454.CustomClassName</string>
 					<string>454.IBPluginDependency</string>
 					<string>456.IBPluginDependency</string>
 					<string>459.IBPluginDependency</string>
@@ -3320,6 +3321,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<string>TSOutlineView</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -3497,6 +3499,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<string>disconnectMenuAction:</string>
 							<string>doubleClickOutlineView:</string>
 							<string>editServerListAction:</string>
+							<string>menuChangeChannelAction:</string>
 							<string>preferencesMenuAction:</string>
 							<string>toggleAway:</string>
 							<string>toggleBlockWhispers:</string>
@@ -3504,6 +3507,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -3565,6 +3569,14 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">Classes/UI/TSController.h</string>
+					</object>
+				</object>
+				<object class="IBPartialClassDescription">
+					<string key="className">TSOutlineView</string>
+					<string key="superclassName">NSOutlineView</string>
+					<object class="IBClassDescriptionSource" key="sourceIdentifier">
+						<string key="majorKey">IBProjectSource</string>
+						<string key="minorKey">Classes/Additions/TSOutlineView.h</string>
 					</object>
 				</object>
 			</object>

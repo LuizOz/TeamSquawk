@@ -892,12 +892,14 @@ void UncaughtExceptionHandler(NSException *exception)
     }
   }
   
+  [mainWindowOutlineView lock];
   [sortedChannels autorelease];
   NSArray *sortDescriptors = [NSArray arrayWithObjects:
                               [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],
                               [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],
                               nil];
   sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
+  [mainWindowOutlineView unlock];
   
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
 }
@@ -920,7 +922,10 @@ void UncaughtExceptionHandler(NSException *exception)
     [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
     
     TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+    
+    [mainWindowOutlineView lock];
     [channel addPlayer:player];
+    [mainWindowOutlineView unlock];
   }
 }
 
@@ -937,7 +942,9 @@ void UncaughtExceptionHandler(NSException *exception)
   [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
   
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+  [mainWindowOutlineView lock];
   [channel addPlayer:player];
+  [mainWindowOutlineView unlock];
 
   BOOL reloadChildren = YES;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
@@ -952,7 +959,7 @@ void UncaughtExceptionHandler(NSException *exception)
 {
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-  
+    
   [channel removePlayer:player];
   [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   
@@ -984,9 +991,13 @@ void UncaughtExceptionHandler(NSException *exception)
   TSChannel *oldChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:fromChannelID]];
   TSChannel *newChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:toChannelID]];
   
+  [player setChannelID:[newChannel channelID]];
+
+  [mainWindowOutlineView lock];
   [oldChannel removePlayer:player];
   [newChannel addPlayer:player];
-  
+  [mainWindowOutlineView unlock];
+    
   if ([player playerID] == [teamspeakConnection clientID])
   {
     [currentChannel autorelease];
