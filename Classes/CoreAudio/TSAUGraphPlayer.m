@@ -8,7 +8,8 @@
 
 #import "TSAUGraphPlayer.h"
 
-#define MAX_ELEMENTS 128
+#define MAX_ELEMENTS  128
+#define BUFFER_SIZE   0.5f
 
 #define initCheckErr(x, str) if (x != noErr) \
 { \
@@ -264,7 +265,7 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (int)indexForNewInputStream
 {
-  unsigned int frames = (unsigned int)([inputStreamDescription sampleRate] * 0.25);
+  unsigned int frames = (unsigned int)([inputStreamDescription sampleRate] * BUFFER_SIZE);
 
   for (int i=0; i<availableChannels; i++)
   {
