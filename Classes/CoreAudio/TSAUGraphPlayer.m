@@ -157,6 +157,19 @@ OSStatus InputRenderCallback(void *inRefCon,
     UInt32 outputASBDSize = sizeof(outputASBD);    
     err = AudioUnitGetProperty(outputDeviceUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &outputASBD, &outputASBDSize);
     initCheckErr(err, @"AudioUnitGetProperty (output device, input format)");
+        
+    // setup left -> all channels
+    unsigned int channelMapSize = sizeof(unsigned int) * [inputStreamDescription channelsPerFrame];
+    unsigned int *channelMap = (unsigned int*)malloc(channelMapSize);
+    for (int i=0; i<[inputStreamDescription channelsPerFrame]; i++)
+    {
+      // put the left channel (its mono) on all speakers.
+      channelMap[i] = 0;
+    }
+    err = AudioUnitSetProperty(outputDeviceUnit, kAudioOutputUnitProperty_ChannelMap, kAudioUnitScope_Input, 0, channelMap, channelMapSize);
+    initCheckErr(err, @"AudioUnitSetProperty (output device, input channel map)");
+    
+    free(channelMap);
   }
   
   {
