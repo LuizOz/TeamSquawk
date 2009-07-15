@@ -11,8 +11,8 @@
 			<integer value="37"/>
 			<integer value="132"/>
 			<integer value="5"/>
-			<integer value="58"/>
 			<integer value="113"/>
+			<integer value="58"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -291,7 +291,7 @@
 									<int key="NSfFlags">3100</int>
 								</object>
 								<reference key="NSControlView" ref="991537273"/>
-								<double key="NSMaxValue">5.000000e+00</double>
+								<double key="NSMaxValue">2.000000e+00</double>
 								<double key="NSMinValue">0.000000e+00</double>
 								<double key="NSValue">1.000000e+00</double>
 								<double key="NSAltIncValue">0.000000e+00</double>
@@ -1595,14 +1595,6 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<int key="connectionID">128</int>
 				</object>
 				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">deleteServerAction:</string>
-						<reference key="source" ref="1001"/>
-						<reference key="destination" ref="181056712"/>
-					</object>
-					<int key="connectionID">129</int>
-				</object>
-				<object class="IBConnectionRecord">
 					<object class="IBOutletConnection" key="connection">
 						<string key="label">serversTableView</string>
 						<reference key="source" ref="1001"/>
@@ -1681,6 +1673,30 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						<reference key="destination" ref="907159038"/>
 					</object>
 					<int key="connectionID">165</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">deleteHotkeyAction:</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="181056712"/>
+					</object>
+					<int key="connectionID">167</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">hotkeyDeleteHotkeyButton</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="1045684022"/>
+					</object>
+					<int key="connectionID">168</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">serversDeleteServerButton</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="181056712"/>
+					</object>
+					<int key="connectionID">169</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -2801,7 +2817,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">165</int>
+			<int key="maxID">169</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2935,6 +2951,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<string>connectionEditorUsernameTextField</string>
 							<string>connectionEditorWindow</string>
 							<string>generalPreferencesView</string>
+							<string>hotkeyDeleteHotkeyButton</string>
 							<string>hotkeyEditorActionPopup</string>
 							<string>hotkeyEditorRecorder</string>
 							<string>hotkeyEditorWindow</string>
@@ -2947,6 +2964,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<string>loopbackSoundTestButton</string>
 							<string>outputSlider</string>
 							<string>outputSoundDeviceButton</string>
+							<string>serversDeleteServerButton</string>
 							<string>serversPreferencesView</string>
 							<string>serversTableView</string>
 							<string>soundPreferencesView</string>
@@ -2960,6 +2978,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<string>NSTextField</string>
 							<string>NSWindow</string>
 							<string>NSView</string>
+							<string>NSButton</string>
 							<string>NSPopUpButton</string>
 							<string>SRRecorderControl</string>
 							<string>NSWindow</string>
@@ -2972,6 +2991,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							<string>NSButton</string>
 							<string>NSSlider</string>
 							<string>NSPopUpButton</string>
+							<string>NSButton</string>
 							<string>NSView</string>
 							<string>NSTableView</string>
 							<string>NSView</string>

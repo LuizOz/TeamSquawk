@@ -14,7 +14,7 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 @implementation TSPreferencesController
 
 - (void)setupToolbar
-{
+{  
   [self addView:serversPreferencesView label:@"Servers" image:[NSImage imageNamed:@"Servers"]];
   [self setupServersPreferences];
   
@@ -35,6 +35,8 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   [serversTableView registerForDraggedTypes:[NSArray arrayWithObjects:TSPreferencesServersDragType, nil]];
   
   [serversTableView reloadData];
+  
+  [serversDeleteServerButton setEnabled:([serversTableView selectedRow] != -1)];
 }
 
 - (void)setupSoundPreferences
@@ -124,13 +126,15 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 }
 
 - (void)setupHotkeyPreferences
-{
+{  
   [hotkeyTableView setDataSource:self];
   [hotkeyTableView setDelegate:self];
   [hotkeyTableView setTarget:self];
   [hotkeyTableView setDoubleAction:@selector(doubleClickHotkeyTableView:)];
   
   [hotkeyTableView reloadData];
+  
+  [hotkeyDeleteHotkeyButton setEnabled:([hotkeyTableView selectedRow] != -1)];
 }
 
 #pragma mark Servers Toolbar
@@ -320,6 +324,11 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   return NO;
 }
 
+- (void)serversTableViewSelectionDidChange:(NSNotification *)aNotification
+{
+  [serversDeleteServerButton setEnabled:([serversTableView selectedRow] != -1)];
+}
+
 #pragma mark Sound Toolbar
 
 - (OSStatus)ioCycleForDevice:(MTCoreAudioDevice *)theDevice
@@ -506,7 +515,19 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 
 - (IBAction)deleteHotkeyAction:(id)sender
 {
+  int row = [hotkeyTableView selectedRow];
   
+  if (row > -1)
+  {
+    NSMutableArray *hotkeys = [[[NSUserDefaults standardUserDefaults] arrayForKey:@"Hotkeys"] mutableCopy];
+    [hotkeys removeObjectAtIndex:row];
+    
+    [[NSUserDefaults standardUserDefaults] setObject:hotkeys forKey:@"Hotkeys"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    [hotkeys release];
+    [hotkeyTableView reloadData];
+  }
 }
 
 - (IBAction)doubleClickHotkeyTableView:(id)sender
@@ -519,6 +540,7 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
     [hotkeyEditorRecorder setAllowedFlags:NSCommandKeyMask|NSAlternateKeyMask|NSControlKeyMask|NSShiftKeyMask];
     [hotkeyEditorRecorder setCanCaptureGlobalHotKeys:YES];
     [hotkeyEditorRecorder setAllowsKeyOnly:YES escapeKeysRecord:NO];
+    [hotkeyEditorRecorder setDelegate:self];
     
     // setup the hotkey editor window dropdown choices
     [hotkeyEditorActionPopup removeAllItems];
@@ -568,9 +590,30 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
                           [NSNumber numberWithUnsignedInt:modifiers], @"HotkeyModifiers",
                           nil];
     [hotkeys replaceObjectAtIndex:row withObject:dict];
+    
     [[NSUserDefaults standardUserDefaults] setObject:hotkeys forKey:@"Hotkeys"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
     [[NSNotificationCenter defaultCenter] postNotificationName:@"TSHotkeysDidChange" object:nil];
+    [hotkeyTableView reloadData];
   }
+}
+
+- (BOOL)shortcutRecorder:(SRRecorderControl *)aRecorder isKeyCode:(NSInteger)keyCode andFlagsTaken:(NSUInteger)flags reason:(NSString **)aReason
+{
+  NSArray *hotkeys = [[NSUserDefaults standardUserDefaults] arrayForKey:@"Hotkeys"];
+  for (NSDictionary *hotkey in hotkeys)
+  {
+    int hotkeyKeycode = [[hotkey objectForKey:@"HotkeyKeycode"] intValue];
+    int hotkeyModifiers = [[hotkey objectForKey:@"HotkeyModifiers"] intValue];
+    
+    if ((hotkeyKeycode == keyCode) && (flags == SRCarbonToCocoaFlags(hotkeyModifiers)))
+    {
+      *aReason = @"it is already assigned to another TeamSquawk action";
+      return YES;
+    }
+  }
+  return NO;
 }
 
 - (NSInteger)hotkeysNumberOfRowsInTableView:(NSTableView*)aTableview
@@ -589,7 +632,7 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
     int keycode = [[hotkeyDict objectForKey:@"HotkeyKeycode"] intValue];
     int modifiers = [[hotkeyDict objectForKey:@"HotkeyModifiers"] intValue];
     
-    if (keycode == 0 || keycode == -1)
+    if (keycode == -1)
     {
       return @"<not assigned>";
     }
@@ -615,6 +658,11 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
     }
   }
   return nil;
+}
+
+- (void)hotkeysTableViewSelectionDidChange:(NSNotification *)aNotification
+{
+  [hotkeyDeleteHotkeyButton setEnabled:([hotkeyTableView selectedRow] != -1)];
 }
 
 #pragma mark Shared Delegate Methods
@@ -678,6 +726,18 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
     return [self serversTableView:aTableView acceptDrop:info row:row dropOperation:operation];
   }
   return NO;
+}
+
+- (void)tableViewSelectionDidChange:(NSNotification *)aNotification
+{
+  if ([[aNotification object] isEqual:serversTableView])
+  {
+    [self serversTableViewSelectionDidChange:aNotification];
+  }
+  else if ([[aNotification object] isEqual:hotkeyTableView])
+  {
+    [self hotkeysTableViewSelectionDidChange:aNotification];
+  }
 }
 
 @end

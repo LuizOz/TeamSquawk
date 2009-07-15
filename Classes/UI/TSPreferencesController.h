@@ -29,6 +29,7 @@ typedef enum {
   
   // servers
   IBOutlet NSTableView *serversTableView;
+  IBOutlet NSButton *serversDeleteServerButton;
   IBOutlet NSWindow *connectionEditorWindow;
   IBOutlet NSTextField *connectionEditorServerTextField;
   IBOutlet NSTextField *connectionEditorNicknameTextField;
@@ -62,6 +63,7 @@ typedef enum {
   IBOutlet NSWindow *hotkeyEditorWindow;
   IBOutlet NSPopUpButton *hotkeyEditorActionPopup;
   IBOutlet SRRecorderControl *hotkeyEditorRecorder;
+  IBOutlet NSButton *hotkeyDeleteHotkeyButton;
 }
 
 - (void)setupToolbar;
@@ -84,6 +86,7 @@ typedef enum {
 - (BOOL)serversTableView:(NSTableView *)tv writeRowsWithIndexes:(NSIndexSet *)rowIndexes toPasteboard:(NSPasteboard*)pboard;
 - (NSDragOperation)serversTableView:(NSTableView*)tv validateDrop:(id <NSDraggingInfo>)info proposedRow:(int)row proposedDropOperation:(NSTableViewDropOperation)op;
 - (BOOL)serversTableView:(NSTableView *)aTableView acceptDrop:(id <NSDraggingInfo>)info row:(int)row dropOperation:(NSTableViewDropOperation)operation;
+- (void)serversTableViewSelectionDidChange:(NSNotification *)aNotification;
 
 #pragma mark Sound Toolbar
 
@@ -105,6 +108,7 @@ typedef enum {
 - (void)sheetDidEnd:(NSWindow *)sheet returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;;
 - (NSInteger)hotkeysNumberOfRowsInTableView:(NSTableView*)aTableview;
 - (id)hotkeysTableView:(NSTableView *)aTableView objectValueForTableColumn:(NSTableColumn *)aTableColumn row:(NSInteger)rowIndex;
+- (void)hotkeysTableViewSelectionDidChange:(NSNotification *)aNotification;
 
 #pragma mark Shared Delegate Methods
 

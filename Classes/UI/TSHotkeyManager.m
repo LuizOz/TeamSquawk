@@ -160,7 +160,7 @@ static TSHotkeyManager *globalHotkeyManager = nil;
 - (void)removeAllHotkeys
 {
   NSMutableDictionary *removals = [hotkeys copy];
-  for (TSHotkey *hotkey in removals)
+  for (TSHotkey *hotkey in [removals allValues])
   {
     [self removeHotkey:hotkey];
   }
