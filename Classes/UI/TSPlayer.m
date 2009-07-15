@@ -98,6 +98,14 @@
   // get the new one
   graphPlayer = [player retain];
   graphPlayerChannel = [graphPlayer indexForNewInputStream];
+  
+  if (graphPlayerChannel == -1)
+  {
+    [graphPlayer release];
+    graphPlayer = nil;
+    
+    NSLog(@"-[%@ %@] failed to obtain a GraphPlayer channel.", [self className], NSStringFromSelector(_cmd));
+  }
     
   // get a new audio converter
   TSAudioConverter *newConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[graphPlayer audioStreamDescription]];

@@ -46,6 +46,7 @@ OSStatus InputRenderCallback(void *inRefCon,
     // set this to YES this now, the _initWithAudioDevice will set it to NO if it fails
     inputStreamDescription = [streamDesc retain];
     isInitialised = YES;
+    availableChannels = 0;
     
     // create a new thread to run on and setup the augraph on there
     renderThread = [[NSThread alloc] initWithTarget:self selector:@selector(_createRenderThread) object:nil];
@@ -197,11 +198,12 @@ OSStatus InputRenderCallback(void *inRefCon,
     initCheckErr(err, @"AUGraphNodeInfo");
     
     // setup how many channels our mixer has
-    unsigned int i, elements = MAX_ELEMENTS;
-    err = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &elements, sizeof(elements));
+    unsigned int i;
+    availableChannels = 1;
+    err = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &availableChannels, sizeof(availableChannels));
     initCheckErr(err, @"AudioUnitSetProperty");
     
-    for (i=0; i<elements; i++)
+    for (i=0; i<availableChannels; i++)
     {
       AURenderCallbackStruct inputCallbackStruct;
       inputCallbackStruct.inputProc = InputRenderCallback;
@@ -249,12 +251,13 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (int)indexForNewInputStream
 {
-  for (int i=0; i<MAX_ELEMENTS; i++)
+  unsigned int frames = (unsigned int)([inputStreamDescription sampleRate] * 0.25);
+
+  for (int i=0; i<availableChannels; i++)
   {
     if ([inputBuffers objectForKey:[NSNumber numberWithInt:i]] == nil)
     {
       // give each channel 1/4 sec of buffer space
-      unsigned int frames = (unsigned int)([inputStreamDescription sampleRate] * 0.25);
       
       MTAudioBuffer *buffer = [[MTAudioBuffer alloc] initWithCapacityFrames:frames channels:2];
       [inputBuffers setObject:[buffer autorelease] forKey:[NSNumber numberWithInt:i]];
@@ -262,6 +265,50 @@ OSStatus InputRenderCallback(void *inRefCon,
       return i;
     }
   }
+  
+  // we couldn't find an extra channel, bring down the AUGraph and make the channels bigger
+  AUGraphStop(outputGraph);
+  AUGraphUninitialize(outputGraph);
+  
+  unsigned int nextChannel = availableChannels;
+  availableChannels++;
+  
+  OSStatus err = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &availableChannels, sizeof(availableChannels));
+  
+  if (err == noErr)
+  {
+    AURenderCallbackStruct inputCallbackStruct;
+    inputCallbackStruct.inputProc = InputRenderCallback;
+    inputCallbackStruct.inputProcRefCon = self;
+    
+    err = AudioUnitSetProperty(mixerUnit,
+                               kAudioUnitProperty_SetRenderCallback,
+                               kAudioUnitScope_Input,
+                               nextChannel,
+                               &inputCallbackStruct,
+                               sizeof(inputCallbackStruct));
+    if (err != noErr)
+    {
+      return -1;
+    }
+    
+    // set the volume
+    float gain = 1.0;
+    err = AudioUnitSetParameter(mixerUnit, kStereoMixerParam_Volume, kAudioUnitScope_Input, nextChannel, gain, 0);
+    if (err != noErr)
+    {
+      return -1;
+    }
+    
+    AUGraphInitialize(outputGraph);
+    AUGraphStart(outputGraph);
+
+    MTAudioBuffer *buffer = [[MTAudioBuffer alloc] initWithCapacityFrames:frames channels:2];
+    [inputBuffers setObject:[buffer autorelease] forKey:[NSNumber numberWithUnsignedInt:nextChannel]];
+    
+    return nextChannel;
+  }
+  
   return -1;
 }
 
@@ -270,6 +317,25 @@ OSStatus InputRenderCallback(void *inRefCon,
   if ([inputBuffers objectForKey:[NSNumber numberWithInt:index]] != nil)
   {
     [inputBuffers removeObjectForKey:[NSNumber numberWithInt:index]];
+  }
+  
+  if (index == (availableChannels - 1))
+  {
+    // if the index was the last, jiggle around so we're not rendering too many buffers
+    
+    AUGraphStop(outputGraph);
+    AUGraphUninitialize(outputGraph);
+    
+    availableChannels--;
+    OSStatus err = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &availableChannels, sizeof(availableChannels));
+    if (err != noErr)
+    {
+      // failed, wtf
+      NSLog(@"Failed to reduce number of rendered audio channels: %@", [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
+    }
+    
+    AUGraphInitialize(outputGraph);
+    AUGraphStart(outputGraph);
   }
 }
 

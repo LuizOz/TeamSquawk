@@ -30,6 +30,7 @@
   AudioUnit mixerUnit;
   
   BOOL isInitialised;
+  unsigned int availableChannels;
 }
 
 #pragma mark Init
