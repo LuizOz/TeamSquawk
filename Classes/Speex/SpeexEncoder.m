@@ -39,7 +39,7 @@
       return nil;
     }
     
-    int sampleRate, on = 1;
+    int sampleRate, on = 1, off = 0;
     
     speex_bits_init(&speexBits);
     speex_encoder_ctl(speexState, SPEEX_GET_FRAME_SIZE, &frameSize);
@@ -47,7 +47,7 @@
     
     preprocessState = speex_preprocess_state_init(frameSize, sampleRate);
     speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DENOISE, &on);
-    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_AGC, &on);
+    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_AGC, &off);
     speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DEREVERB, &on);
     
     resamplerState = NULL;
