@@ -118,6 +118,7 @@ typedef enum {
 - (IBAction)toggleAway:(id)sender;
 - (IBAction)toggleChannelCommander:(id)sender;
 - (IBAction)toggleBlockWhispers:(id)sender;
+- (IBAction)menuChangeChannelAction:(id)sender;
 
 #pragma mark Connection Window Actions
 
@@ -134,6 +135,7 @@ typedef enum {
 - (void)recentServersChanged:(NSNotification*)notification;
 - (IBAction)editServerListAction:(id)sender;
 - (void)setupRecentServersMenu;
+- (void)setupChannelsMenu;
 - (void)setupDisconnectedToolbarStatusPopupButton;
 - (void)setupConnectedToolbarStatusPopupButton;
 
@@ -170,6 +172,10 @@ typedef enum {
 - (void)hotkeyPressed:(TSHotkey*)hotkey;
 - (void)hotkeyReleased:(TSHotkey*)hotkey;
 - (void)hotkeyMappingsChanged:(NSNotification*)notification;
+
+#pragma mark NSAlert Sheet Delegate
+
+- (void)alertDidEnd:(NSAlert *)alert returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 
 #pragma mark NSApplication Delegate
 
