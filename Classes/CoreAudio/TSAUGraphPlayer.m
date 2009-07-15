@@ -45,7 +45,6 @@ OSStatus InputRenderCallback(void *inRefCon,
   {
     // set this to YES this now, the _initWithAudioDevice will set it to NO if it fails
     inputStreamDescription = [streamDesc retain];
-    NSLog(@"%@", inputStreamDescription);
     isInitialised = YES;
     
     // create a new thread to run on and setup the augraph on there
@@ -86,6 +85,12 @@ OSStatus InputRenderCallback(void *inRefCon,
   {
     [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
+  
+  for (MTAudioBuffer *buffer in [inputBuffers allValues])
+  {
+    [buffer flush];
+  }
+  [inputBuffers removeAllObjects];
 }
 
 #pragma mark Threading
@@ -308,7 +313,7 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (unsigned int)writeAudioBufferList:(AudioBufferList*)abl toInputStream:(unsigned int)index withForRoom:(BOOL)waitForRoom
 {
-  if ([inputBuffers objectForKey:[NSNumber numberWithInt:index]] != nil)
+  if (isInitialised && ([inputBuffers objectForKey:[NSNumber numberWithInt:index]] != nil))
   {
     MTAudioBuffer *buffer = [inputBuffers objectForKey:[NSNumber numberWithInt:index]];
     return [buffer writeFromAudioBufferList:abl maxFrames:MTAudioBufferListFrameCount(abl) rateScalar:1.0 waitForRoom:waitForRoom];

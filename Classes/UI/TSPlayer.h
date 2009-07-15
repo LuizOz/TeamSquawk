@@ -8,8 +8,8 @@
 
 #import <Cocoa/Cocoa.h>
 #import "SpeexDecoder.h"
+#import "TSAUGraphPlayer.h"
 #import "TSAudioConverter.h"
-#import "TSCoreAudioPlayer.h"
 
 typedef enum {
   TSPlayerChannelCommander = 0x01,
@@ -25,10 +25,12 @@ typedef enum {
 } TSPlayerExtendedFlags;
 
 @interface TSPlayer : NSObject {
-  TSCoreAudioPlayer *coreAudio;
+  TSAUGraphPlayer *graphPlayer;
   TSAudioConverter *converter;
   SpeexDecoder *speex;
   NSOperationQueue *decodeQueue;
+  
+  unsigned int graphPlayerChannel;
   
   NSString *playerName;
   unsigned int playerFlags;
@@ -43,13 +45,14 @@ typedef enum {
 
 @property (readonly) SpeexDecoder *decoder;
 @property (readonly) TSAudioConverter *converter;
-@property (readonly) TSCoreAudioPlayer *coreAudioPlayer;
+@property (retain) TSAUGraphPlayer *graphPlayer;
 @property (readonly) NSOperationQueue *decodeQueue;
 @property (assign) unsigned int lastVoicePacketCount;
 @property (assign) unsigned int extendedFlags;
 @property (assign) BOOL isTransmitting;
 @property (assign) BOOL isWhispering;
 
+- (id)initWithGraphPlayer:(TSAUGraphPlayer*)player;
 - (id)copyWithZone:(NSZone *)zone;
 
 - (NSString*)playerName;

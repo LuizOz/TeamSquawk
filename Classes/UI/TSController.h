@@ -8,7 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "SLConnection.h"
-#import "TSCoreAudioPlayer.h"
+#import "TSAUGraphPlayer.h"
 #import "TSAudioConverter.h"
 #import "TSPlayerCell.h"
 #import "TSHotkeyManager.h"
@@ -73,12 +73,13 @@ typedef enum {
   
   TSChannel *currentChannel;
   
-  // background stuff
+  // main graph player
+  TSAUGraphPlayer *graphPlayer;
   
+  // background stuff
   SLConnection *teamspeakConnection;
   
   // transmission stuff
-  
   TSTransmission *transmission;
 }
 
@@ -159,6 +160,8 @@ typedef enum {
 
 #pragma mark Audio
 
+- (void)outputDeviceHasChanged:(NSNotification*)notification;
+- (void)outputDeviceGainChanged:(NSNotification*)notification;
 - (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count;
 - (void)idleAudioCheck:(NSTimer*)timer;
 

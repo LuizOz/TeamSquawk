@@ -40,6 +40,9 @@
 		C90586E31000DFFC003BD88A /* TSPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C90586E21000DFFC003BD88A /* TSPlayer.m */; };
 		C90587301000E813003BD88A /* TSChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = C905872F1000E813003BD88A /* TSChannel.m */; };
 		C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C939E193100D3C61002CBED3 /* TSAUGraphPlayer.m */; };
+		C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */; };
+		C939E2D9100DC950002CBED3 /* TeamSquawk.icns in Resources */ = {isa = PBXBuildFile; fileRef = C939E2D8100DC950002CBED3 /* TeamSquawk.icns */; };
+		C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */ = {isa = PBXBuildFile; fileRef = C939E2EE100DCA07002CBED3 /* TransmitRed.png */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
@@ -141,6 +144,9 @@
 		C905872F1000E813003BD88A /* TSChannel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSChannel.m; sourceTree = "<group>"; };
 		C939E192100D3C61002CBED3 /* TSAUGraphPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSAUGraphPlayer.h; sourceTree = "<group>"; };
 		C939E193100D3C61002CBED3 /* TSAUGraphPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSAUGraphPlayer.m; sourceTree = "<group>"; };
+		C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		C939E2D8100DC950002CBED3 /* TeamSquawk.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = TeamSquawk.icns; sourceTree = "<group>"; };
+		C939E2EE100DCA07002CBED3 /* TransmitRed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitRed.png; sourceTree = "<group>"; };
 		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
@@ -503,6 +509,7 @@
 				C9BD028E0FFC96E200FC280A /* QuickTime.framework in Frameworks */,
 				C9E2D1B1100662B700ED920D /* Carbon.framework in Frameworks */,
 				C9E2E452100ABB2000ED920D /* ExceptionHandling.framework in Frameworks */,
+				C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -563,6 +570,7 @@
 				C9BD028D0FFC96E200FC280A /* QuickTime.framework */,
 				C9E2D1B0100662B700ED920D /* Carbon.framework */,
 				C9E2E42C100AB95600ED920D /* ExceptionHandling.framework */,
+				C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */,
 			);
 			name = TeamSquawk;
 			sourceTree = "<group>";
@@ -583,6 +591,7 @@
 			isa = PBXGroup;
 			children = (
 				C9E2CA1610032AAF00ED920D /* Images */,
+				C939E2D8100DC950002CBED3 /* TeamSquawk.icns */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				1DDD58140DA1D0A300B32029 /* MainMenu.xib */,
@@ -1231,6 +1240,7 @@
 				C9E2CC0A1003F18F00ED920D /* TransmitGreen.png */,
 				C9E2CC0B1003F18F00ED920D /* TransmitOrange.png */,
 				C9E2CE0B1004823400ED920D /* TransmitGray.png */,
+				C939E2EE100DCA07002CBED3 /* TransmitRed.png */,
 				C9E2CA1810032ACB00ED920D /* Graphite.tiff */,
 				C9E2CA1910032ACB00ED920D /* Green.tiff */,
 				C9E2CA1A10032ACB00ED920D /* Grey.tiff */,
@@ -1343,6 +1353,8 @@
 				C9E2D50C1007265000ED920D /* deleteWidget.png in Resources */,
 				C9E2D515100726B600ED920D /* Keyboard.png in Resources */,
 				C9E2E0801009667E00ED920D /* Servers.png in Resources */,
+				C939E2D9100DC950002CBED3 /* TeamSquawk.icns in Resources */,
+				C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

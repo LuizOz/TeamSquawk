@@ -13,30 +13,24 @@
 
 @synthesize decoder = speex;
 @synthesize converter;
-@synthesize coreAudioPlayer = coreAudio;
+@synthesize graphPlayer;
 @synthesize decodeQueue;
 @synthesize lastVoicePacketCount;
 @synthesize extendedFlags;
 @synthesize isTransmitting;
 @synthesize isWhispering;
 
-- (id)init
+- (id)initWithGraphPlayer:(TSAUGraphPlayer*)player
 {
   if (self = [super init])
   {
     speex = [[SpeexDecoder alloc] initWithMode:SpeexDecodeWideBandMode];
+    [self setGraphPlayer:player];
     
-    NSString *outputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputDeviceUID"];
-    MTCoreAudioDevice *outputDevice = (outputDeviceUID ? [MTCoreAudioDevice deviceWithUID:outputDeviceUID] : [MTCoreAudioDevice defaultOutputDevice]);
-    
-    coreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:outputDevice];
-    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[outputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
+    converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[graphPlayer audioStreamDescription]];
     decodeQueue = [[NSOperationQueue alloc] init];
     [decodeQueue setMaxConcurrentOperationCount:1];
-    
-    [self performSelectorInBackground:@selector(_setIsRunningThread) withObject:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_outputDeviceChanged:) name:@"TSOutputDeviceChanged" object:nil];
-    
+        
     playerName = nil;
   }
   return self;
@@ -47,7 +41,7 @@
   if (self = [super init])
   {
     speex = nil;
-    coreAudio = nil;
+    graphPlayer = nil;
     converter = nil;
     decodeQueue = nil;
     playerName = nil;
@@ -60,9 +54,10 @@
   TSPlayer *copyPlayer = [[[self class] allocWithZone:zone] _init];
   
   copyPlayer->speex = [speex retain];
-  copyPlayer->coreAudio = [coreAudio retain];
+  copyPlayer->graphPlayer = [graphPlayer retain];
   copyPlayer->converter = [converter retain];
   copyPlayer->decodeQueue = [decodeQueue retain];
+  copyPlayer->graphPlayerChannel = graphPlayerChannel;
   
   [copyPlayer setPlayerName:[self playerName]];
   [copyPlayer setPlayerID:[self playerID]];
@@ -78,7 +73,7 @@
 
 - (void)dealloc
 {
-  [coreAudio release];
+  [graphPlayer release];
   [converter release];
   [speex release];
   [playerName release];
@@ -94,30 +89,21 @@
           [self playerID]];
 }
 
-- (void)_setIsRunningThread
+- (void)setGraphPlayer:(TSAUGraphPlayer*)player
 {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  [coreAudio setIsRunning:YES];
-  [[NSRunLoop currentRunLoop] run];
-  [pool release];
-}
-
-- (void)_outputDeviceChanged:(NSNotification*)notification
-{
-  [coreAudio setIsRunning:NO];
-  [coreAudio autorelease];
+  // let go of the old player
+  [graphPlayer removeInputStream:graphPlayerChannel];
+  [graphPlayer autorelease];
+  
+  // get the new one
+  graphPlayer = [player retain];
+  graphPlayerChannel = [graphPlayer indexForNewInputStream];
+    
+  // get a new audio converter
+  TSAudioConverter *newConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[graphPlayer audioStreamDescription]];
+  
   [converter autorelease];
-  
-  NSString *outputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputDeviceUID"];
-  MTCoreAudioDevice *outputDevice = (outputDeviceUID ? [MTCoreAudioDevice deviceWithUID:outputDeviceUID] : [MTCoreAudioDevice defaultOutputDevice]);
-  
-  TSCoreAudioPlayer *newCoreAudio = [[TSCoreAudioPlayer alloc] initWithOutputDevice:outputDevice];
-  TSAudioConverter *newConverter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[outputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection]];
-  
-  coreAudio = newCoreAudio;
-  converter = newConverter;
-  
-  [self performSelectorInBackground:@selector(_setIsRunningThread) withObject:nil];
+  converter = newConverter; // already retained
 }
 
 - (void)backgroundDecodeData:(NSData*)audioCodecData
@@ -136,16 +122,16 @@
   unsigned int convertedFrameCount = 0;
   AudioBufferList *resampledBufferList = [[self converter] audioBufferListByConvertingList:decodedBufferList framesConverted:&convertedFrameCount];
   
-  if ([coreAudio activeFramesInBuffer] == 0)
+  if ([graphPlayer numberOfFramesInInputStream:graphPlayerChannel] == 0)
   {
     // we've no audio, i'd like to lead the audio by 0.25s just to give us some jitter room
     unsigned int sampleRate = (unsigned int)[[[MTCoreAudioDevice defaultOutputDevice] streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection] sampleRate];
     AudioBufferList *blankFrames = MTAudioBufferListNew(1, sampleRate / 4, NO);
-    [[self coreAudioPlayer] queueAudioBufferList:blankFrames count:(sampleRate / 4)];
+    [[self graphPlayer] writeAudioBufferList:blankFrames toInputStream:graphPlayerChannel withForRoom:YES];
     MTAudioBufferListDispose(blankFrames);
   }
   
-  [[self coreAudioPlayer] queueAudioBufferList:resampledBufferList count:convertedFrameCount];
+  [[self graphPlayer] writeAudioBufferList:resampledBufferList toInputStream:graphPlayerChannel withForRoom:YES];
   
   MTAudioBufferListDispose(resampledBufferList);
   MTAudioBufferListDispose(decodedBufferList);
@@ -201,7 +187,7 @@
 
 - (BOOL)isTalking
 {
-  return (([coreAudio activeFramesInBuffer] > 0) || [self isTransmitting]);
+  return (([graphPlayer numberOfFramesInInputStream:graphPlayerChannel] > 0) || [self isTransmitting]);
 }
 
 - (BOOL)isRegistered

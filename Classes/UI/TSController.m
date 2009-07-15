@@ -94,11 +94,25 @@ void UncaughtExceptionHandler(NSException *exception)
   flattenedChannels = [[NSMutableDictionary alloc] init];
   sortedChannels = nil;
   transmission = nil;
+  graphPlayer = nil;
   
   // point NSApp here
   [NSApp setDelegate:self];
   
+  // get the output device going
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(outputDeviceHasChanged:) name:@"TSOutputDeviceChanged" object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(outputDeviceGainChanged:) name:@"TSOutputGainChanged" object:nil];
+  
+  // setup the initial graph player
+  [self outputDeviceHasChanged:nil];
+  [self outputDeviceGainChanged:nil];
+  
   [NSTimer scheduledTimerWithTimeInterval:0.25 target:self selector:@selector(idleAudioCheck:) userInfo:nil repeats:YES];
+  
+  if(getenv("NSZombieEnabled") || getenv("NSAutoreleaseFreedObjectCheckEnabled"))
+  {
+		NSLog(@"NSZombieEnabled/NSAutoreleaseFreedObjectCheckEnabled enabled!");
+	}
 }
 
 #pragma mark OutlineView DataSource
@@ -827,9 +841,9 @@ void UncaughtExceptionHandler(NSException *exception)
   [flattenedChannels removeAllObjects];
   [channels removeAllObjects];
   [players removeAllObjects];
-  
+    
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
-  
+
   if (error)
   {
     [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
@@ -891,7 +905,7 @@ void UncaughtExceptionHandler(NSException *exception)
   
   for (NSDictionary *playerDictionary in playersDictionary)
   {
-    TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
+    TSPlayer *player = [[[TSPlayer alloc] initWithGraphPlayer:graphPlayer] autorelease];
     
     [player setPlayerName:[playerDictionary objectForKey:@"SLPlayerNick"]];
     [player setPlayerFlags:[[playerDictionary objectForKey:@"SLPlayerFlags"] unsignedIntValue]];
@@ -991,6 +1005,29 @@ void UncaughtExceptionHandler(NSException *exception)
 }
 
 #pragma mark Audio
+
+- (void)outputDeviceHasChanged:(NSNotification*)notification
+{
+  // setup a new graph player and tell any TSPlayer objects we have a new one
+  NSString *outputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputDeviceUID"];
+  MTCoreAudioDevice *outputDevice = (outputDeviceUID ? [MTCoreAudioDevice deviceWithUID:outputDeviceUID] : [MTCoreAudioDevice defaultOutputDevice]);
+  MTCoreAudioStreamDescription *outputDeviceFormat = [outputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
+  
+  [graphPlayer close];
+  [graphPlayer autorelease];
+  graphPlayer = [[TSAUGraphPlayer alloc] initWithAudioDevice:outputDevice inputStreamDescription:outputDeviceFormat];
+  
+  for (TSPlayer *player in [players allValues])
+  {
+    [player setGraphPlayer:graphPlayer];
+  }
+}
+
+- (void)outputDeviceGainChanged:(NSNotification*)notification
+{
+  float volume = [[NSUserDefaults standardUserDefaults] floatForKey:@"OutputGain"];
+  [graphPlayer setOutputVolume:volume];  
+}
 
 - (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count
 {
