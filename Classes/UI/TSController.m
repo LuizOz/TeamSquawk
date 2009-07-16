@@ -831,12 +831,18 @@ void UncaughtExceptionHandler(NSException *exception)
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
   [toolbarViewStatusPopupButton setTitle:currentServerAddress];
   
+  // get the TSPlayer for who we are
+  TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  
+  // check our permissions
+  NSLog(@"%d", [teamspeakConnection checkPermission:PERMS_MISC_CHANCOMMANDER_BYTE5 permissionType:SLConnectionPermissionMisc forUserType:[me extendedFlags]]);
+  
   // find what channel we ended up in
   for (TSChannel *channel in [flattenedChannels allValues])
   {
     for (TSPlayer *player in [channel players])
     {
-      if ([player playerID] == [teamspeakConnection clientID])
+      if ([player isEqual:me])
       {
         currentChannel = [channel retain];
         break;

@@ -171,7 +171,7 @@ typedef enum {
 
 - (void)outputDeviceHasChanged:(NSNotification*)notification;
 - (void)outputDeviceGainChanged:(NSNotification*)notification;
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count;
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID isWhisper:(BOOL)isWhisper senderPacketCounter:(unsigned short)count;
 - (void)idleAudioCheck:(NSTimer*)timer;
 
 #pragma mark Hotkeys

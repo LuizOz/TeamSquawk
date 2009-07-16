@@ -202,12 +202,12 @@
 
 - (BOOL)isRegistered
 {
-  return ((extendedFlags & TSPlayerRegistered) == TSPlayerRegistered);
+  return ((extendedFlags & SLConnectionRegisteredPlayer) == SLConnectionRegisteredPlayer);
 }
 
 - (BOOL)isServerAdmin
 {
-  return ((extendedFlags & TSPlayerServerAdmin) == TSPlayerServerAdmin);
+  return ((extendedFlags & SLConnectionServerAdmin) == SLConnectionServerAdmin);
 }
 
 - (unsigned int)playerID

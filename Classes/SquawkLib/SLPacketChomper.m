@@ -250,6 +250,14 @@
       [socket maybeDequeueSend];
       return chompedPacket;
     }
+    case PACKET_TYPE_EFLAGS_UPDATE:
+    {
+      NSDictionary *chompedPacket = [self chompEFlagsUpdate:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
+      [socket maybeDequeueSend];
+      return chompedPacket;
+    }
     default:
     {
       NSLog(@"unknown packet type: 0x%08x", packetType);
@@ -709,6 +717,50 @@
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithBool:(mutedStatus == 0x01 ? YES : NO)], @"SLMutedStatus",
                                     nil];
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompEFlagsUpdate:(NSData*)data
+{
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
+  // get connection id and client id
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+  
+  unsigned int sequenceNumber = 0;
+  SNARF_INT(sequenceNumber);
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
+  
+  SNARF_CRC();  
+  
+  unsigned int playerID;
+  SNARF_INT(playerID);
+  
+  unsigned short extendedFlags;
+  SNARF_SHORT(extendedFlags);
+  
+  unsigned int fromPlayerID;
+  SNARF_INT(fromPlayerID);
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_EFLAGS_UPDATE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    [NSNumber numberWithUnsignedShort:extendedFlags], @"SLExtendedFlags",
+                                    [NSNumber numberWithUnsignedInt:fromPlayerID], @"SLFromPlayerID",
+                                    nil];
+  
   return packetDictionary;
 }
 

@@ -86,18 +86,18 @@ enum {
 };
 
 typedef enum {
-  TSPlayerServerAdmin = 0x01,
-  TSPlayerRegistered = 0x04,
-} TSPlayerExtendedFlags;
+  SLConnectionAnonymousPlayer = 0x00,
+  SLConnectionServerAdmin = 0x01,
+  SLConnectionRegisteredPlayer = 0x04,
+} SLConnectionExtendedFlags;
 
 typedef enum {
-  SLConnectionTypeAnonymous = PERMS_8BYTE,
-  SLConnectionTypeVoice = PERMS_8BYTE,
-  SLConnectionTypeOperator = PERMS_8BYTE,
-  SLConnectionTypeChannelAdmin = PERMS_8BYTE,
-  
-  SLConnectionTypeRegistered = PERMS_10BYTE,
-  SLConnectionTypeServerAdmin = PERMS_10BYTE,
+  SLConnectionPermissionMisc = 0x00,
+  SLConnectionPermissionRevoke = 0x01,
+  SLConnectionPermissionGrant = 0x02,
+  SLConnectionPermissionChanEdit = 0x03,
+  SLConnectionPermissionChan = 0x04,
+  SLConnectionPermissionAdmin = 0x05,
 } SLConnectionPermissionType;
 
 @interface SLConnection : NSObject {

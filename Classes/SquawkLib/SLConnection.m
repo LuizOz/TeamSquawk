@@ -10,7 +10,7 @@
 #import "SLPacketBuilder.h"
 #import "SLPacketChomper.h"
 
-//#define PERMS_DEBUG 1
+#define PERMS_DEBUG 1
 
 @implementation SLConnection
 
@@ -537,6 +537,8 @@
   }
 }
 
+#pragma mark Permissions
+
 - (void)parsePermissionData:(NSData*)data
 {
   unsigned int position = 0;
@@ -544,7 +546,7 @@
   // skip 10 bytes of crap
   position += 10;
   
-  [data getBytes:&serverAdminPermissions range:NSMakeRange(position, 10)];
+  [data getBytes:serverAdminPermissions range:NSMakeRange(position, 10)];
   position += 10;
   
 #ifdef PERMS_DEBUG
@@ -556,7 +558,7 @@
   // skip 4 bytes
   position += 4;
   
-  [data getBytes:&channelAdminPermissions range:NSMakeRange(position, 8)];
+  [data getBytes:channelAdminPermissions range:NSMakeRange(position, 8)];
   position += 8;
   
 #ifdef PERMS_DEBUG
@@ -568,7 +570,7 @@
   // skip 3 bytes
   position += 3;
   
-  [data getBytes:&operatorPemissions range:NSMakeRange(position, 8)];
+  [data getBytes:operatorPemissions range:NSMakeRange(position, 8)];
   position += 8;
   
 #ifdef PERMS_DEBUG
@@ -580,18 +582,18 @@
   // skip 3 bytes
   position += 3;
   
-  [data getBytes:&voicePermissions range:NSMakeRange(position, 8)];
+  [data getBytes:voicePermissions range:NSMakeRange(position, 8)];
   position += 8;
   
 #ifdef PERMS_DEBUG
   NSLog(@"voice: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
-        voiceBits[0], voiceBits[1], voiceBits[2], voiceBits[3],
-        voiceBits[4], voiceBits[5], voiceBits[6], voiceBits[7]);
+        voicePermissions[0], voicePermissions[1], voicePermissions[2], voicePermissions[3],
+        voicePermissions[4], voicePermissions[5], voicePermissions[6], voicePermissions[7]);
 #endif
   
   // skip no bytes here
   
-  [data getBytes:&registeredPermissions range:NSMakeRange(position, 10)];
+  [data getBytes:registeredPermissions range:NSMakeRange(position, 10)];
   position += 10;
   
 #ifdef PERMS_DEBUG
@@ -603,13 +605,68 @@
   // skip 4 bytes
   position += 4;
   
-  [data getBytes:&anonymousPermissions range:NSMakeRange(position, 8)];
+  [data getBytes:anonymousPermissions range:NSMakeRange(position, 8)];
   
 #ifdef PERMS_DEBUG
   NSLog(@"anonymous: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
         anonymousPermissions[0], anonymousPermissions[1], anonymousPermissions[2], anonymousPermissions[3],
         anonymousPermissions[4], anonymousPermissions[5], anonymousPermissions[6], anonymousPermissions[7]);
 #endif
+}
+
+- (BOOL)checkPermission:(unsigned char)permission permissionType:(SLConnectionPermissionType)type forUserType:(SLConnectionExtendedFlags)userFlags
+{
+  unsigned char userFlagsType[] = { PERMS_8BYTE, PERMS_10BYTE, 0x00, 0x00, PERMS_10BYTE };
+  
+  switch (userFlagsType[userFlags])
+  {
+    case PERMS_10BYTE:
+    {
+      unsigned char permissionByteMap[] = {
+        PERMS_10BYTE_MISC_BYTE,
+        PERMS_10BYTE_REVOKE_BYTE,
+        PERMS_10BYTE_GRANT_BYTE,
+        PERMS_10BYTE_CHANEDIT_BYTE,
+        PERMS_10BYTE_CHAN_BYTE,
+        PERMS_10BYTE_ADMIN_BYTE
+      };
+      
+      unsigned char permissionByteIndex = permissionByteMap[type];
+      
+      switch (userFlags)
+      {
+        case SLConnectionServerAdmin:
+          return ((serverAdminPermissions[permissionByteIndex] & permission) == permission);
+        case SLConnectionRegisteredPlayer:
+          return ((registeredPermissions[permissionByteIndex] & permission) == permission);
+      }      
+      break;
+    }
+    case PERMS_8BYTE:
+    {
+      unsigned char permissionByteMap[] = {
+        PERMS_8BYTE_MISC_BYTE,
+        PERMS_8BYTE_REVOKE_BYTE,
+        PERMS_8BYTE_GRANT_BYTE,
+        PERMS_8BYTE_CHANEDIT_BYTE,
+        PERMS_8BYTE_CHAN_BYTE,
+        PERMS_8BYTE_ADMIN_BYTE
+      };
+      
+      unsigned char permissionByteIndex = permissionByteMap[type];
+      
+      switch (userFlags)
+      {
+        case SLConnectionAnonymousPlayer:
+          return ((anonymousPermissions[permissionByteIndex] & permission) == permission);
+      }
+      
+      break;
+    }
+    default:
+      return NO;
+  }
+  return NO;
 }
 
 #pragma mark Ping Timer
