@@ -10,6 +10,8 @@
 #import "SLPacketBuilder.h"
 #import "SLPacketChomper.h"
 
+//#define PERMS_DEBUG 1
+
 @implementation SLConnection
 
 @synthesize clientName;
@@ -327,6 +329,8 @@
           [connectionTimer release];
           connectionTimer = [[NSTimer scheduledTimerWithTimeInterval:TRANSMIT_TIMEOUT target:self selector:@selector(connectionTimer:) userInfo:nil repeats:NO] retain];
           
+          [self parsePermissionData:[packet objectForKey:@"SLPermissionsData"]];
+          
           if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:didLoginTo:port:serverName:platform:majorVersion:minorVersion:subLevelVersion:subsubLevelVersion:welcomeMessage:)])
           {
             [[self delegate] connection:self
@@ -531,6 +535,81 @@
   {
     [[self delegate] connectionDisconnected:self withError:error];
   }
+}
+
+- (void)parsePermissionData:(NSData*)data
+{
+  unsigned int position = 0;
+  
+  // skip 10 bytes of crap
+  position += 10;
+  
+  [data getBytes:&serverAdminPermissions range:NSMakeRange(position, 10)];
+  position += 10;
+  
+#ifdef PERMS_DEBUG
+  NSLog(@"server admin: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", 
+        serverAdminPermissions[0], serverAdminPermissions[1], serverAdminPermissions[2], serverAdminPermissions[3], serverAdminPermissions[4],
+        serverAdminPermissions[5], serverAdminPermissions[6], serverAdminPermissions[7], serverAdminPermissions[8], serverAdminPermissions[9]);
+#endif
+  
+  // skip 8 bytes
+  position += 4;
+  
+  [data getBytes:&channelAdminPermissions range:NSMakeRange(position, 8)];
+  position += 8;
+  
+#ifdef PERMS_DEBUG
+  NSLog(@"channel admin: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
+        channelAdminPermissions[0], channelAdminPermissions[1], channelAdminPermissions[2], channelAdminPermissions[3],
+        channelAdminPermissions[4], channelAdminPermissions[5], channelAdminPermissions[6], channelAdminPermissions[7]);
+#endif
+  
+  // skip 3 bytes
+  position += 3;
+  
+  [data getBytes:&operatorPemissions range:NSMakeRange(position, 8)];
+  position += 8;
+  
+#ifdef PERMS_DEBUG
+  NSLog(@"operator: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
+        operatorPemissions[0], operatorPemissions[1], operatorPemissions[2], operatorPemissions[3],
+        operatorPemissions[4], operatorPemissions[5], operatorPemissions[6], operatorPemissions[7]);
+#endif
+  
+  // skip 3 bytes
+  position += 3;
+  
+  [data getBytes:&voicePermissions range:NSMakeRange(position, 8)];
+  position += 8;
+  
+#ifdef PERMS_DEBUG
+  NSLog(@"voice: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
+        voiceBits[0], voiceBits[1], voiceBits[2], voiceBits[3],
+        voiceBits[4], voiceBits[5], voiceBits[6], voiceBits[7]);
+#endif
+  
+  // skip no bytes here
+  
+  [data getBytes:&registeredPermissions range:NSMakeRange(position, 10)];
+  position += 10;
+  
+#ifdef PERMS_DEBUG
+  NSLog(@"registered: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", 
+        registeredPermissions[0], registeredPermissions[1], registeredPermissions[2], registeredPermissions[3], registeredPermissions[4],
+        registeredPermissions[5], registeredPermissions[6], registeredPermissions[7], registeredPermissions[8], registeredPermissions[9]);
+#endif
+  
+  // skip 4 bytes
+  position += 4;
+  
+  [data getBytes:&anonymousPermissions range:NSMakeRange(position, 8)];
+  
+#ifdef PERMS_DEBUG
+  NSLog(@"anonymous: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
+        anonymousPermissions[0], anonymousPermissions[1], anonymousPermissions[2], anonymousPermissions[3],
+        anonymousPermissions[4], anonymousPermissions[5], anonymousPermissions[6], anonymousPermissions[7]);
+#endif
 }
 
 #pragma mark Ping Timer

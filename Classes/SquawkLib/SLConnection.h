@@ -9,6 +9,62 @@
 #import <Cocoa/Cocoa.h>
 #import "AsyncUdpSocket.h"
 
+#define PERMS_10BYTE_MISC_BYTE              0x09
+#define PERMS_10BYTE_REVOKE_BYTE            0x07
+#define PERMS_10BYTE_GRANT_BYTE             0x06
+#define PERMS_10BYTE_CHANEDIT_BYTE          0x05
+#define PERMS_10BYTE_CHAN_BYTE              0x04
+#define PERMS_10BYTE_ADMIN_BYTE             0x03
+
+#define PERMS_8BYTE_MISC_BYTE               0x06
+#define PERMS_8BYTE_REVOKE_BYTE             0x04
+#define PERMS_8BYTE_GRANT_BYTE              0x03
+#define PERMS_8BYTE_CHANEDIT_BYTE           0x02
+#define PERMS_8BYTE_CHAN_BYTE               0x01
+#define PERMS_8BYTE_ADMIN_BYTE              0x00
+
+#define PERMS_MISC_CHANCOMMANDER_BYTE5      0x80
+#define PERMS_MISC_CHANKICK_BYTE5           0x40
+#define PERMS_MISC_SERVERKICK_BYTE5         0x20
+#define PERMS_MISC_TEXTPLAYER_BYTE5         0x10
+#define PERMS_MISC_TEXTCHANALL_BYTE5        0x08
+#define PERMS_MISC_TEXTCHANOWN_BYTE5        0x04
+#define PERMS_MISC_TEXTALL_BYTE5            0x02
+
+#define PERMS_GRANT_CA_BYTE                 0x04
+#define PERMS_GRANT_AUTOOP_BYTE             0x08
+#define PERMS_GRANT_OP_BYTE                 0x10
+#define PERMS_GRANT_AUTOVOICE_BYTE          0x20
+#define PERMS_GRANT_VOICE_BYTE              0x40
+#define PERMS_GRANT_REGISTER_BYTE           0x80
+
+#define PERMS_REVOKE_CA_BYTE                0x02
+#define PERMS_REVOKE_AUTOOP_BYTE            0x04
+#define PERMS_REVOKE_OP_BYTE                0x08
+#define PERMS_REVOKE_AUTOVOICE_BYTE         0x10
+#define PERMS_REVOKE_VOICE_BYTE             0x20
+#define PERMS_REVOKE_REGISTER_BYTE          0x40
+
+#define PERMS_CHAN_JOINREG_BYTE             0x02
+#define PERMS_CHAN_CREATEREG_BYTE           0x04
+#define PERMS_CHAN_CREATEUNREG_BYTE         0x08
+#define PERMS_CHAN_CREATEDEF_BYTE           0x10
+#define PERMS_CHAN_CREATESUB_BYTE           0x20
+#define PERMS_CHAN_CREATEMOD_BYTE           0x40
+#define PERMS_CHAN_DELETE_BYTE              0x80
+
+#define PERMS_CHANEDIT_NAME_BYTE            0x01
+#define PERMS_CHANEDIT_PWD_BYTE             0x02
+#define PERMS_CHANEDIT_TOPIC_BYTE           0x04
+#define PERMS_CHANEDIT_DESC_BYTE            0x08
+#define PERMS_CHANEDIT_ORDER_BYTE           0x10
+#define PERMS_CHANEDIT_MAXU_BYTE            0x20
+#define PERMS_CHANEDIT_CODEC_BYTE           0x40
+#define PERMS_CHANEDIT_CHNOPWD_BYTE         0x80
+
+#define PERMS_ADMIN_MOVEPLAYER_BYTE         0x02
+#define PERMS_ADMIN_BANIP_BYTE              0x01
+
 typedef enum {
   SLCodecSpeex_3_4 = 0x05,
   SLCodecSpeex_5_2 = 0x06,
@@ -55,6 +111,15 @@ enum {
   BOOL pendingReceive;
   BOOL pingReplyPending;
   
+  // permissions
+  unsigned char channelAdminPermissions[8];
+  unsigned char operatorPemissions[8];
+  unsigned char voicePermissions[8];
+  unsigned char anonymousPermissions[8];
+  
+  unsigned char serverAdminPermissions[10];
+  unsigned char registeredPermissions[10];
+  
   id delegate;
 }
 
@@ -80,6 +145,8 @@ enum {
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error;
 
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error;
+
+- (void)parsePermissionData:(NSData*)data;
 
 #pragma mark Ping Timer
 
