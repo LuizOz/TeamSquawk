@@ -812,7 +812,7 @@
   unsigned int packetType;
   SNARF_INT(packetType);
   
-  BOOL commanderChannel = (((packetType >> 16) & 0xff) == 0x01);
+  BOOL isWhisper = (((packetType >> 16) & 0xff) == 0x01);
   
   // get connection id and client id
   unsigned int connectionID, clientID;
@@ -845,7 +845,7 @@
                                     [NSNumber numberWithUnsignedShort:serverData], @"SLServerData",
                                     [NSNumber numberWithUnsignedInt:senderID], @"SLSenderID",
                                     [NSNumber numberWithUnsignedShort:senderCounter], @"SLSenderCounter",
-                                    [NSNumber numberWithBool:commanderChannel], @"SLCommandChannel",
+                                    [NSNumber numberWithBool:isWhisper], @"SLIsWhisper",
                                     audioCodecData, @"SLAudioCodecData",
                                     nil];
   

@@ -1113,12 +1113,12 @@ void UncaughtExceptionHandler(NSException *exception)
   [graphPlayer setOutputVolume:volume];  
 }
 
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID isWhisper:(BOOL)isWhisper senderPacketCounter:(unsigned short)count
 {
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   
   // out-of-band, I know, least messy way though
-  [player setIsWhispering:NO];
+  [player setIsWhispering:isWhisper];
   
   NSInvocationOperation *invocation = [[NSInvocationOperation alloc] initWithTarget:player selector:@selector(backgroundDecodeData:) object:[audioCodecData retain]];
   [[player decodeQueue] addOperation:invocation];

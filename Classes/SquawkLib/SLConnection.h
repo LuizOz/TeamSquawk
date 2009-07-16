@@ -86,6 +86,11 @@ enum {
 };
 
 typedef enum {
+  TSPlayerServerAdmin = 0x01,
+  TSPlayerRegistered = 0x04,
+} TSPlayerExtendedFlags;
+
+typedef enum {
   SLConnectionTypeAnonymous = PERMS_8BYTE,
   SLConnectionTypeVoice = PERMS_8BYTE,
   SLConnectionTypeOperator = PERMS_8BYTE,
@@ -203,7 +208,7 @@ typedef enum {
 - (void)connectionPingReply:(SLConnection*)connection;
 
 - (void)connection:(SLConnection*)connection receivedTextMessage:(NSString*)message fromNickname:(NSString*)nickname playerID:(unsigned int)playerID;
-- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID commandChannel:(BOOL)command senderPacketCounter:(unsigned short)count;
+- (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID isWhisper:(BOOL)isWhisper senderPacketCounter:(unsigned short)count;
 
 @end
 

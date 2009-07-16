@@ -434,15 +434,15 @@
       case PACKET_TYPE_CVOICE_SPEEX_19_5:
       case PACKET_TYPE_CVOICE_SPEEX_25_9:
       {
-        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedVoiceMessage:codec:playerID:commandChannel:senderPacketCounter:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedVoiceMessage:codec:playerID:isWhisper:senderPacketCounter:)])
         {
           NSData *data = [packet objectForKey:@"SLAudioCodecData"];
           SLAudioCodecType codec = (([[packet objectForKey:@"SLPacketType"] unsignedIntValue] >> 24) & 0xff);
           unsigned int playerID = [[packet objectForKey:@"SLSenderID"] unsignedIntValue];
           unsigned short count = [[packet objectForKey:@"SLSenderCounter"] unsignedShortValue];
-          BOOL commandChannel = [[packet objectForKey:@"SLCommandChannel"] boolValue];
+          BOOL isWhisper = [[packet objectForKey:@"SLIsWhisper"] boolValue];
           
-          [[self delegate] connection:self receivedVoiceMessage:data codec:codec playerID:playerID commandChannel:commandChannel senderPacketCounter:count];
+          [[self delegate] connection:self receivedVoiceMessage:data codec:codec playerID:playerID isWhisper:isWhisper senderPacketCounter:count];
         }
         break;
       }

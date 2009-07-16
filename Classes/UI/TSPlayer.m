@@ -7,7 +7,7 @@
 //
 
 #import "TSPlayer.h"
-
+#import "SLConnection.h"
 
 @implementation TSPlayer
 

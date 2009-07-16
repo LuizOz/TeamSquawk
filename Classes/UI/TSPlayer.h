@@ -19,11 +19,6 @@ typedef enum {
   TSPlayerHasMutedSpeakers = 0x20,
 } TSPlayerFlags;
 
-typedef enum {
-  TSPlayerServerAdmin = 0x01,
-  TSPlayerRegistered = 0x04,
-} TSPlayerExtendedFlags;
-
 @interface TSPlayer : NSObject {
   TSAUGraphPlayer *graphPlayer;
   TSAudioConverter *converter;
