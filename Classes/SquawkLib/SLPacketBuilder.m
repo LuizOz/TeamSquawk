@@ -32,6 +32,13 @@
 #define VOMIT_STRING(str)   const char *str##Buffer = [str cStringUsingEncoding:NSASCIIStringEncoding]; \
                             [packetData appendBytes:(char*)str##Buffer length:([str length] + 1)]
 
+#define VOMIT_26BYTE_STRING(str)  unsigned char str##Len = ([str length] < 25 ? (char)([str length] & 0xff) : 25); \
+                                  unsigned char str##Chunk[25]; \
+                                  memset(str##Chunk, '\0', 25); \
+                                  memcpy(str##Chunk, [str cStringUsingEncoding:NSASCIIStringEncoding], str##Len); \
+                                  [packetData appendBytes:&str##Len length:1]; \
+                                  [packetData appendBytes:str##Chunk length:25]
+
 #define VOMIT_30BYTE_STRING(str)  unsigned char str##Len = ([str length] < 30 ? (char)([str length] & 0xff) : 29); \
                                   unsigned char str##Chunk[29]; \
                                   memset(str##Chunk, '\0', 29); \
@@ -172,7 +179,7 @@
   VOMIT_30BYTE_STRING(subChannelName);
   
   // channel password
-  VOMIT_30BYTE_STRING(channelPassword);
+  VOMIT_26BYTE_STRING(channelPassword);
   
   // now the crc from the previous login call
   VOMIT_INT(lastCRC32);

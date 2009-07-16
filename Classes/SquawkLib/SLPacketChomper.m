@@ -16,6 +16,7 @@
                           NSData *snarfData = data
 
 #define SNARF_SKIP(count) snarfPos += count;
+#define SNARF_POS()       snarfPos
 
 #define SNARF_BYTES(dest, count)  [snarfData getBytes:&dest range:NSMakeRange(snarfPos, count)]; \
                                   snarfPos += count
@@ -50,6 +51,11 @@
                                     [snarfData getBytes:&dest##Buffer range:NSMakeRange(snarfPos, 29)]; \
                                     snarfPos += 29; \
                                     dest = [[[NSString alloc] initWithCString:(const char*)dest##Buffer length:dest##Len] autorelease]
+
+#define SNARF_NULLTERM_STRING(dest) char *dest##DataPtr = (char*)[[snarfData subdataWithRange:NSMakeRange(snarfPos, [snarfData length] - snarfPos)] bytes]; \
+                                    unsigned int dest##Len = (strlen(dest##DataPtr) < ([snarfData length] - snarfPos)) ? strlen(dest##DataPtr) : ([snarfData length] - snarfPos); \
+                                    dest = [[[NSString alloc] initWithCString:dest##DataPtr length:dest##Len] autorelease]; \
+                                    snarfPos += dest##Len + 1
 
 #define SNARF_CRC()   unsigned int crc; \
                       [snarfData getBytes:&crc range:NSMakeRange(snarfPos, 4)]; \
@@ -118,9 +124,11 @@
 
 - (NSDictionary*)chompPacket:(NSData*)data
 {
+  SNARF_INIT(data);
+  
   // We've been given a packet to do something with. First four bytes of the packet are the packet type.
   unsigned int packetType, connectionID, clientID, sequenceNumber;
-  [data getBytes:&packetType range:NSMakeRange(0, 4)];
+  SNARF_INT(packetType);
   
   if (packetType == PACKET_TYPE_ACKNOWELDGE)
   {
@@ -130,9 +138,9 @@
   
   // these aren't true for all packets. the one that aren't we'll have to specficially not send acks in the
   // switch statement.
-  [data getBytes:&connectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+  SNARF_INT(sequenceNumber);
   
   switch (packetType) 
   {
@@ -281,7 +289,7 @@
   // platform string
   NSString *platformName;
   SNARF_30BYTE_STRING(platformName);
-
+  
   // versions
   unsigned short majorVersion, minorVersion;
   unsigned short subLevelVersion, subsubLevelVersion;
@@ -335,45 +343,36 @@
 #pragma mark Server Info
 
 - (NSDictionary*)chompChannelList:(NSData*)data
-{  
+{
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
-  
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
+
   // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   // number of channels
   unsigned int currentChannel = 0, numberOfChannels = 0;
-  [data getBytes:&numberOfChannels range:NSMakeRange(24, 4)];
-  
-  // from here on we're gonna need a channel byte pointer
-  unsigned int byteIndex = 28;
+  SNARF_INT(numberOfChannels);
   
   NSMutableArray *channels = [NSMutableArray array];
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_LIST], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:numberOfChannels], @"SLNumberOfChannels",
                                     channels, @"SLChannels",
@@ -382,48 +381,33 @@
   while (currentChannel < numberOfChannels)
   {
     unsigned int channelID = 0;
-    [data getBytes:&channelID range:NSMakeRange(byteIndex, 4)];
-    byteIndex += 4;
+    SNARF_INT(channelID);
     
     unsigned short flags = 0;
-    [data getBytes:&flags range:NSMakeRange(byteIndex, 2)];
-    byteIndex += 2;
+    SNARF_SHORT(flags);
     
     unsigned short codec = 0;
-    [data getBytes:&codec range:NSMakeRange(byteIndex, 2)];
-    byteIndex += 2;
+    SNARF_SHORT(codec);
     
     unsigned int parentID = 0;
-    [data getBytes:&parentID range:NSMakeRange(byteIndex, 4)];
-    byteIndex += 4;
+    SNARF_INT(parentID);
     
     unsigned short sortOrder = 0;
-    [data getBytes:&sortOrder range:NSMakeRange(byteIndex, 2)];
-    byteIndex += 2;
+    SNARF_SHORT(sortOrder);
     
     unsigned short maxUsers;
-    [data getBytes:&maxUsers range:NSMakeRange(byteIndex, 2)];
-    byteIndex += 2;    
+    SNARF_SHORT(maxUsers);
     
     // we have to start reading null-terminated strings here :(
-    char *dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
-    unsigned int dataLen = strlen(dataPtr);
+    NSString *channelName;
+    SNARF_NULLTERM_STRING(channelName);
     
-    NSString *channelName = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
-    byteIndex += dataLen + 1;
+    NSString *channelTopic;
+    SNARF_NULLTERM_STRING(channelTopic);
+
+    NSString *channelDescription;
+    SNARF_NULLTERM_STRING(channelDescription);
     
-    dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
-    dataLen = strlen(dataPtr);
-    
-    NSString *channelTopic = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
-    byteIndex += dataLen + 1;
-    
-    dataPtr = (char*)[[data subdataWithRange:NSMakeRange(byteIndex, [data length] - byteIndex)] bytes];
-    dataLen = strlen(dataPtr);
-    
-    NSString *channelDescription = [[[NSString alloc] initWithCString:dataPtr length:dataLen] autorelease];
-    byteIndex += dataLen + 1;
-        
     NSDictionary *channelDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                        [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
                                        [NSNumber numberWithUnsignedShort:flags], @"SLChannelFlags",
@@ -444,43 +428,33 @@
 
 - (NSDictionary*)chompPlayerList:(NSData*)data
 {
-  // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
   
+  // get connection id and client id
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   unsigned int currentPlayer = 0, numberOfPlayers = 0;
-  [data getBytes:&numberOfPlayers range:NSMakeRange(24, 4)];
-  
-  // they're fixed spaces but we still need a byte counter
-  unsigned int byteIndex = 28;
+  SNARF_INT(numberOfPlayers);
   
   NSMutableArray *players = [NSMutableArray array];
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_LIST], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:numberOfPlayers], @"SLNumberOfPlayers",
                                     players, @"SLPlayers",
@@ -489,33 +463,22 @@
   for (currentPlayer = 0; currentPlayer < numberOfPlayers; currentPlayer++)
   {
     unsigned int playerID = 0;
-    [data getBytes:&playerID range:NSMakeRange(byteIndex, 4)];
-    byteIndex += 4;
+    SNARF_INT(playerID);
     
     unsigned int channelID = 0;
-    [data getBytes:&channelID range:NSMakeRange(byteIndex, 4)];
-    byteIndex += 4;
-    
+    SNARF_INT(channelID);
+
     // skip two bytes
-    byteIndex += 2;
+    SNARF_SKIP(2);
     
     unsigned short playerExtendedFlags;
-    [data getBytes:&playerExtendedFlags range:NSMakeRange(byteIndex, 2)];
-    byteIndex += 2;
+    SNARF_SHORT(playerExtendedFlags);
     
     unsigned short flags = 0;
-    [data getBytes:&flags range:NSMakeRange(byteIndex, 2)];
-    byteIndex += 2;
+    SNARF_SHORT(flags);
     
-    unsigned char nickLen = 0;
-    [data getBytes:&nickLen range:NSMakeRange(byteIndex, 1)];
-    byteIndex++;
-    
-    unsigned char nickBuffer[29];
-    [data getBytes:&nickBuffer range:NSMakeRange(byteIndex, 29)];
-    byteIndex += 29;
-    
-    NSString *nick = [[[NSString alloc] initWithCString:(char*)nickBuffer length:nickLen] autorelease];
+    NSString *nick;
+    SNARF_30BYTE_STRING(nick);
     
     NSDictionary *playerDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
@@ -534,55 +497,49 @@
 
 - (NSDictionary*)chompNewPlayer:(NSData*)data
 {
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   unsigned int playerID;
-  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  SNARF_INT(playerID);
   
   unsigned int channelID;
-  [data getBytes:&channelID range:NSMakeRange(28, 4)];
+  SNARF_INT(channelID);
   
   // 2 bytes of crap, then the player extended flags and then two more I don't know about eyt
+  SNARF_SKIP(2);
+  
   unsigned short extendedFlags;
-  [data getBytes:&extendedFlags range:NSMakeRange(34, 2)];
+  SNARF_SHORT(extendedFlags);
   
-  unsigned char nickLen;
-  char nickBuffer[29];
-  [data getBytes:&nickLen range:NSMakeRange(38, 1)];
-  [data getBytes:nickBuffer range:NSMakeRange(39, 29)];
+  SNARF_SKIP(2);
   
-  NSString *nick = [NSString stringWithCString:nickBuffer length:nickLen];
+  NSString *nick;
+  SNARF_30BYTE_STRING(nick);
   
   // 4 bytes at the end that I don't know what they are either
+  SNARF_SKIP(4);
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_NEW_PLAYER], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
@@ -595,33 +552,26 @@
 
 - (NSDictionary*)chompPlayerLeft:(NSData*)data
 {
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
 
   unsigned int playerID;
-  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  SNARF_INT(playerID);
   
   // there is a whole load of crap in the player left packet but I've no idea what
   // it means. Some if it will be timed out vs. disconnected I imagine
@@ -630,7 +580,7 @@
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_LEFT], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     nil];
@@ -640,39 +590,32 @@
 
 - (NSDictionary*)chompChannelChange:(NSData*)data
 {
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   unsigned int playerID;
-  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  SNARF_INT(playerID);
   
   unsigned int previousChannelID;
-  [data getBytes:&previousChannelID range:NSMakeRange(28, 4)];
+  SNARF_INT(previousChannelID);
   
   unsigned int newChannelID;
-  [data getBytes:&newChannelID range:NSMakeRange(32, 4)];
+  SNARF_INT(newChannelID);
   
   // 2 bytes of unknown + possible other crc?
   
@@ -680,7 +623,7 @@
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_CHANGE], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedInt:previousChannelID], @"SLPreviousChannelID",
@@ -692,36 +635,29 @@
 
 - (NSDictionary*)chompPlayerUpdate:(NSData*)data
 {
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
 
   unsigned int playerID;
-  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  SNARF_INT(playerID);
   
   unsigned short playerFlags;
-  [data getBytes:&playerFlags range:NSMakeRange(28, 2)];
+  SNARF_SHORT(playerFlags);
   
   // 4 bytes of unknown, possible other crc?
   
@@ -729,7 +665,7 @@
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_UPDATE], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedShort:playerFlags], @"SLPlayerFlags",
@@ -740,42 +676,35 @@
 
 - (NSDictionary*)chompPlayerMutedUpdate:(NSData*)data
 {
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   unsigned int playerID;
-  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  SNARF_INT(playerID);
   
   unsigned char mutedStatus;
-  [data getBytes:&mutedStatus range:NSMakeRange(28, 1)];
+  SNARF_BYTE(mutedStatus);
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_MUTED], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithBool:(mutedStatus == 0x01 ? YES : NO)], @"SLMutedStatus",
@@ -794,64 +723,42 @@
     return [self chompMoreTextMessage:data];
   }
   
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   // there appears to be 5 bytes of crap here, probably 4 + 1 but the length
   // of the sending nickname is at the 6th
+  SNARF_SKIP(5);
   
-  unsigned char nickLen;
-  [data getBytes:&nickLen range:NSMakeRange(29, 1)];
-  
-  unsigned char nickBuffer[29];
-  [data getBytes:&nickBuffer range:NSMakeRange(30, 29)];
-  
-  NSString *nick = [[[NSString alloc] initWithCString:(char*)nickBuffer length:nickLen] autorelease];
+  NSString *nick;
+  SNARF_30BYTE_STRING(nick);
   
   // according to libtbb, the message data starts at 0x3b (59) and continues till the first
   // null character. if it hits EOM then we should be expecting a second/third/etc packet
-  
-  unsigned int byteIndex = 59;
-  
-  unsigned char *dataPtr = (unsigned char*)[data bytes];
-  NSString *message = [NSString string];
-  
-  while (byteIndex < [data length])
-  {
-    if (dataPtr[byteIndex]  == '\0')
-    {
-      break;
-    }
-    message = [message stringByAppendingFormat:@"%c", dataPtr[byteIndex++]];
-  }
+
+  NSString *message;
+  SNARF_NULLTERM_STRING(message);
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_TEXT_MESSAGE], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
-                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     nick, @"SLNickname",
@@ -865,44 +772,26 @@
 {
   NSMutableDictionary *mutableFragment = [fragment mutableCopy];
   
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
   // get connection id and client id
-  unsigned int connnectionID, clientID;
-  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber = 0;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
   // resend and fragment count
   unsigned short resendCount = 0, fragmentCount = 0;
-  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
-  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
   
-  // crc
-  unsigned int crc = 0;
-  [data getBytes:&crc range:NSMakeRange(20, 4)];
-  
-  // check the crc
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
-  
-  unsigned int byteIndex = 24;
-  
-  unsigned char *dataPtr = (unsigned char*)[data bytes];
-  NSString *moreMessage = [NSString string];
-  
-  while (byteIndex < [data length])
-  {
-    if (dataPtr[byteIndex] == '\0')
-    {
-      break;
-    }
-    moreMessage = [moreMessage stringByAppendingFormat:@"%c", dataPtr[byteIndex++]];
-  }
+  SNARF_CRC();
+
+  NSString *moreMessage;
+  SNARF_NULLTERM_STRING(moreMessage);
   
   // we've got more message, mutate the fragment and bomb out
   NSString *messageFragment = [mutableFragment objectForKey:@"SLMessage"];
@@ -918,30 +807,35 @@
 
 - (NSDictionary*)chompVoiceMessage:(NSData*)data
 {
+  SNARF_INIT(data);
+  
   unsigned int packetType;
-  [data getBytes:&packetType range:NSMakeRange(0, 4)];
+  SNARF_INT(packetType);
   
   BOOL commanderChannel = (((packetType >> 16) & 0xff) == 0x01);
   
+  // get connection id and client id
   unsigned int connectionID, clientID;
-  [data getBytes:&connectionID range:NSMakeRange(4, 4)];
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
-  
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+    
   unsigned short packetCounter;
-  [data getBytes:&packetCounter range:NSMakeRange(12, 2)];
+  SNARF_SHORT(packetCounter);
   
   unsigned short serverData;
-  [data getBytes:&serverData range:NSMakeRange(14, 2)];
+  SNARF_SHORT(serverData);
   
   unsigned int senderID;
-  [data getBytes:&senderID range:NSMakeRange(16, 4)];
+  SNARF_INT(senderID);
   
   // one byte of guff here?
+  SNARF_SKIP(1);
   
-  unsigned int senderCounter;
-  [data getBytes:&senderCounter range:NSMakeRange(21, 2)];
+  unsigned short senderCounter;
+  SNARF_SHORT(senderCounter);
   
-  NSData *audioCodecData = [data subdataWithRange:NSMakeRange(23, [data length]-23)];
+  NSData *audioCodecData;
+  SNARF_DATA(audioCodecData, [data length] - SNARF_POS());
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:packetType], @"SLPacketType",
