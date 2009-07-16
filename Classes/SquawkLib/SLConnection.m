@@ -553,7 +553,7 @@
         serverAdminPermissions[5], serverAdminPermissions[6], serverAdminPermissions[7], serverAdminPermissions[8], serverAdminPermissions[9]);
 #endif
   
-  // skip 8 bytes
+  // skip 4 bytes
   position += 4;
   
   [data getBytes:&channelAdminPermissions range:NSMakeRange(position, 8)];

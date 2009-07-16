@@ -9,6 +9,9 @@
 #import <Cocoa/Cocoa.h>
 #import "AsyncUdpSocket.h"
 
+#define PERMS_8BYTE                         0x00
+#define PERMS_10BYTE                        0x01
+
 #define PERMS_10BYTE_MISC_BYTE              0x09
 #define PERMS_10BYTE_REVOKE_BYTE            0x07
 #define PERMS_10BYTE_GRANT_BYTE             0x06
@@ -81,6 +84,16 @@ enum {
   SLConnectionErrorPingTimeout = 2,
   SLConnectionErrorBadLogin = 3,
 };
+
+typedef enum {
+  SLConnectionTypeAnonymous = PERMS_8BYTE,
+  SLConnectionTypeVoice = PERMS_8BYTE,
+  SLConnectionTypeOperator = PERMS_8BYTE,
+  SLConnectionTypeChannelAdmin = PERMS_8BYTE,
+  
+  SLConnectionTypeRegistered = PERMS_10BYTE,
+  SLConnectionTypeServerAdmin = PERMS_10BYTE,
+} SLConnectionPermissionType;
 
 @interface SLConnection : NSObject {
   AsyncUdpSocket *socket;
