@@ -340,8 +340,8 @@
 		C9BD00C70FFA02CD00FC280A /* testenc_uwb.vcproj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = testenc_uwb.vcproj; sourceTree = "<group>"; };
 		C9BD00C80FFA02CD00FC280A /* testenc_wb.vcproj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = testenc_wb.vcproj; sourceTree = "<group>"; };
 		C9BD00C90FFA02CD00FC280A /* testresample.vcproj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = testresample.vcproj; sourceTree = "<group>"; };
-		C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libspeex.1.5.0.dylib; path = build/Debug/libspeex.1.5.0.dylib; sourceTree = "<group>"; };
-		C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libspeexdsp.1.5.0.dylib; path = build/Debug/libspeexdsp.1.5.0.dylib; sourceTree = "<group>"; };
+		C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libspeex.1.5.0.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libspeexdsp.1.5.0.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9BD020A0FFB47BE00FC280A /* SpeexDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpeexDecoder.h; sourceTree = "<group>"; };
 		C9BD020B0FFB47BE00FC280A /* SpeexDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpeexDecoder.m; sourceTree = "<group>"; };
 		C9BD020D0FFB47C600FC280A /* SpeexEncoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpeexEncoder.h; sourceTree = "<group>"; };
@@ -1381,7 +1381,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# shell script goes here\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make clean && make\n\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeex.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeexdsp.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"";
+			shellScript = "# shell script goes here\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-arch i386 -arch ppc -g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make clean && make\n\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeex.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeexdsp.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"";
 		};
 		C9BD03210FFCA14400FC280A /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
