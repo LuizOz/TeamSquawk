@@ -53,7 +53,7 @@
   return [self initWithHost:host withPort:8767 withError:error];
 }
 
-- (id)initWithHost:(NSString*)host withPort:(int)port withError:(NSError**)error
+- (id)initWithHost:(NSString*)host withPort:(short)port withError:(NSError**)error
 {
   if (self = [super init])
   {
@@ -89,7 +89,7 @@
     
     if (!connected)
     {
-      NSLog(@"%@", *error);
+      NSLog(@"initWithHost error, %@", *error);
       [socket release];
       [self release];
       return nil;

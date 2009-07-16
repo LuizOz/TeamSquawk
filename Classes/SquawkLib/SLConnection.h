@@ -145,7 +145,7 @@ typedef enum {
 
 + (unsigned int)bitrateForCodec:(unsigned int)codec;
 - (id)initWithHost:(NSString*)host withError:(NSError**)error;
-- (id)initWithHost:(NSString*)host withPort:(int)port withError:(NSError**)error;
+- (id)initWithHost:(NSString*)host withPort:(short)port withError:(NSError**)error;
 
 #pragma mark Commands
 

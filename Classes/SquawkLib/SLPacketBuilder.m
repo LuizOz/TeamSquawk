@@ -6,8 +6,44 @@
 //  Copyright 2009 Matt Wright Consulting. All rights reserved.
 //
 
+#import <Foundation/NSByteOrder.h>
+
 #import "SLPacketBuilder.h"
 #import "NSData+Extensions.h"
+
+#define VOMIT_INIT()  NSMutableData *packetData = [NSMutableData data]
+
+#define VOMIT_BYTE(name)  [packetData appendBytes:&name length:1]
+#define VOMIT_BYTES(name, len)   [packetData appendBytes:name length:len]
+
+#define VOMIT_SHORT(name) unsigned short bs##name = NSSwapHostShortToLittle((name & 0xffff)); \
+                          [packetData appendBytes:&bs##name length:2]
+
+#define VOMIT_INT(name)   unsigned int bs##name = NSSwapHostIntToLittle(name & 0xffffffff); \
+                          [packetData appendBytes:&bs##name length:4]
+
+#define VOMIT_CRC_BLANKS()  unsigned char crc32Chunk[] = { 0x00, 0x00, 0x00, 0x00 }; \
+                            NSRange crcRange = NSMakeRange([packetData length], 4); \
+                            [packetData appendBytes:crc32Chunk length:4]
+
+#define VOMIT_CRC() unsigned int crc32 = NSSwapHostIntToLittle([packetData crc32]); \
+                    [packetData replaceBytesInRange:crcRange withBytes:&crc32 length:4];
+
+#define VOMIT_STRING(str)   const char *str##Buffer = [str cStringUsingEncoding:NSASCIIStringEncoding]; \
+                            [packetData appendBytes:(char*)str##Buffer length:([str length] + 1)]
+
+#define VOMIT_30BYTE_STRING(str)  unsigned char str##Len = ([str length] < 30 ? (char)([str length] & 0xff) : 29); \
+                                  unsigned char str##Chunk[29]; \
+                                  memset(str##Chunk, '\0', 29); \
+                                  memcpy(str##Chunk, [str cStringUsingEncoding:NSASCIIStringEncoding], str##Len); \
+                                  [packetData appendBytes:&str##Len length:1]; \
+                                  [packetData appendBytes:str##Chunk length:29]
+
+#define VOMIT_BLANKS(id, count) unsigned char blanks##id[count]; \
+                                memset(blanks##id, '\0', count); \
+                                [packetData appendBytes:&blanks##id length:count];
+
+#define VOMIT_DATA(data)  [packetData appendData:data]
 
 @implementation SLPacketBuilder
 
@@ -43,92 +79,56 @@
                             loginNickName:(NSString*)loginNickName;
 {
   // See http://fiasko-nw.net/~thomas/2006/TeamTapper/protocol/f4/be/03/index.php.en
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // This is the "I'm a login packet" header
   unsigned char headerChunk[] = { 0xf4, 0xbe, 0x03, 0x00 };
-  [packetData appendBytes:headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // We don't have a connection id yet, login packets have it blank
   unsigned char connectionIDChunk[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-  [packetData appendBytes:connectionIDChunk length:8];
+  VOMIT_BYTES(connectionIDChunk, 8);
   
   // Sequence
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(sequenceID);
   
   // We're gonna have to come back and do the CRC later, so pad out 4 bytes of blank
-  unsigned char crc32Chunk[] = { 0x00, 0x00, 0x00, 0x00 };
-  [packetData appendBytes:crc32Chunk length:4];
+  VOMIT_CRC_BLANKS();
   
   // Client name has to be less than 29 bytes.
-  unsigned char clientNameLen = ([client length] < 30 ? (char)([client length] & 0xff) : 29);
-  unsigned char clientNameChunk[29];
-  
-  // Copy the chunk over
-  memset(clientNameChunk, '\0', 29);
-  memcpy(clientNameChunk, [client cStringUsingEncoding:NSASCIIStringEncoding], clientNameLen);
-  [packetData appendBytes:&clientNameLen length:1];
-  [packetData appendBytes:clientNameChunk length:29];
+  VOMIT_30BYTE_STRING(client);
   
   // Same routine again for the OS name
-  unsigned char osNameLen = ([osName length] < 30 ? [osName length] : 29);
-  unsigned char osNameChunk[29];
-  
-  // Copy the chunk
-  memset(osNameChunk, '\0', 29);
-  memcpy(osNameChunk, [osName cStringUsingEncoding:NSASCIIStringEncoding], osNameLen);
-  [packetData appendBytes:&osNameLen length:1];
-  [packetData appendBytes:osNameChunk length:29];
+  VOMIT_30BYTE_STRING(osName);
   
   // Two bytes of majorVersion, two bytes of minorVersion, then two lots of one byte of sub/subsublevel which I don't implement
-  unsigned short majorVersionChunk = (majorVersion & 0xffff);
-  unsigned short minorVersionChunk = (minorVersion & 0xffff);
-  [packetData appendBytes:&majorVersionChunk length:2];
-  [packetData appendBytes:&minorVersionChunk length:2];
+  VOMIT_SHORT(majorVersion);
+  VOMIT_SHORT(minorVersion);
   
   unsigned char subLevelVersionChunk = 0x00;
   unsigned char subsubLevelVersionChunk = 0x00;
-  [packetData appendBytes:&subLevelVersionChunk length:1];
-  [packetData appendBytes:&subsubLevelVersionChunk length:1];
+  VOMIT_BYTE(subLevelVersionChunk);
+  VOMIT_BYTE(subsubLevelVersionChunk);
   
   // Unknown data? Two bytes, 0x00 0x01
   unsigned char unknownChunk[] = { 0x00, 0x01 };
-  [packetData appendBytes:unknownChunk length:2];
+  VOMIT_BYTES(unknownChunk, 2);
   
   // Are we registered or anonymous
   unsigned char registeredChunk[] = { 0x01, (isRegistered ? 0x02 : 0x01) };
-  [packetData appendBytes:&registeredChunk length:2];
+  VOMIT_BYTES(registeredChunk, 2);
   
   // Login name
-  unsigned char loginNameLen = ([loginName length] < 30 ? [loginName length] : 29);
-  unsigned char loginNameChunk[29];
-  
-  memset(loginNameChunk, '\0', 29);
-  memcpy(loginNameChunk, [loginName cStringUsingEncoding:NSASCIIStringEncoding], loginNameLen);
-  [packetData appendBytes:&loginNameLen length:1];
-  [packetData appendBytes:loginNameChunk length:29];
-  
+  VOMIT_30BYTE_STRING(loginName);
+
   // Login password
-  unsigned char loginPasswordLen = ([loginPassword length] < 30 ? [loginPassword length] : 29);
-  unsigned char loginPasswordChunk[29];
-  
-  memset(loginPasswordChunk, '\0', 29);
-  memcpy(loginPasswordChunk, [loginPassword cStringUsingEncoding:NSASCIIStringEncoding], loginPasswordLen);
-  [packetData appendBytes:&loginPasswordLen length:1];
-  [packetData appendBytes:loginPasswordChunk length:29];
+  VOMIT_30BYTE_STRING(loginPassword);
   
   // Login name
-  unsigned char loginNickNameLen = ([loginNickName length] < 30 ? [loginNickName length] : 29);
-  unsigned char loginNickNameChunk[29];
-  
-  memset(loginNickNameChunk, '\0', 29);
-  memcpy(loginNickNameChunk, [loginNickName cStringUsingEncoding:NSASCIIStringEncoding], loginNickNameLen);
-  [packetData appendBytes:&loginNickNameLen length:1];
-  [packetData appendBytes:loginNickNameChunk length:29];
+  VOMIT_30BYTE_STRING(loginNickName);
   
   // Now to CRC
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(16, 4) withBytes:&crc32 length:4];
+  VOMIT_CRC();
   
   return packetData;
 }
@@ -139,66 +139,49 @@
                                           lastCRC32:(unsigned int)lastCRC32
 {
   // This packet appears to contain loads more information than this but no one knows quite what it is
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
 
   // login response packet
   unsigned char headerChunk[] = { 0xf0, 0xbe, 0x05, 0x00 };
-  [packetData appendBytes:headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // connection/session id + clientID
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
   
   // sequence id
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(sequenceID);
   
   // resend and fragment count, according to wireshark are both 2 bytes each.
   unsigned short resendCount = 0, fragmentCount = 0;
-  [packetData appendBytes:&resendCount length:2];
-  [packetData appendBytes:&fragmentCount length:2];
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
   
   // crc spacer
-  unsigned int crc = 0;
-  [packetData appendBytes:&crc length:4];
+  VOMIT_CRC_BLANKS();
   
   // not sure what this is
   unsigned short body1 = 0x0001;
-  [packetData appendBytes:&body1 length:2];
+  VOMIT_SHORT(body1);
   
   // these are actually channel name, sub channel name and password
-  unsigned char channelNameLen = 0;
-  unsigned char channelNameBuffer[29];
-  
-  memset(channelNameBuffer, '\0', 29);
-  [packetData appendBytes:&channelNameLen length:1];
-  [packetData appendBytes:channelNameBuffer length:29];
+  NSString *channelName = @"", *subChannelName = @"", *channelPassword = @"";
+  VOMIT_30BYTE_STRING(channelName);
   
   // sub channel
-  unsigned char subChannelNameLen = 0;
-  unsigned char subChannelNameBuffer[29];
-  
-  memset(subChannelNameBuffer, '\0', 29);
-  [packetData appendBytes:&subChannelNameLen length:1];
-  [packetData appendBytes:subChannelNameBuffer length:29];  
+  VOMIT_30BYTE_STRING(subChannelName);
   
   // channel password
-  unsigned char channelPasswordLen = 0;
-  unsigned char channelPasswordBuffer[25];
-  
-  memset(channelPasswordBuffer, '\0', 25);
-  [packetData appendBytes:&channelPasswordLen length:1];
-  [packetData appendBytes:channelPasswordBuffer length:25];  
+  VOMIT_30BYTE_STRING(channelPassword);
   
   // now the crc from the previous login call
-  [packetData appendBytes:&lastCRC32 length:4];
+  VOMIT_INT(lastCRC32);
   
-  // and 4 btyes of blank?
-  unsigned int spacer2 = 0;
-  [packetData appendBytes:&spacer2 length:4];
+  // and 4 btyes of blank
+  VOMIT_BLANKS(0, 4);
   
   // do the crc
-  unsigned int packetCRC = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(20, 4) withBytes:&packetCRC length:4];
+  VOMIT_CRC();
   
   return packetData;
 }
@@ -207,27 +190,24 @@
                                         clientID:(unsigned int)clientID
                                       sequenceID:(unsigned int)sequenceID
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   unsigned char headerChunk[] = { 0xf0, 0xbe, 0x2c, 0x01 };
-  [packetData appendBytes:headerChunk length:4];
-  
+  VOMIT_BYTES(headerChunk, 4);
+
   // connection id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
   
   // sequence id
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(sequenceID);
   
   unsigned short resendCount = 0, fragmentCount = 0;
-  [packetData appendBytes:&resendCount length:2];
-  [packetData appendBytes:&fragmentCount length:2];
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
   
-  unsigned int crc = 0, crcPosition = [packetData length];
-  [packetData appendBytes:&crc length:4];
-  
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  VOMIT_CRC_BLANKS();
+  VOMIT_CRC();
   
   return packetData;
 }
@@ -237,18 +217,18 @@
 - (NSData*)buildAcknowledgePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID
 {
   // we need to ack packets the server sends us.
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // this is the acknowledge header
   unsigned char headerChunk[] = { 0xf1,  0xbe, 0x00, 0x00 };
-  [packetData appendBytes:headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // connectiond id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
   
   // sequence to ack
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(sequenceID);
   
   // don't need a crc, how odd
   
@@ -257,27 +237,24 @@
 
 - (NSData*)buildPingPacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // ping header
   unsigned char headerChunk[] = { 0xf4, 0xbe, 0x01, 0x00 };
-  [packetData appendBytes:headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // session key
-  [packetData appendBytes:&connectionID length:4];
+  VOMIT_INT(connectionID);
   
   // client id
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(clientID);
   
   // sequence
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(sequenceID);
   
   // crc placeholder
-  unsigned int crc = 0;
-  [packetData appendBytes:&crc length:4];
-  
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(16, 4) withBytes:&crc32 length:4];
+  VOMIT_CRC_BLANKS();
+  VOMIT_CRC();
   
   return packetData;
 }
@@ -286,43 +263,39 @@
 
 - (NSData*)buildTextMessagePacketWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID message:(NSString*)message
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // text message header
   unsigned char headerChunk[] = { 0xf0, 0xbe, 0xae, 0x01 };
-  [packetData appendBytes:headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // session key
-  [packetData appendBytes:&connectionID length:4];
+  VOMIT_INT(connectionID);
   
   // client id
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(clientID);
   
   // sequence
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(sequenceID);
   
   // we're gonna need to do something with the fragment count if we want to send long message
   unsigned short resentCount = 0, fragmentCount = 0;
-  [packetData appendBytes:&resentCount length:2];
-  [packetData appendBytes:&fragmentCount length:2];
+  VOMIT_SHORT(resentCount);
+  VOMIT_SHORT(fragmentCount);
   
   // crc placeholder
-  unsigned int crc = 0;
-  [packetData appendBytes:&crc length:4];
+  VOMIT_CRC_BLANKS();
   
   // 5 bytes of junk? then the player id.
   unsigned char junk[] = { 0x00, 0x00, 0x00, 0x00, 0x02 };
-  [packetData appendBytes:junk length:5];
+  VOMIT_BYTES(junk, 5);
   
   // player id
-  [packetData appendBytes:&playerID length:4];
-  
-  const char *textBuffer = [message cStringUsingEncoding:NSASCIIStringEncoding];
-  [packetData appendBytes:textBuffer length:([message length]+1)];
+  VOMIT_INT(playerID);
+  VOMIT_STRING(message);
   
   // do the crc
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(20, 4) withBytes:&crc32 length:4];
+  VOMIT_CRC();
   
   return packetData;
 }
@@ -331,27 +304,27 @@
 
 - (NSData*)buildVoiceMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID codec:(unsigned char)codec packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID audioData:(NSData*)data audioFrames:(unsigned char)frames
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // packet header
   unsigned char headerChunk[] = { 0xf2, 0xbe, 0x00, codec };
-  [packetData appendBytes:&headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // conenction id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
   
   // packet count
-  [packetData appendBytes:&packetCount length:2];
+  VOMIT_SHORT(packetCount);
   
   // tranmission id
-  [packetData appendBytes:&transmissionID length:2];
+  VOMIT_SHORT(transmissionID);
   
   // number of frames
-  [packetData appendBytes:&frames length:1];
+  VOMIT_BYTE(frames);
   
   // audio data
-  [packetData appendData:data];
+  VOMIT_DATA(data);
   
   return packetData;
 }
@@ -365,40 +338,40 @@
                                  audioFrames:(unsigned char)frames
                                   recipients:(NSArray*)recipientIDs
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // packet header
   unsigned char headerChunk[] = { 0xf2, 0xbe, 0x01, codec };
-  [packetData appendBytes:&headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // conenction id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
   
   // packet count
-  [packetData appendBytes:&packetCount length:2];
+  VOMIT_SHORT(packetCount);
   
   // some kind of transmission count?
-  [packetData appendBytes:&transmissionID length:2];
+  VOMIT_SHORT(transmissionID);
   
   unsigned char numOfRecipients = [recipientIDs count];
-  [packetData appendBytes:&numOfRecipients length:1];
+  VOMIT_BYTE(numOfRecipients);
   
   for (NSNumber *recipient in recipientIDs)
   {
     // something odd?
     unsigned char odd = 0x01;
-    [packetData appendBytes:&odd length:1];
+    VOMIT_BYTE(odd);
     
     unsigned int recipientID = [recipient unsignedIntValue];
-    [packetData appendBytes:&recipientID length:4];
+    VOMIT_INT(recipientID);
   }
   
   // number of frames
-  [packetData appendBytes:&frames length:1];
+  VOMIT_BYTE(frames);
   
   // audio data
-  [packetData appendData:data];
+  VOMIT_DATA(data);
   
   return packetData;
 }
@@ -407,100 +380,86 @@
 
 - (NSData*)buildSwitchChannelMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID newChannelID:(unsigned int)channelID password:(NSString*)password
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // packet header
   unsigned char headerChunk[] = { 0xf0, 0xbe, 0x2f, 0x01 };
-  [packetData appendBytes:&headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // connection id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
-  
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
+  VOMIT_INT(sequenceID);
   
   unsigned short resendCount = 0, fragmentCount = 0;
-  [packetData appendBytes:&resendCount length:2];
-  [packetData appendBytes:&fragmentCount length:2];
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
   
-  unsigned int crc = 0, crcPosition = [packetData length];
-  [packetData appendBytes:&crc length:4];
+  VOMIT_CRC_BLANKS();
   
   // channel id
-  [packetData appendBytes:&channelID length:4];
+  VOMIT_INT(channelID);
   
   // password length
-  unsigned char passwordLength = [password length] & 0xff;
-  unsigned char passwordBuffer[29];
-  
-  memset(passwordBuffer, '\0', 29);
-  memcpy(passwordBuffer, [password cStringUsingEncoding:NSASCIIStringEncoding], [password length]);
-  [packetData appendBytes:&passwordLength length:1];
-  [packetData appendBytes:passwordBuffer length:29];
-  
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  VOMIT_30BYTE_STRING(password);
+    
+  VOMIT_CRC();
   
   return packetData;
 }
 
 - (NSData*)buildChangePlayerStatusMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID newStatusFlags:(unsigned short)statusFlags
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // packet header
   unsigned char headerChunk[] = { 0xf0, 0xbe, 0x30, 0x01 };
-  [packetData appendBytes:&headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // connection id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
-  
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
+
+  VOMIT_INT(sequenceID);
   
   unsigned short resendCount = 0, fragmentCount = 0;
-  [packetData appendBytes:&resendCount length:2];
-  [packetData appendBytes:&fragmentCount length:2];
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
   
-  unsigned int crc = 0, crcPosition = [packetData length];
-  [packetData appendBytes:&crc length:4];
+  VOMIT_CRC_BLANKS();
   
-  [packetData appendBytes:&statusFlags length:2];
+  VOMIT_SHORT(statusFlags);
   
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  VOMIT_CRC();
   
   return packetData;  
 }
 
 - (NSData*)buildChangeOtherPlayerMuteStatusWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID muted:(BOOL)flag
 {
-  NSMutableData *packetData = [NSMutableData data];
+  VOMIT_INIT();
   
   // packet header
   unsigned char headerChunk[] = { 0xf0, 0xbe, 0x40, 0x01 };
-  [packetData appendBytes:&headerChunk length:4];
+  VOMIT_BYTES(headerChunk, 4);
   
   // connection id + client id
-  [packetData appendBytes:&connectionID length:4];
-  [packetData appendBytes:&clientID length:4];
-  
-  [packetData appendBytes:&sequenceID length:4];
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
+  VOMIT_INT(sequenceID);
   
   unsigned short resendCount = 0, fragmentCount = 0;
-  [packetData appendBytes:&resendCount length:2];
-  [packetData appendBytes:&fragmentCount length:2];
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
+
+  VOMIT_CRC_BLANKS();
   
-  unsigned int crc = 0, crcPosition = [packetData length];
-  [packetData appendBytes:&crc length:4];
-  
-  [packetData appendBytes:&playerID length:4];
+  VOMIT_INT(playerID);
   
   unsigned char muted = (flag ? 0x01 : 0x00);
-  [packetData appendBytes:&muted length:1];
-  
-  unsigned int crc32 = [packetData crc32];
-  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  VOMIT_BYTE(muted);
+
+  VOMIT_CRC();
   
   return packetData;
 }

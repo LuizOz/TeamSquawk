@@ -11,6 +11,58 @@
 
 #import "NSData+Extensions.h"
 
+
+#define SNARF_INIT(data)  unsigned int snarfPos = 0; \
+                          NSData *snarfData = data
+
+#define SNARF_SKIP(count) snarfPos += count;
+
+#define SNARF_BYTES(dest, count)  [snarfData getBytes:&dest range:NSMakeRange(snarfPos, count)]; \
+                                  snarfPos += count
+
+#define SNARF_BYTE(dest)  [snarfData getBytes:&dest range:NSMakeRange(snarfPos, 1)]; \
+                          snarfPos += 1
+
+#define SNARF_SHORT(dest) [snarfData getBytes:&dest range:NSMakeRange(snarfPos, 2)]; \
+                          snarfPos += 2; \
+                          dest = NSSwapLittleShortToHost(dest)
+
+#define SNARF_INT(dest)   [snarfData getBytes:&dest range:NSMakeRange(snarfPos, 4)]; \
+                          snarfPos += 4; \
+                          dest = NSSwapLittleIntToHost(dest)
+
+#define SNARF_DATA(dest, count)   dest = [data subdataWithRange:NSMakeRange(snarfPos, count)]; \
+                                  snarfPos += count
+
+#define SNARF_255BYTE_STRING(dest)  unsigned char dest##Len = 0; \
+                                    unsigned char dest##Buffer[255]; \
+                                    [snarfData getBytes:&dest##Len range:NSMakeRange(snarfPos, 1)]; \
+                                    snarfPos += 1; \
+                                    [snarfData getBytes:&dest##Buffer range:NSMakeRange(snarfPos, 255)]; \
+                                    snarfPos += 255; \
+                                    dest = [[[NSString alloc] initWithCString:(const char*)dest##Buffer length:dest##Len] autorelease]
+
+#define SNARF_30BYTE_STRING(dest)   unsigned char dest##Len; \
+                                    unsigned char dest##Buffer[29]; \
+                                    [snarfData getBytes:&dest##Len range:NSMakeRange(snarfPos, 1)]; \
+                                    snarfPos += 1; \
+                                    memset(dest##Buffer, '\0', 29); \
+                                    [snarfData getBytes:&dest##Buffer range:NSMakeRange(snarfPos, 29)]; \
+                                    snarfPos += 29; \
+                                    dest = [[[NSString alloc] initWithCString:(const char*)dest##Buffer length:dest##Len] autorelease]
+
+#define SNARF_CRC()   unsigned int crc; \
+                      [snarfData getBytes:&crc range:NSMakeRange(snarfPos, 4)]; \
+                      crc = NSSwapLittleIntToHost(crc); \
+                      NSMutableData *crcCheckData = [snarfData mutableCopy]; \
+                      [crcCheckData resetBytesInRange:NSMakeRange(snarfPos, 4)]; \
+                      if ([crcCheckData crc32] != crc) \
+                      { \
+                        NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc); \
+                      } \
+                      [crcCheckData release]; \
+                      snarfPos += 4
+
 @implementation SLPacketChomper
 
 + (id)packetChomper
@@ -206,78 +258,56 @@
 
 - (NSDictionary*)chompLoginReply:(NSData*)data
 {
+  SNARF_INIT(data);
+  
   // We've already got the packet type. So start at the session key, though it appears to be zero on this kind of reply.
+  SNARF_SKIP(4);
+  
   unsigned int sessionKey;
-  [data getBytes:&sessionKey range:NSMakeRange(4, 4)];
+  SNARF_INT(sessionKey);
   
   unsigned int clientID;
-  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  SNARF_INT(clientID);
   
   unsigned int sequenceNumber;
-  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  SNARF_INT(sequenceNumber);
   
-  unsigned int crc;
-  [data getBytes:&crc range:NSMakeRange(16, 4)];
-  
-  // right, check if the crc is correct.
-  NSMutableData *crcCheckData = [data mutableCopy];
-  [crcCheckData resetBytesInRange:NSMakeRange(16, 4)];
-  if ([crcCheckData crc32] != crc)
-  {
-    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
-  }
+  SNARF_CRC();
   
   // server name is next, guessing its 30 bytes like most of the other stuff. one length, 29 data.
-  unsigned char serverNameLen;
-  [data getBytes:&serverNameLen range:NSMakeRange(20, 1)];
-  
-  unsigned char serverNameBuffer[29];
-  memset(serverNameBuffer, '\0', 29);
-  [data getBytes:&serverNameBuffer range:NSMakeRange(21, 29)];
-  
-  // convert it to a cocoa string
-  NSString *serverName = [[[NSString alloc] initWithCString:(const char*)serverNameBuffer length:serverNameLen] autorelease];
+  NSString *serverName;
+  SNARF_30BYTE_STRING(serverName);
   
   // platform string
-  unsigned char platformNameLen;
-  [data getBytes:&platformNameLen range:NSMakeRange(50, 1)];
-  
-  unsigned char platformNameBuffer[29];
-  memset(platformNameBuffer, '\0', 29);
-  [data getBytes:&platformNameBuffer range:NSMakeRange(51, 29)];
-  
-  // convert to cocoa
-  NSString *platformName = [[[NSString alloc] initWithCString:(const char*)platformNameBuffer length:platformNameLen] autorelease];
-  
+  NSString *platformName;
+  SNARF_30BYTE_STRING(platformName);
+
   // versions
   unsigned short majorVersion, minorVersion;
   unsigned short subLevelVersion, subsubLevelVersion;
-  [data getBytes:&majorVersion range:NSMakeRange(80, 2)];
-  [data getBytes:&minorVersion range:NSMakeRange(82, 2)];
-  [data getBytes:&subLevelVersion range:NSMakeRange(84, 2)];
-  [data getBytes:&subsubLevelVersion range:NSMakeRange(86, 2)];
+  SNARF_SHORT(majorVersion);
+  SNARF_SHORT(minorVersion);
+  SNARF_SHORT(subLevelVersion);
+  SNARF_SHORT(subsubLevelVersion);
   
   // bad login?
   unsigned char badLogin[4] = { 0x0, 0x0, 0x0, 0x0 };
-  [data getBytes:&badLogin range:NSMakeRange(88, 4)];
+  SNARF_BYTES(badLogin, 4);
   
-  // 80 bytes of crap, so advance the pointer from 92 upto 172
-  NSData *permissions = [data subdataWithRange:NSMakeRange(92, 80)];
+  // These are the permissions bits
+  NSData *permissions;
+  SNARF_DATA(permissions, 80);
   
   // session key
   unsigned int newConnectionID = 0;
-  [data getBytes:&newConnectionID range:NSMakeRange(172, 4)];
+  SNARF_INT(newConnectionID);
   
   // there appears to be a rogue 4 bytes here, so 176 to 180
+  SNARF_SKIP(4);
   
   // welcome message
-  unsigned char welcomeMessageLen = 0;
-  [data getBytes:&welcomeMessageLen range:NSMakeRange(180, 1)];
-  
-  unsigned char welcomeMessageBuffer[255];
-  [data getBytes:&welcomeMessageBuffer range:NSMakeRange(181, 255)];
-  
-  NSString *welcomeMessage = [[[NSString alloc] initWithCString:(const char*)welcomeMessageBuffer length:welcomeMessageLen] autorelease];
+  NSString *welcomeMessage;
+  SNARF_255BYTE_STRING(welcomeMessage);
   
   BOOL isBadLogin = ((badLogin[0] == 0xff) && (badLogin[1] == 0xff) && (badLogin[2] == 0xff) && (badLogin[3] == 0xff));
   
