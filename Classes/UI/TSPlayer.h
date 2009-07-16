@@ -16,7 +16,7 @@ typedef enum {
   TSPlayerBlockWhispers = 0x04,
   TSPlayerIsAway = 0x08,
   TSPlayerHasMutedMicrophone = 0x10,
-  TSPlayerIsMuted = 0x20,
+  TSPlayerHasMutedSpeakers = 0x20,
 } TSPlayerFlags;
 
 typedef enum {
@@ -41,6 +41,7 @@ typedef enum {
   
   BOOL isTransmitting;
   BOOL isWhispering;
+  BOOL isLocallyMuted;
 }
 
 @property (readonly) SpeexDecoder *decoder;
@@ -51,6 +52,7 @@ typedef enum {
 @property (assign) unsigned int extendedFlags;
 @property (assign) BOOL isTransmitting;
 @property (assign) BOOL isWhispering;
+@property (assign) BOOL isLocallyMuted;
 
 - (id)initWithGraphPlayer:(TSAUGraphPlayer*)player;
 - (id)copyWithZone:(NSZone *)zone;
@@ -65,7 +67,7 @@ typedef enum {
 - (BOOL)shouldBlockWhispers;
 - (BOOL)isAway;
 - (BOOL)hasMutedMicrophone;
-- (BOOL)isMuted;
+- (BOOL)hasMutedSpeakers;
 
 - (BOOL)isRegistered;
 - (BOOL)isServerAdmin;

@@ -14,5 +14,6 @@
 }
 
 + (float)cellHeight;
++ (float)smallCellHeight;
 
 @end

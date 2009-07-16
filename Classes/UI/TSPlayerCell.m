@@ -16,6 +16,11 @@
   return 32.0;
 }
 
++ (float)smallCellHeight
+{
+  return 18.0;
+}
+
 - (NSSize)cellSize
 {
   return NSMakeSize(0, 32.0);
@@ -24,6 +29,7 @@
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView
 { 
   TSPlayer *player = [self objectValue];
+  BOOL small = [[NSUserDefaults standardUserDefaults] boolForKey:@"SmallPlayers"];
   
   // draw the transmission logo
   {
@@ -31,7 +37,12 @@
     NSImage *image;
     float opacity;
     
-    if ([player isTalking] && [player isWhispering])
+    if ([player isLocallyMuted])
+    {
+      image = [NSImage imageNamed:@"TransmitGray"];
+      opacity = 1.0;
+    }
+    else if ([player isTalking] && [player isWhispering])
     {
       image = [NSImage imageNamed:@"TransmitRed"];
       opacity = 1.0;
@@ -47,16 +58,20 @@
       opacity = 0.25;
     }
     
-    NSDivideRect(cellFrame, &transmissionRect, &cellFrame, [image size].width + 5, NSMaxXEdge);
-    transmissionRect.origin.y -= ceil((transmissionRect.size.height - [image size].height) / 2);
-    transmissionRect.origin.x += ceil((transmissionRect.size.width - [image size].width) / 2);
+    // gah bit of a cheat, draw at 16x16 if we're small or 24x24 if we're large
+    NSSize compositeSize = (small ? NSMakeSize(17, 17) : [image size]);
+    
+    NSDivideRect(cellFrame, &transmissionRect, &cellFrame, compositeSize.width + 5, NSMaxXEdge);
+    transmissionRect.origin.x += ceil((transmissionRect.size.width - compositeSize.width) / 2);
 
-    if ([controlView isFlipped])
-      transmissionRect.origin.y += ceil((cellFrame.size.height + transmissionRect.size.height) / 2);
-    else
-      transmissionRect.origin.y += ceil((cellFrame.size.height - transmissionRect.size.height) / 2);
+    BOOL oldFlipped = [image isFlipped];
+    [image setFlipped:[controlView isFlipped]];
+    
+    transmissionRect.size = compositeSize;    
+    transmissionRect.origin.y += ceil((cellFrame.size.height - transmissionRect.size.height) / 2);
 
-    [image compositeToPoint:transmissionRect.origin operation:NSCompositeSourceOver fraction:opacity];
+    [image drawInRect:transmissionRect fromRect:NSMakeRect(0, 0, [image size].width, [image size].height) operation:NSCompositeSourceOver fraction:opacity];
+    [image setFlipped:oldFlipped];
   }
   
   // draw the light
@@ -64,7 +79,7 @@
     NSRect userLightRect;
     NSImage *image;
     
-    if ([player isMuted])
+    if ([player hasMutedSpeakers])
     {
       image = [NSImage imageNamed:@"Mute"];
     }
@@ -119,7 +134,8 @@
       statusText = [[NSMutableAttributedString alloc] initWithString:@"Unregistered"];
     }
     
-    NSFont *playerNameFont = [NSFont labelFontOfSize:[NSFont systemFontSize]];
+    float playerFontSize = (small ? [NSFont smallSystemFontSize] : [NSFont systemFontSize]);
+    NSFont *playerNameFont = [NSFont labelFontOfSize:playerFontSize];
     [playerName addAttribute:NSFontAttributeName value:playerNameFont range:NSMakeRange(0, [playerName length])];
     
     NSFont *statusTextFont = [NSFont labelFontOfSize:[NSFont smallSystemFontSize]];
@@ -129,18 +145,7 @@
     [statusText addAttribute:NSForegroundColorAttributeName value:grayColor range:NSMakeRange(0, [statusText length])];
     
     NSRect playerNameDrawRect = [playerName boundingRectWithSize:NSZeroSize options:0];
-    playerNameDrawRect.origin.y = cellFrame.origin.y;// + ceil((cellFrame.size.height - playerNameDrawRect.size.height) / 2);
-    playerNameDrawRect.origin.x = cellFrame.origin.x + 3;
-    
     NSRect statusTextDrawRect = [statusText boundingRectWithSize:NSZeroSize options:0];
-    statusTextDrawRect.origin.y = cellFrame.origin.y;// + ceil((cellFrame.size.height - playerNameDrawRect.size.height) / 2);
-    statusTextDrawRect.origin.x = cellFrame.origin.x + 3;
-      
-    float combinedTextHeight = playerNameDrawRect.size.height + statusTextDrawRect.size.height;
-    statusTextDrawRect.origin.y = playerNameDrawRect.origin.y + playerNameDrawRect.size.height;
-    
-    playerNameDrawRect.origin.y += ceil((cellFrame.size.height - combinedTextHeight) / 2);
-    statusTextDrawRect.origin.y += ceil((cellFrame.size.height - combinedTextHeight) / 2);
     
     if ([self backgroundStyle] == NSBackgroundStyleDark)
     {
@@ -149,8 +154,29 @@
       [statusText addAttribute:NSForegroundColorAttributeName value:whiteColor range:NSMakeRange(0, [statusText length])];
     }
     
+    if (small)
+    {
+      playerNameDrawRect.origin.y = cellFrame.origin.y + ceil((cellFrame.size.height - playerNameDrawRect.size.height) / 2);
+      playerNameDrawRect.origin.x = cellFrame.origin.x + 3;
+    }
+    else
+    {
+      playerNameDrawRect.origin.y = cellFrame.origin.y;// + ceil((cellFrame.size.height - playerNameDrawRect.size.height) / 2);
+      playerNameDrawRect.origin.x = cellFrame.origin.x + 3;
+      
+      statusTextDrawRect.origin.y = cellFrame.origin.y;// + ceil((cellFrame.size.height - playerNameDrawRect.size.height) / 2);
+      statusTextDrawRect.origin.x = cellFrame.origin.x + 3;
+      
+      float combinedTextHeight = playerNameDrawRect.size.height + statusTextDrawRect.size.height;
+      statusTextDrawRect.origin.y = playerNameDrawRect.origin.y + playerNameDrawRect.size.height;
+      
+      playerNameDrawRect.origin.y += ceil((cellFrame.size.height - combinedTextHeight) / 2);
+      statusTextDrawRect.origin.y += ceil((cellFrame.size.height - combinedTextHeight) / 2);
+
+      [statusText drawInRect:statusTextDrawRect];
+    }
+    
     [playerName drawInRect:playerNameDrawRect];
-    [statusText drawInRect:statusTextDrawRect];
     
     [playerName release];
     [statusText release];

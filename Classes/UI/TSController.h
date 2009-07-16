@@ -26,7 +26,7 @@
 typedef enum {
   TSControllerPlayerActive = 1,
   TSControllerPlayerMuteMic = 2,
-  TSControllerPlayerMute = 3,
+  TSControllerPlayerMuteSpeakers = 3,
 
   TSControllerPlayerAway = 100,
   TSControllerPlayerChannelCommander = 200,
@@ -103,6 +103,10 @@ typedef enum {
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forChannel:(TSChannel*)channel;
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forPlayer:(TSPlayer*)player;
 
+#pragma mark Context Menu Generators
+
+- (NSMenu*)contextualMenuForPlayer:(TSPlayer*)player;
+
 #pragma mark Toolbar Delegates
 
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)aToolbar;
@@ -115,6 +119,7 @@ typedef enum {
 - (IBAction)disconnectMenuAction:(id)sender;
 - (IBAction)preferencesMenuAction:(id)sender;
 - (IBAction)connectToHistoryAction:(id)sender;
+- (IBAction)singleClickOutlineView:(id)sender;
 - (IBAction)doubleClickOutlineView:(id)sender;
 - (IBAction)changeUserStatusAction:(id)sender;
 - (IBAction)toggleAway:(id)sender;
@@ -174,6 +179,10 @@ typedef enum {
 - (void)hotkeyPressed:(TSHotkey*)hotkey;
 - (void)hotkeyReleased:(TSHotkey*)hotkey;
 - (void)hotkeyMappingsChanged:(NSNotification*)notification;
+
+#pragma mark Defaults
+
+- (void)userDefaultsChanged:(NSNotification*)notification;
 
 #pragma mark NSAlert Sheet Delegate
 

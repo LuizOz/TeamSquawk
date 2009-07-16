@@ -55,6 +55,8 @@ void UncaughtExceptionHandler(NSException *exception)
                                                        [NSNumber numberWithInt:-1], @"HotkeyKeycode",
                                                        [NSNumber numberWithInt:0], @"HotkeyModifiers",
                                                        nil], nil], @"Hotkeys",
+                            [NSNumber numberWithBool:NO], @"SmallPlayers",
+                            [NSNumber numberWithBool:NO], @"AutoChannelCommander",
                             nil];
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
   
@@ -67,9 +69,12 @@ void UncaughtExceptionHandler(NSException *exception)
   // setup the outline view
   [mainWindowOutlineView setDelegate:self];
   [mainWindowOutlineView setDataSource:self];
+  //[mainWindowOutlineView setAction:@selector(singleClickOutlineView:)];
   [mainWindowOutlineView setDoubleAction:@selector(doubleClickOutlineView:)];
   [mainWindowOutlineView setTarget:self];
-  //[mainWindowOutlineView setIndentationPerLevel:0.0];
+  
+  float rowHeight = ([[NSUserDefaults standardUserDefaults] boolForKey:@"SmallPlayers"] ? [TSPlayerCell smallCellHeight] : [TSPlayerCell cellHeight]);
+  [mainWindowOutlineView setRowHeight:rowHeight];
   
   // setup the toolbar
   toolbar = [[NSToolbar alloc] initWithIdentifier:@"MainWindowToolbar"];
@@ -102,6 +107,7 @@ void UncaughtExceptionHandler(NSException *exception)
   // get the output device going
   [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(outputDeviceHasChanged:) name:@"TSOutputDeviceChanged" object:nil];
   [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(outputDeviceGainChanged:) name:@"TSOutputGainChanged" object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDefaultsChanged:) name:NSUserDefaultsDidChangeNotification object:nil];
   
   // setup the initial graph player
   [self outputDeviceHasChanged:nil];
@@ -234,7 +240,53 @@ void UncaughtExceptionHandler(NSException *exception)
 
 - (void)outlineView:(NSOutlineView *)outlineView willDisplayCell:(RPImageAndTextCell*)cell forTableColumn:(NSTableColumn*)tableColumn forPlayer:(TSPlayer*)player
 {
+  [cell setMenu:[self contextualMenuForPlayer:player]];
+}
 
+#pragma mark Context Menu Generators
+
+- (NSMenu*)contextualMenuForPlayer:(TSPlayer*)player
+{
+  NSMenu *menu = [[NSMenu allocWithZone:[NSMenu menuZone]] init];
+  
+  [menu addItemWithTitle:@"Kick Player" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Kick Player From Channel" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Ban Player" action:nil keyEquivalent:@""];
+  
+  if ([player isLocallyMuted])
+  {
+    [menu addItemWithTitle:@"Unmute Player" action:@selector(toggleMutePlayer:) keyEquivalent:@""];
+  }
+  else
+  {
+    [menu addItemWithTitle:@"Mute Player" action:@selector(toggleMutePlayer:) keyEquivalent:@""];
+  }
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  [menu addItemWithTitle:@"Get Info" action:nil keyEquivalent:@""];
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  [menu addItemWithTitle:@"Channel Admin" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Auto-Operator" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Auto-Voice" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Operator" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Voice" action:nil keyEquivalent:@""];
+  
+  [menu addItem:[NSMenuItem separatorItem]];
+  
+  [menu addItemWithTitle:@"Send Player Text Message" action:nil keyEquivalent:@""];
+  
+  return [menu autorelease];
+}
+
+#pragma mark Contextual Menu Actions
+
+- (void)toggleMutePlayer:(id)sender
+{  
+  TSPlayer *player = [mainWindowOutlineView itemAtRow:[mainWindowOutlineView clickedRow]];
+  [teamspeakConnection changeMute:![player isLocallyMuted] onOtherPlayerID:[player playerID]];
 }
 
 #pragma mark Toolbar Delegates
@@ -302,6 +354,11 @@ void UncaughtExceptionHandler(NSException *exception)
              password:[server objectForKey:@"Password"]];
 }
 
+- (IBAction)singleClickOutlineView:(id)sender
+{
+  
+}
+
 - (IBAction)doubleClickOutlineView:(id)sender
 {
   id item = [(NSOutlineView*)sender itemAtRow:[(NSOutlineView*)sender selectedRow]];
@@ -323,21 +380,21 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     case TSControllerPlayerActive:
     {
-      currentFlags &= ~(TSPlayerIsMuted | TSPlayerHasMutedMicrophone);
+      currentFlags &= ~(TSPlayerHasMutedSpeakers | TSPlayerHasMutedMicrophone);
       [teamspeakConnection changeStatusTo:currentFlags];
       break;
     }
     case TSControllerPlayerMuteMic:
     {
-      currentFlags &= ~(TSPlayerIsMuted | TSPlayerHasMutedMicrophone);
+      currentFlags &= ~(TSPlayerHasMutedSpeakers | TSPlayerHasMutedMicrophone);
       currentFlags |= TSPlayerHasMutedMicrophone;
       [teamspeakConnection changeStatusTo:currentFlags];
       break;
     }
-    case TSControllerPlayerMute:
+    case TSControllerPlayerMuteSpeakers:
     {
-      currentFlags &= ~(TSPlayerIsMuted | TSPlayerHasMutedMicrophone);
-      currentFlags |= TSPlayerIsMuted;
+      currentFlags &= ~(TSPlayerHasMutedSpeakers | TSPlayerHasMutedMicrophone);
+      currentFlags |= TSPlayerHasMutedSpeakers;
       [teamspeakConnection changeStatusTo:currentFlags];      
     }
     default:
@@ -421,14 +478,14 @@ void UncaughtExceptionHandler(NSException *exception)
     
     [toolbarViewNicknameField setStringValue:[player playerName]];
     
-    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerIsMuted)) == 0)];
-    [[statusMenu itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerIsMuted)) == 0)];
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerHasMutedSpeakers)) == 0)];
+    [[statusMenu itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerHasMutedSpeakers)) == 0)];
     
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMuteMic] setState:[player hasMutedMicrophone]];
     [[statusMenu itemWithTag:TSControllerPlayerMuteMic] setState:[player hasMutedMicrophone]];
     
-    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMute] setState:[player isMuted]];
-    [[statusMenu itemWithTag:TSControllerPlayerMute] setState:[player isMuted]];
+    [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerMuteSpeakers] setState:[player hasMutedSpeakers]];
+    [[statusMenu itemWithTag:TSControllerPlayerMuteSpeakers] setState:[player hasMutedSpeakers]];
     
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerAway] setState:[player isAway]];
     [[statusMenu itemWithTag:TSControllerPlayerAway] setState:[player isAway]];
@@ -439,7 +496,7 @@ void UncaughtExceptionHandler(NSException *exception)
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerBlockWhispers] setState:[player shouldBlockWhispers]];
     [[statusMenu itemWithTag:TSControllerPlayerBlockWhispers] setState:[player shouldBlockWhispers]];
 
-    if ([player isMuted])
+    if ([player hasMutedSpeakers])
     {
       [toolbarViewAwayImageView setImage:[NSImage imageNamed:@"Mute"]];
     }
@@ -634,7 +691,7 @@ void UncaughtExceptionHandler(NSException *exception)
   
   NSMenuItem *muteBothItem = [menu addItemWithTitle:@"Mute Mic + Speakers" action:@selector(changeUserStatusAction:) keyEquivalent:@""];
   [muteBothItem setTarget:self];
-  [muteBothItem setTag:TSControllerPlayerMute];
+  [muteBothItem setTag:TSControllerPlayerMuteSpeakers];
   [muteBothItem setImage:[NSImage imageNamed:@"Mute"]];
   
   [menu addItem:[NSMenuItem separatorItem]];
@@ -808,6 +865,11 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation setArgument:&expandChildren atIndex:3];
   
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"AutoChannelCommander"])
+  {
+    [self toggleChannelCommander:nil];
+  }
 }
 
 - (void)connectionFailedToLogin:(SLConnection*)connection withError:(NSError*)error
@@ -981,6 +1043,14 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
   }
+  
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+}
+
+- (void)connection:(SLConnection*)connection receivedPlayerMutedNotification:(unsigned int)playerID wasMuted:(BOOL)muted
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  [player setIsLocallyMuted:muted];
   
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
 }
@@ -1164,6 +1234,18 @@ void UncaughtExceptionHandler(NSException *exception)
     
     [[TSHotkeyManager globalManager] addHotkey:hotkey];
   }
+}
+
+#pragma mark Defaults
+
+- (void)userDefaultsChanged:(NSNotification*)notification
+{
+  // check for some stuff here that we'd need to deal with when a user ticks buttons
+  
+  // requested small buttons, or not, reload the UI
+  float rowHeight = ([[NSUserDefaults standardUserDefaults] boolForKey:@"SmallPlayers"] ? [TSPlayerCell smallCellHeight] : [TSPlayerCell cellHeight]);
+  [mainWindowOutlineView setRowHeight:rowHeight];
+  [mainWindowOutlineView reloadData];
 }
 
 #pragma mark NSAlert Sheet Delegate

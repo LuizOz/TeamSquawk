@@ -55,6 +55,8 @@
 {
   if (self = [super init])
   {
+    sendReceiveLock = [[NSRecursiveLock alloc] init];
+    
     connectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(spawnThread) object:nil];
     [connectionThread start];
     
@@ -110,6 +112,7 @@
   [socket release];
   [connectionThread release];
   [textFragments release];
+  [sendReceiveLock release];
   [super dealloc];
 }
 
@@ -139,14 +142,30 @@
 
 - (void)sendData:(NSData*)data
 {
+  while (![sendReceiveLock tryLock])
+  {
+    // allow a deadlocked runloop to break itself
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
+  
   // intended to be run on the socket's thread
   [socket sendData:data withTimeout:TRANSMIT_TIMEOUT tag:0];
+  
+  [sendReceiveLock unlock];
 }
 
 - (void)queueReceiveData
 {
+  while (![sendReceiveLock tryLock])
+  {
+    // allow a deadlocked runloop to break itself
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
+  
   // queue up a recieve
   [socket receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
+  
+  [sendReceiveLock unlock];
 }
 
 - (void)waitForSend
@@ -227,6 +246,8 @@
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
+  
+  [sendReceiveLock lock];
   
   pendingReceive = NO;
   
@@ -471,14 +492,27 @@
         }
         break;
       }
+      case PACKET_TYPE_PLAYER_MUTED:
+      {
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerMutedNotification:wasMuted:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          BOOL muted = [[packet objectForKey:@"SLMutedStatus"] boolValue];
+          
+          [[self delegate] connection:self receivedPlayerMutedNotification:playerID wasMuted:muted];          
+        }
+        break;
+      }
       default:
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }
     
     [sock receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
+    [sendReceiveLock unlock];
     [pool release];
     return YES;
   }
+  [sendReceiveLock unlock];
   [pool release];
   return NO;
 }
@@ -618,6 +652,18 @@
                                                                                           clientID:clientID
                                                                                         sequenceID:standardSequenceNumber++
                                                                                     newStatusFlags:flags];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [pool release];
+}
+
+- (void)changeMute:(BOOL)isMuted onOtherPlayerID:(unsigned int)playerID
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildChangeOtherPlayerMuteStatusWithConnectionID:connectionID
+                                                                                            clientID:clientID
+                                                                                          sequenceID:standardSequenceNumber++
+                                                                                            playerID:playerID
+                                                                                               muted:isMuted];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
   [pool release];
 }

@@ -67,6 +67,7 @@ typedef enum {
 }
 
 - (void)setupToolbar;
+- (void)setupGeneralPreferences;
 - (void)setupServersPreferences;
 - (void)setupSoundPreferences;
 - (void)setupHotkeyPreferences;

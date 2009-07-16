@@ -473,4 +473,36 @@
   return packetData;  
 }
 
+- (NSData*)buildChangeOtherPlayerMuteStatusWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID muted:(BOOL)flag
+{
+  NSMutableData *packetData = [NSMutableData data];
+  
+  // packet header
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0x40, 0x01 };
+  [packetData appendBytes:&headerChunk length:4];
+  
+  // connection id + client id
+  [packetData appendBytes:&connectionID length:4];
+  [packetData appendBytes:&clientID length:4];
+  
+  [packetData appendBytes:&sequenceID length:4];
+  
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [packetData appendBytes:&resendCount length:2];
+  [packetData appendBytes:&fragmentCount length:2];
+  
+  unsigned int crc = 0, crcPosition = [packetData length];
+  [packetData appendBytes:&crc length:4];
+  
+  [packetData appendBytes:&playerID length:4];
+  
+  unsigned char muted = (flag ? 0x01 : 0x00);
+  [packetData appendBytes:&muted length:1];
+  
+  unsigned int crc32 = [packetData crc32];
+  [packetData replaceBytesInRange:NSMakeRange(crcPosition, 4) withBytes:&crc32 length:4];
+  
+  return packetData;
+}
+
 @end

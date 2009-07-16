@@ -182,6 +182,14 @@
       [socket maybeDequeueSend];
       return chompedPacket;
     }
+    case PACKET_TYPE_PLAYER_MUTED:
+    {
+      NSDictionary *chompedPacket = [self chompPlayerMutedUpdate:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
+      [socket maybeDequeueSend];
+      return chompedPacket;
+    }
     default:
     {
       NSLog(@"unknown packet type: 0x%08x", packetType);
@@ -697,6 +705,51 @@
                                     nil];
   
   return packetDictionary;  
+}
+
+- (NSDictionary*)chompPlayerMutedUpdate:(NSData*)data
+{
+  // get connection id and client id
+  unsigned int connnectionID, clientID;
+  [data getBytes:&connnectionID range:NSMakeRange(4, 4)];
+  [data getBytes:&clientID range:NSMakeRange(8, 4)];
+  
+  unsigned int sequenceNumber = 0;
+  [data getBytes:&sequenceNumber range:NSMakeRange(12, 4)];
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  [data getBytes:&resendCount range:NSMakeRange(16, 2)];
+  [data getBytes:&fragmentCount range:NSMakeRange(18, 2)];
+  
+  // crc
+  unsigned int crc = 0;
+  [data getBytes:&crc range:NSMakeRange(20, 4)];
+  
+  // check the crc
+  NSMutableData *crcCheckData = [data mutableCopy];
+  [crcCheckData resetBytesInRange:NSMakeRange(20, 4)];
+  if ([crcCheckData crc32] != crc)
+  {
+    NSLog(@"crc check failed, 0x%08x != 0x%08x", [crcCheckData crc32], crc);
+  }
+  
+  unsigned int playerID;
+  [data getBytes:&playerID range:NSMakeRange(24, 4)];
+  
+  unsigned char mutedStatus;
+  [data getBytes:&mutedStatus range:NSMakeRange(28, 1)];
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_MUTED], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connnectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    [NSNumber numberWithBool:(mutedStatus == 0x01 ? YES : NO)], @"SLMutedStatus",
+                                    nil];
+  return packetDictionary;
 }
 
 #pragma mark Text/Chat Messages

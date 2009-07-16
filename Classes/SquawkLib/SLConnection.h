@@ -29,6 +29,7 @@ enum {
 @interface SLConnection : NSObject {
   AsyncUdpSocket *socket;
   NSThread *connectionThread;
+  NSRecursiveLock *sendReceiveLock;
   
   NSTimer *pingTimer;
   NSTimer *connectionTimer;
@@ -97,6 +98,7 @@ enum {
 
 - (void)changeChannelTo:(unsigned int)newChannel withPassword:(NSString*)password;
 - (void)changeStatusTo:(unsigned short)flags;
+- (void)changeMute:(BOOL)isMuted onOtherPlayerID:(unsigned int)playerID;
 
 @end
 
@@ -115,6 +117,7 @@ enum {
 - (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)eFlags;
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID;
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
+- (void)connection:(SLConnection*)connection receivedPlayerMutedNotification:(unsigned int)playerID wasMuted:(BOOL)muted;
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
 
 - (void)connectionPingReply:(SLConnection*)connection;

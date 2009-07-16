@@ -20,6 +20,7 @@
 #define PACKET_TYPE_PLAYER_LEFT       0x0065bef0
 #define PACKET_TYPE_CHANNEL_CHANGE    0x0067bef0
 #define PACKET_TYPE_PLAYER_UPDATE     0x0068bef0
+#define PACKET_TYPE_PLAYER_MUTED      0x0141bef0
 
 #define PACKET_TYPE_PING_REPLY        0x0002bef4
 
@@ -78,6 +79,7 @@
 - (NSDictionary*)chompPlayerLeft:(NSData*)data;
 - (NSDictionary*)chompChannelChange:(NSData*)data;
 - (NSDictionary*)chompPlayerUpdate:(NSData*)data;
+- (NSDictionary*)chompPlayerMutedUpdate:(NSData*)data;
 
 #pragma mark Text/Chat Messages
 

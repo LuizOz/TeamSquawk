@@ -14,7 +14,10 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 @implementation TSPreferencesController
 
 - (void)setupToolbar
-{  
+{
+  [self addView:generalPreferencesView label:@"General" image:[NSImage imageNamed:@"General"]];
+  [self setupGeneralPreferences];
+  
   [self addView:serversPreferencesView label:@"Servers" image:[NSImage imageNamed:@"Servers"]];
   [self setupServersPreferences];
   
@@ -23,6 +26,11 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   
   [self addView:hotkeysPreferencesView label:@"HotKeys" image:[NSImage imageNamed:@"Keyboard"]];
   [self setupHotkeyPreferences];
+}
+
+- (void)setupGeneralPreferences
+{
+  
 }
 
 - (void)setupServersPreferences

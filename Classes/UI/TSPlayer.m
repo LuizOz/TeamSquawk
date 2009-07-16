@@ -19,6 +19,7 @@
 @synthesize extendedFlags;
 @synthesize isTransmitting;
 @synthesize isWhispering;
+@synthesize isLocallyMuted;
 
 - (id)initWithGraphPlayer:(TSAUGraphPlayer*)player
 {
@@ -67,6 +68,7 @@
   [copyPlayer setExtendedFlags:[self extendedFlags]];
   [copyPlayer setIsTransmitting:[self isTransmitting]];
   [copyPlayer setIsWhispering:[self isWhispering]];
+  [copyPlayer setIsLocallyMuted:[self isLocallyMuted]];
   
   return copyPlayer;
 }
@@ -188,9 +190,9 @@
   return ((playerFlags & TSPlayerHasMutedMicrophone) == TSPlayerHasMutedMicrophone);
 }
 
-- (BOOL)isMuted
+- (BOOL)hasMutedSpeakers
 {
-  return ((playerFlags & TSPlayerIsMuted) == TSPlayerIsMuted);
+  return ((playerFlags & TSPlayerHasMutedSpeakers) == TSPlayerHasMutedSpeakers);
 }
 
 - (BOOL)isTalking

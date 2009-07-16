@@ -44,6 +44,7 @@
 		C939E2D9100DC950002CBED3 /* TeamSquawk.icns in Resources */ = {isa = PBXBuildFile; fileRef = C939E2D8100DC950002CBED3 /* TeamSquawk.icns */; };
 		C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */ = {isa = PBXBuildFile; fileRef = C939E2EE100DCA07002CBED3 /* TransmitRed.png */; };
 		C939E3AC100E70E1002CBED3 /* TSOutlineView.m in Sources */ = {isa = PBXBuildFile; fileRef = C939E3AB100E70E1002CBED3 /* TSOutlineView.m */; };
+		C939E513100E8DB3002CBED3 /* General.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C939E512100E8DB3002CBED3 /* General.tiff */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
@@ -150,6 +151,7 @@
 		C939E2EE100DCA07002CBED3 /* TransmitRed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitRed.png; sourceTree = "<group>"; };
 		C939E3AA100E70E1002CBED3 /* TSOutlineView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSOutlineView.h; sourceTree = "<group>"; };
 		C939E3AB100E70E1002CBED3 /* TSOutlineView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSOutlineView.m; sourceTree = "<group>"; };
+		C939E512100E8DB3002CBED3 /* General.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = General.tiff; sourceTree = "<group>"; };
 		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
@@ -1256,6 +1258,7 @@
 				C9E2CF5610053DE300ED920D /* Mute.tiff */,
 				C9E2D2B210067ED000ED920D /* Mic.png */,
 				C9E2E07F1009667E00ED920D /* Servers.png */,
+				C939E512100E8DB3002CBED3 /* General.tiff */,
 			);
 			path = Images;
 			sourceTree = "<group>";
@@ -1360,6 +1363,7 @@
 				C9E2E0801009667E00ED920D /* Servers.png in Resources */,
 				C939E2D9100DC950002CBED3 /* TeamSquawk.icns in Resources */,
 				C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */,
+				C939E513100E8DB3002CBED3 /* General.tiff in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
