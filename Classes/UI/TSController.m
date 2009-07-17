@@ -16,6 +16,8 @@
 #import "TSChannel.h"
 #import "TSThreadBlocker.h"
 
+#define SPEECH_RATE 150.0f
+
 void UncaughtExceptionHandler(NSException *exception)
 {
   if ([exception callStackReturnAddresses]) 
@@ -58,6 +60,7 @@ void UncaughtExceptionHandler(NSException *exception)
                                                        nil], nil], @"Hotkeys",
                             [NSNumber numberWithBool:NO], @"SmallPlayers",
                             [NSNumber numberWithBool:NO], @"AutoChannelCommander",
+                            [NSNumber numberWithBool:NO], @"SpeakChannelEvents",
                             nil];
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
   
@@ -882,6 +885,13 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     [self toggleChannelCommander:nil];
   }
+  
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
+  {
+    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
+    [synth setRate:SPEECH_RATE];
+    [synth startSpeakingString:@"Link Engaged."];
+  }
 }
 
 - (void)connectionFailedToLogin:(SLConnection*)connection withError:(NSError*)error
@@ -925,6 +935,13 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
   }
+  
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
+  {
+    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
+    [synth setRate:SPEECH_RATE];
+    [synth startSpeakingString:@"Link Disengaged."];
+  }  
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
@@ -1029,7 +1046,7 @@ void UncaughtExceptionHandler(NSException *exception)
   [channel addPlayer:player];
   [blocker unblockThread];
   [blocker release];
-
+  
   BOOL reloadChildren = YES;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
   [invocation setSelector:@selector(reloadItem:reloadChildren:)];
@@ -1037,6 +1054,13 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation setArgument:&reloadChildren atIndex:3];
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:channel waitUntilDone:YES];
+  
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
+  {
+    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
+    [synth setRate:SPEECH_RATE];
+    [synth startSpeakingString:@"New Player."];
+  }  
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID
@@ -1059,6 +1083,13 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation setArgument:&channel atIndex:2];
   [invocation setArgument:&reloadChildren atIndex:3];
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
+  {
+    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
+    [synth setRate:SPEECH_RATE];
+    [synth startSpeakingString:@"Player left."];
+  }  
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags
