@@ -43,7 +43,6 @@
 		C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */; };
 		C939E2D9100DC950002CBED3 /* TeamSquawk.icns in Resources */ = {isa = PBXBuildFile; fileRef = C939E2D8100DC950002CBED3 /* TeamSquawk.icns */; };
 		C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */ = {isa = PBXBuildFile; fileRef = C939E2EE100DCA07002CBED3 /* TransmitRed.png */; };
-		C939E3AC100E70E1002CBED3 /* TSOutlineView.m in Sources */ = {isa = PBXBuildFile; fileRef = C939E3AB100E70E1002CBED3 /* TSOutlineView.m */; };
 		C939E513100E8DB3002CBED3 /* General.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C939E512100E8DB3002CBED3 /* General.tiff */; };
 		C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */ = {isa = PBXBuildFile; fileRef = C939EB221010FD61002CBED3 /* TSThreadBlocker.m */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
@@ -150,8 +149,6 @@
 		C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		C939E2D8100DC950002CBED3 /* TeamSquawk.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = TeamSquawk.icns; sourceTree = "<group>"; };
 		C939E2EE100DCA07002CBED3 /* TransmitRed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitRed.png; sourceTree = "<group>"; };
-		C939E3AA100E70E1002CBED3 /* TSOutlineView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSOutlineView.h; sourceTree = "<group>"; };
-		C939E3AB100E70E1002CBED3 /* TSOutlineView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSOutlineView.m; sourceTree = "<group>"; };
 		C939E512100E8DB3002CBED3 /* General.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = General.tiff; sourceTree = "<group>"; };
 		C939EB211010FD61002CBED3 /* TSThreadBlocker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSThreadBlocker.h; sourceTree = "<group>"; };
 		C939EB221010FD61002CBED3 /* TSThreadBlocker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSThreadBlocker.m; sourceTree = "<group>"; };
@@ -645,8 +642,6 @@
 			children = (
 				C97174A00FF7756B008FC21C /* NSData+Extensions.h */,
 				C97174A10FF7756B008FC21C /* NSData+Extensions.m */,
-				C939E3AA100E70E1002CBED3 /* TSOutlineView.h */,
-				C939E3AB100E70E1002CBED3 /* TSOutlineView.m */,
 			);
 			path = Additions;
 			sourceTree = "<group>";
@@ -1448,7 +1443,6 @@
 				C9E2D4D01006BCBA00ED920D /* TSTransmission.m in Sources */,
 				C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */,
 				C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */,
-				C939E3AC100E70E1002CBED3 /* TSOutlineView.m in Sources */,
 				C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
