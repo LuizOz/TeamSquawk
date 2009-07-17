@@ -10,7 +10,7 @@
 #import "SLPacketBuilder.h"
 #import "SLPacketChomper.h"
 
-#define PERMS_DEBUG 1
+//#define PERMS_DEBUG 1
 
 @implementation SLConnection
 
@@ -69,7 +69,7 @@
     isDisconnecting = NO;
     hasFinishedDisconnecting = NO;
     pendingReceive = NO;
-    pingReplyPending = NO;
+    pingReplysPending = 0;
     
     connectionSequenceNumber = 0;
     standardSequenceNumber = 0;
@@ -386,7 +386,7 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
-        pingReplyPending = NO;
+        pingReplysPending--;
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
         {
           [[self delegate] connectionPingReply:self];
@@ -448,14 +448,15 @@
       }
       case PACKET_TYPE_NEW_PLAYER:
       {
-        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:extendedFlags:)])
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:channelPrivFlags:extendedFlags:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
           unsigned int channelID = [[packet objectForKey:@"SLChannelID"] unsignedIntValue];
+          unsigned int channelPrivFlags = [[packet objectForKey:@"SLChannelPrivFlags"] unsignedIntValue];
           unsigned int extendedFlags = [[packet objectForKey:@"SLPlayerExtendedFlags"] unsignedIntValue];
           NSString *nick = [packet objectForKey:@"SLNickname"];
           
-          [[self delegate] connection:self receivedNewPlayerNotification:playerID channel:channelID nickname:nick extendedFlags:extendedFlags];
+          [[self delegate] connection:self receivedNewPlayerNotification:playerID channel:channelID nickname:nick channelPrivFlags:channelPrivFlags extendedFlags:extendedFlags];
         }
         break;
       }
@@ -505,6 +506,64 @@
           
           [[self delegate] connection:self receivedPlayerMutedNotification:playerID wasMuted:muted];          
         }
+        break;
+      }
+      case PACKET_TYPE_PRIV_UPDATE:
+      {
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerPriviledgeChangeNotification:byPlayerID:changeType:privFlag:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          unsigned int byPlayerID = [[packet objectForKey:@"SLFromPlayerID"] unsignedIntValue];
+          unsigned int flag = 0;
+          BOOL addNotRemove = [[packet objectForKey:@"SLAddNotRemove"] boolValue];
+          
+          switch ([[packet objectForKey:@"SLPrivFlag"] unsignedIntValue])
+          {
+            case 0x00:
+              flag = SLConnectionChannelAdmin;
+              break;
+            case 0x01:
+              flag = SLConnectionOperator;
+              break;
+            case 0x02:
+              flag = SLConnectionVoice;
+              break;
+          }
+          
+          if (flag != 0)
+          {
+            [[self delegate] connection:self receivedPlayerPriviledgeChangeNotification:playerID byPlayerID:byPlayerID changeType:addNotRemove privFlag:flag];
+          }
+        }
+        break;
+      }
+      case PACKET_TYPE_SERVERPRIV_UPDATE:
+      {
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerServerPriviledgeChangeNotification:byPlayerID:changeType:privFlag:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          unsigned int byPlayerID = [[packet objectForKey:@"SLFromPlayerID"] unsignedIntValue];
+          unsigned int flag = 0;
+          BOOL addNotRemove = [[packet objectForKey:@"SLAddNotRemove"] boolValue];
+          
+          switch ([[packet objectForKey:@"SLPrivFlag"] unsignedIntValue])
+          {
+            case 0x00:
+              flag = SLConnectionServerAdmin;
+              break;
+          }
+          
+          if (flag != 0)
+          {
+            [[self delegate] connection:self receivedPlayerServerPriviledgeChangeNotification:playerID byPlayerID:byPlayerID changeType:addNotRemove privFlag:flag];
+          }
+        }
+        break;
+      }
+      case PACKET_TYPE_SERVERINFO_UPDATE:
+      {
+        NSData *data = [packet objectForKey:@"SLPermissionsData"];
+        [self parsePermissionData:data];
         break;
       }
       default:
@@ -614,59 +673,46 @@
 #endif
 }
 
-- (BOOL)checkPermission:(unsigned char)permission permissionType:(SLConnectionPermissionType)type forUserType:(SLConnectionExtendedFlags)userFlags
+- (BOOL)checkPermission:(unsigned char)permission permissionType:(SLConnectionPermissionType)type forExtendedFlags:(SLConnectionExtendedFlags)extendedFlags andChannelPrivFlags:(SLConnectionChannelPrivFlags)channelPrivFlags
 {
-  unsigned char userFlagsType[] = { PERMS_8BYTE, PERMS_10BYTE, 0x00, 0x00, PERMS_10BYTE };
+  unsigned char permission10ByteMap[] = { PERMS_10BYTE_MISC_BYTE, PERMS_10BYTE_REVOKE_BYTE, PERMS_10BYTE_GRANT_BYTE, PERMS_10BYTE_CHANEDIT_BYTE, PERMS_10BYTE_CHAN_BYTE, PERMS_10BYTE_ADMIN_BYTE };
+  unsigned char permission8ByteMap[] = { PERMS_8BYTE_MISC_BYTE, PERMS_8BYTE_REVOKE_BYTE, PERMS_8BYTE_GRANT_BYTE, PERMS_8BYTE_CHANEDIT_BYTE, PERMS_8BYTE_CHAN_BYTE, PERMS_8BYTE_ADMIN_BYTE };
   
-  switch (userFlagsType[userFlags])
+  BOOL hasPermission = NO;
+  
+  // go through in order, Server Admin first
+  if ((extendedFlags & SLConnectionServerAdmin) == SLConnectionServerAdmin)
   {
-    case PERMS_10BYTE:
-    {
-      unsigned char permissionByteMap[] = {
-        PERMS_10BYTE_MISC_BYTE,
-        PERMS_10BYTE_REVOKE_BYTE,
-        PERMS_10BYTE_GRANT_BYTE,
-        PERMS_10BYTE_CHANEDIT_BYTE,
-        PERMS_10BYTE_CHAN_BYTE,
-        PERMS_10BYTE_ADMIN_BYTE
-      };
-      
-      unsigned char permissionByteIndex = permissionByteMap[type];
-      
-      switch (userFlags)
-      {
-        case SLConnectionServerAdmin:
-          return ((serverAdminPermissions[permissionByteIndex] & permission) == permission);
-        case SLConnectionRegisteredPlayer:
-          return ((registeredPermissions[permissionByteIndex] & permission) == permission);
-      }      
-      break;
-    }
-    case PERMS_8BYTE:
-    {
-      unsigned char permissionByteMap[] = {
-        PERMS_8BYTE_MISC_BYTE,
-        PERMS_8BYTE_REVOKE_BYTE,
-        PERMS_8BYTE_GRANT_BYTE,
-        PERMS_8BYTE_CHANEDIT_BYTE,
-        PERMS_8BYTE_CHAN_BYTE,
-        PERMS_8BYTE_ADMIN_BYTE
-      };
-      
-      unsigned char permissionByteIndex = permissionByteMap[type];
-      
-      switch (userFlags)
-      {
-        case SLConnectionAnonymousPlayer:
-          return ((anonymousPermissions[permissionByteIndex] & permission) == permission);
-      }
-      
-      break;
-    }
-    default:
-      return NO;
+    hasPermission = ((serverAdminPermissions[permission10ByteMap[type]] & permission) == permission);
   }
-  return NO;
+  
+  if (!hasPermission && ((extendedFlags & SLConnectionRegisteredPlayer) == SLConnectionRegisteredPlayer))
+  {
+    hasPermission = ((registeredPermissions[permission10ByteMap[type]] & permission) == permission);
+  }
+  
+  if (!hasPermission && ((channelPrivFlags & SLConnectionChannelAdmin) == SLConnectionChannelAdmin))
+  {
+    hasPermission = ((channelAdminPermissions[permission8ByteMap[type]] & permission) == permission);
+  }
+  
+  if (!hasPermission && ((channelPrivFlags & SLConnectionOperator) == SLConnectionOperator))
+  {
+    hasPermission = ((operatorPemissions[permission8ByteMap[type]] & permission) == permission);
+  }
+  
+  if (!hasPermission && ((channelPrivFlags & SLConnectionVoice) == SLConnectionVoice))
+  {
+    hasPermission = ((voicePermissions[permission8ByteMap[type]] & permission) == permission);
+  }
+  
+  // anonymous
+  if (!hasPermission)
+  {
+    hasPermission = ((anonymousPermissions[permission8ByteMap[type]] & permission) == permission);
+  }
+  
+  return hasPermission;
 }
 
 #pragma mark Ping Timer
@@ -675,7 +721,7 @@
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  if (pingReplyPending)
+  if (pingReplysPending > 5)
   {
     // if we've got a reply pending then we've probably timed out.
     if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
@@ -701,7 +747,7 @@
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:data waitUntilDone:YES];
   [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
   
-  pingReplyPending = YES;
+  pingReplysPending++;
   
   [pool release];
 }

@@ -30,6 +30,7 @@ typedef enum {
   NSString *playerName;
   unsigned int playerFlags;
   unsigned int extendedFlags;
+  unsigned int channelPrivFlags;
   unsigned int playerID;
   unsigned int channelID;
   unsigned int lastVoicePacketCount;
@@ -45,6 +46,7 @@ typedef enum {
 @property (readonly) NSOperationQueue *decodeQueue;
 @property (assign) unsigned int lastVoicePacketCount;
 @property (assign) unsigned int extendedFlags;
+@property (assign) unsigned int channelPrivFlags;
 @property (assign) BOOL isTransmitting;
 @property (assign) BOOL isWhispering;
 @property (assign) BOOL isLocallyMuted;
@@ -66,6 +68,10 @@ typedef enum {
 
 - (BOOL)isRegistered;
 - (BOOL)isServerAdmin;
+
+- (BOOL)isChannelAdmin;
+- (BOOL)isChannelOperator;
+- (BOOL)isChannelVoice;
 
 - (BOOL)isTalking;
 

@@ -17,6 +17,7 @@
 @synthesize decodeQueue;
 @synthesize lastVoicePacketCount;
 @synthesize extendedFlags;
+@synthesize channelPrivFlags;
 @synthesize isTransmitting;
 @synthesize isWhispering;
 @synthesize isLocallyMuted;
@@ -66,6 +67,7 @@
   [copyPlayer setChannelID:[self channelID]];
   [copyPlayer setLastVoicePacketCount:[self lastVoicePacketCount]];
   [copyPlayer setExtendedFlags:[self extendedFlags]];
+  [copyPlayer setChannelPrivFlags:[self channelPrivFlags]];
   [copyPlayer setIsTransmitting:[self isTransmitting]];
   [copyPlayer setIsWhispering:[self isWhispering]];
   [copyPlayer setIsLocallyMuted:[self isLocallyMuted]];
@@ -75,10 +77,13 @@
 
 - (void)dealloc
 {
+  [self setPlayerName:nil];
+  
+  [decodeQueue release];
   [graphPlayer release];
   [converter release];
   [speex release];
-  [playerName release];
+  
   [super dealloc];
 }
 
@@ -208,6 +213,21 @@
 - (BOOL)isServerAdmin
 {
   return ((extendedFlags & SLConnectionServerAdmin) == SLConnectionServerAdmin);
+}
+
+- (BOOL)isChannelAdmin
+{
+  return ((channelPrivFlags & SLConnectionChannelAdmin) == SLConnectionChannelAdmin);
+}
+
+- (BOOL)isChannelOperator
+{
+  return ((channelPrivFlags & SLConnectionOperator) == SLConnectionOperator);
+}
+
+- (BOOL)isChannelVoice
+{
+  return ((channelPrivFlags & SLConnectionVoice) == SLConnectionVoice);
 }
 
 - (unsigned int)playerID

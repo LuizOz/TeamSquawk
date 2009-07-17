@@ -169,10 +169,6 @@ void UncaughtExceptionHandler(NSException *exception)
 {
   // assert thread safety here, if someone's called reloadItem/reloadData badly we'll know about it.
   ASSERT_UI_THREAD_SAFETY();
-  if (item == nil)
-  {
-    return @"Foo";
-  }
   if ([item isKindOfClass:[TSChannel class]])
   {
     return [(TSChannel*)item channelName];
@@ -740,10 +736,22 @@ void UncaughtExceptionHandler(NSException *exception)
   }
   else if (([anItem action] == @selector(changeUserStatusAction:)) ||
            ([anItem action] == @selector(toggleAway:)) ||
-           ([anItem action] == @selector(toggleChannelCommander:)) ||
            ([anItem action] == @selector(toggleBlockWhispers:)))
   {
     return isConnected;
+  }
+  else if ([anItem action] == @selector(toggleChannelCommander:))
+  {
+    if (isConnected)
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      BOOL hasChanCmdrPriv = [teamspeakConnection checkPermission:PERMS_MISC_CHANCOMMANDER_BYTE5 
+                                                   permissionType:SLConnectionPermissionMisc
+                                                 forExtendedFlags:[me extendedFlags]
+                                              andChannelPrivFlags:[me channelPrivFlags]];
+      return hasChanCmdrPriv;
+    }
+    return NO;
   }
   
   return YES;
@@ -833,10 +841,7 @@ void UncaughtExceptionHandler(NSException *exception)
   
   // get the TSPlayer for who we are
   TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
-  
-  // check our permissions
-  NSLog(@"%d", [teamspeakConnection checkPermission:PERMS_MISC_CHANCOMMANDER_BYTE5 permissionType:SLConnectionPermissionMisc forUserType:[me extendedFlags]]);
-  
+    
   // find what channel we ended up in
   for (TSChannel *channel in [flattenedChannels allValues])
   {
@@ -924,7 +929,6 @@ void UncaughtExceptionHandler(NSException *exception)
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
 {
   NSArray *channelsDictionary = [channelDictionary objectForKey:@"SLChannels"];
-  [flattenedChannels removeAllObjects];
   
   for (NSDictionary *channelDictionary in channelsDictionary)
   {
@@ -983,6 +987,7 @@ void UncaughtExceptionHandler(NSException *exception)
     [player setPlayerName:[playerDictionary objectForKey:@"SLPlayerNick"]];
     [player setPlayerFlags:[[playerDictionary objectForKey:@"SLPlayerFlags"] unsignedIntValue]];
     [player setExtendedFlags:[[playerDictionary objectForKey:@"SLPlayerExtendedFlags"] unsignedIntValue]];
+    [player setChannelPrivFlags:[[playerDictionary objectForKey:@"SLChannelPrivFlags"] unsignedIntValue]];
     [player setPlayerID:[[playerDictionary objectForKey:@"SLPlayerID"] unsignedIntValue]];
     [player setChannelID:[[playerDictionary objectForKey:@"SLChannelID"] unsignedIntValue]];
     [player setLastVoicePacketCount:0];
@@ -997,7 +1002,7 @@ void UncaughtExceptionHandler(NSException *exception)
   }
 }
 
-- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)extendedFlags
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname channelPrivFlags:(unsigned int)cFlags extendedFlags:(unsigned int)eFlags
 {
   TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
   
@@ -1005,7 +1010,8 @@ void UncaughtExceptionHandler(NSException *exception)
   [player setPlayerName:nickname];
   [player setChannelID:channelID];
   [player setPlayerFlags:0];
-  [player setExtendedFlags:extendedFlags];
+  [player setExtendedFlags:eFlags];
+  [player setChannelPrivFlags:cFlags];
   
   [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
   
@@ -1092,6 +1098,36 @@ void UncaughtExceptionHandler(NSException *exception)
   
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:newChannel waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
+}
+
+- (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  
+  if (changeType == SLConnectionPrivAdded)
+  {
+    [player setChannelPrivFlags:([player channelPrivFlags] | flag)];
+  }
+  else
+  {
+    [player setChannelPrivFlags:([player channelPrivFlags] & ~flag)];
+  }
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+}
+
+- (void)connection:(SLConnection*)connection receivedPlayerServerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  
+  if (changeType == SLConnectionPrivAdded)
+  {
+    [player setExtendedFlags:([player extendedFlags] | flag)];
+  }
+  else
+  {
+    [player setExtendedFlags:([player extendedFlags] & ~flag)];
+  }
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
 }
 
 #pragma mark Audio

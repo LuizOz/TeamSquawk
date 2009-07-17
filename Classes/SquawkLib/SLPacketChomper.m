@@ -250,9 +250,25 @@
       [socket maybeDequeueSend];
       return chompedPacket;
     }
-    case PACKET_TYPE_EFLAGS_UPDATE:
+    case PACKET_TYPE_PRIV_UPDATE:
     {
-      NSDictionary *chompedPacket = [self chompEFlagsUpdate:data];
+      NSDictionary *chompedPacket = [self chompChannelPrivUpdate:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
+      [socket maybeDequeueSend];
+      return chompedPacket;
+    }
+    case PACKET_TYPE_SERVERPRIV_UPDATE:
+    {
+      NSDictionary *chompedPacket = [self chompServerPrivUpdate:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
+      [socket maybeDequeueSend];
+      return chompedPacket;
+    }
+    case PACKET_TYPE_SERVERINFO_UPDATE:
+    {
+      NSDictionary *chompedPacket = [self chompServerInfoUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
       [socket maybeDequeueSend];
@@ -476,8 +492,8 @@
     unsigned int channelID = 0;
     SNARF_INT(channelID);
 
-    // skip two bytes
-    SNARF_SKIP(2);
+    unsigned short channelPrivFlags;
+    SNARF_SHORT(channelPrivFlags);
     
     unsigned short playerExtendedFlags;
     SNARF_SHORT(playerExtendedFlags);
@@ -493,10 +509,46 @@
                                       [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
                                       [NSNumber numberWithUnsignedShort:flags], @"SLPlayerFlags",
                                       [NSNumber numberWithUnsignedShort:playerExtendedFlags], @"SLPlayerExtendedFlags",
+                                      [NSNumber numberWithUnsignedShort:channelPrivFlags], @"SLChannelPrivFlags",
                                       nick, @"SLPlayerNick",
                                       nil];
     [players addObject:playerDictionary];
   }
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompServerInfoUpdate:(NSData*)data
+{
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
+  // get connection id and client id
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+  
+  unsigned int sequenceNumber = 0;
+  SNARF_INT(sequenceNumber);
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
+  
+  SNARF_CRC();
+  
+  NSData *serverPermissions;
+  SNARF_DATA(serverPermissions, 80);
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_SERVERINFO_UPDATE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
+                                    serverPermissions, @"SLPermissionsData",
+                                    nil];
   
   return packetDictionary;
 }
@@ -529,8 +581,8 @@
   unsigned int channelID;
   SNARF_INT(channelID);
   
-  // 2 bytes of crap, then the player extended flags and then two more I don't know about eyt
-  SNARF_SKIP(2);
+  unsigned short channelPrivFlags;
+  SNARF_SHORT(channelPrivFlags);
   
   unsigned short extendedFlags;
   SNARF_SHORT(extendedFlags);
@@ -552,6 +604,7 @@
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
                                     [NSNumber numberWithUnsignedInt:channelID], @"SLChannelID",
                                     [NSNumber numberWithUnsignedInt:extendedFlags], @"SLPlayerExtendedFlags",
+                                    [NSNumber numberWithUnsignedShort:channelPrivFlags], @"SLChannelPrivFlags",
                                     nick, @"SLNickname",
                                     nil];
   
@@ -720,7 +773,7 @@
   return packetDictionary;
 }
 
-- (NSDictionary*)chompEFlagsUpdate:(NSData*)data
+- (NSDictionary*)chompChannelPrivUpdate:(NSData*)data
 {
   SNARF_INIT(data);
   SNARF_SKIP(4);
@@ -743,21 +796,73 @@
   unsigned int playerID;
   SNARF_INT(playerID);
   
-  unsigned short extendedFlags;
-  SNARF_SHORT(extendedFlags);
+  unsigned char addOrRemove;
+  SNARF_BYTE(addOrRemove);
+  
+  unsigned char privFlag;
+  SNARF_BYTE(privFlag);
   
   unsigned int fromPlayerID;
   SNARF_INT(fromPlayerID);
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
-                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_EFLAGS_UPDATE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_PRIV_UPDATE], @"SLPacketType",
                                     [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                     [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
-                                    [NSNumber numberWithUnsignedShort:extendedFlags], @"SLExtendedFlags",
+                                    [NSNumber numberWithBool:(addOrRemove == 0x0 ? YES : NO)], @"SLAddNotRemove",
+                                    [NSNumber numberWithUnsignedChar:privFlag], @"SLPrivFlag",
+                                    [NSNumber numberWithUnsignedInt:fromPlayerID], @"SLFromPlayerID",
+                                    nil];
+  
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompServerPrivUpdate:(NSData*)data
+{
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
+  // get connection id and client id
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+  
+  unsigned int sequenceNumber = 0;
+  SNARF_INT(sequenceNumber);
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
+  
+  SNARF_CRC();  
+  
+  unsigned int playerID;
+  SNARF_INT(playerID);
+  
+  unsigned char addOrRemove;
+  SNARF_BYTE(addOrRemove);
+  
+  unsigned char privFlag;
+  SNARF_BYTE(privFlag);
+  
+  unsigned int fromPlayerID;
+  SNARF_INT(fromPlayerID);
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_SERVERPRIV_UPDATE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
+                                    [NSNumber numberWithUnsignedInt:playerID], @"SLPlayerID",
+                                    [NSNumber numberWithBool:(addOrRemove == 0x0 ? YES : NO)], @"SLAddNotRemove",
+                                    [NSNumber numberWithUnsignedChar:privFlag], @"SLPrivFlag",
                                     [NSNumber numberWithUnsignedInt:fromPlayerID], @"SLFromPlayerID",
                                     nil];
   

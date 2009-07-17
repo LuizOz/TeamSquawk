@@ -125,6 +125,18 @@
     {
       statusText = [[NSMutableAttributedString alloc] initWithString:@"Server Admin"];
     }
+    else if ([(TSPlayer*)[self objectValue] isChannelAdmin])
+    {
+      statusText = [[NSMutableAttributedString alloc] initWithString:@"Channel Admin"];
+    }
+    else if ([(TSPlayer*)[self objectValue] isChannelOperator])
+    {
+      statusText = [[NSMutableAttributedString alloc] initWithString:@"Operator"];
+    }
+    else if ([(TSPlayer*)[self objectValue] isChannelVoice])
+    {
+      statusText = [[NSMutableAttributedString alloc] initWithString:@"Voice"];
+    }
     else if ([(TSPlayer*)[self objectValue] isRegistered])
     {
       statusText = [[NSMutableAttributedString alloc] initWithString:@"Registered"];

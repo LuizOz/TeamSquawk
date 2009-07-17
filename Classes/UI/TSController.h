@@ -107,6 +107,10 @@ typedef enum {
 
 - (NSMenu*)contextualMenuForPlayer:(TSPlayer*)player;
 
+#pragma mark Contextual Menu Actions
+
+- (void)toggleMutePlayer:(id)sender;
+
 #pragma mark Toolbar Delegates
 
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)aToolbar;
@@ -162,10 +166,13 @@ typedef enum {
 - (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error;
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
-- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)extendedFlags;
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname channelPrivFlags:(unsigned int)cFlags extendedFlags:(unsigned int)eFlags;
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID;
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
+- (void)connection:(SLConnection*)connection receivedPlayerMutedNotification:(unsigned int)playerID wasMuted:(BOOL)muted;
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
+- (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
+- (void)connection:(SLConnection*)connection receivedPlayerServerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
 
 #pragma mark Audio
 

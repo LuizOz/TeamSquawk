@@ -92,6 +92,17 @@ typedef enum {
 } SLConnectionExtendedFlags;
 
 typedef enum {
+  SLConnectionChannelAdmin = 0x01,
+  SLConnectionVoice = 0x02,
+  SLConnectionOperator = 0x04,
+} SLConnectionChannelPrivFlags;
+
+typedef enum {
+  SLConnectionPrivAdded = YES,
+  SLConnectionPrivRemoved = NO,
+} SLConnectionPrivChange;
+
+typedef enum {
   SLConnectionPermissionMisc = 0x00,
   SLConnectionPermissionRevoke = 0x01,
   SLConnectionPermissionGrant = 0x02,
@@ -127,7 +138,7 @@ typedef enum {
   BOOL isDisconnecting;
   BOOL hasFinishedDisconnecting;
   BOOL pendingReceive;
-  BOOL pingReplyPending;
+  unsigned int pingReplysPending;
   
   // permissions
   unsigned char channelAdminPermissions[8];
@@ -151,6 +162,16 @@ typedef enum {
 + (unsigned int)bitrateForCodec:(unsigned int)codec;
 - (id)initWithHost:(NSString*)host withError:(NSError**)error;
 - (id)initWithHost:(NSString*)host withPort:(short)port withError:(NSError**)error;
+- (void)dealloc;
+
+#pragma mark Threading
+
+- (void)spawnThread;
+- (void)initSocketOnThread;
+- (void)sendData:(NSData*)data;
+- (void)queueReceiveData;
+- (void)waitForSend;
+- (void)queueReceiveDataAndWait;
 
 #pragma mark Commands
 
@@ -161,14 +182,17 @@ typedef enum {
 
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port;
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error;
-
 - (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error;
 
+#pragma mark Permissions
+
 - (void)parsePermissionData:(NSData*)data;
+- (BOOL)checkPermission:(unsigned char)permission permissionType:(SLConnectionPermissionType)type forExtendedFlags:(SLConnectionExtendedFlags)extendedFlags andChannelPrivFlags:(SLConnectionChannelPrivFlags)channelPrivFlags;
 
 #pragma mark Ping Timer
 
 - (void)pingTimer:(NSTimer*)timer;
+- (void)connectionTimer:(NSTimer*)timer;
 
 #pragma mark Text Message
 
@@ -177,7 +201,7 @@ typedef enum {
 #pragma mark Voice Message
 
 - (void)sendVoiceMessage:(NSData*)audioCodecData frames:(unsigned char)frames packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID codec:(SLAudioCodecType)codec;
-- (void)sendVoiceWhisper:(NSData*)audioCodecData frames:(unsigned char)frames packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID codec:(SLAudioCodecType)codec recipients:(NSArray*)recipients;
+- (void)sendVoiceWhisper:(NSData*)audioCodecData frames:(unsigned char)frames packetCount:(unsigned short)packetCount transmissionID:(unsigned short)transmissionID codec:(SLAudioCodecType)codec recipients:(NSArray*)recipients;;
 
 #pragma mark Channel/Status
 
@@ -199,11 +223,13 @@ typedef enum {
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary;
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary;
 
-- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname extendedFlags:(unsigned int)eFlags;
+- (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname channelPrivFlags:(unsigned int)cFlags extendedFlags:(unsigned int)eFlags;
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID;
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags;
 - (void)connection:(SLConnection*)connection receivedPlayerMutedNotification:(unsigned int)playerID wasMuted:(BOOL)muted;
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
+- (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)player byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
+- (void)connection:(SLConnection*)connection receivedPlayerServerPriviledgeChangeNotification:(unsigned int)player byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
 
 - (void)connectionPingReply:(SLConnection*)connection;
 
