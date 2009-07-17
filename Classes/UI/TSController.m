@@ -60,7 +60,9 @@ void UncaughtExceptionHandler(NSException *exception)
                                                        nil], nil], @"Hotkeys",
                             [NSNumber numberWithBool:NO], @"SmallPlayers",
                             [NSNumber numberWithBool:NO], @"AutoChannelCommander",
-                            [NSNumber numberWithBool:NO], @"SpeakChannelEvents",
+                            [NSNumber numberWithBool:YES], @"SpeakChannelEvents",
+                            [NSNumber numberWithBool:YES], @"UseTeamspeakPhrases",
+                            [NSSpeechSynthesizer defaultVoice], @"SpeechVoice",
                             nil];
   [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
   
@@ -890,7 +892,14 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
     [synth setRate:SPEECH_RATE];
-    [synth startSpeakingString:@"Link Engaged."];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
+    {
+      [synth startSpeakingString:@"Link Engaged."];
+    }
+    else
+    {
+      [synth startSpeakingString:@"Connected."];
+    }
   }
 }
 
@@ -940,7 +949,14 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
     [synth setRate:SPEECH_RATE];
-    [synth startSpeakingString:@"Link Disengaged."];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
+    {
+      [synth startSpeakingString:@"Link Disengaged."];
+    }
+    else
+    {
+      [synth startSpeakingString:@"Disconnected."];
+    }
   }  
 }
 
@@ -1059,7 +1075,14 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
     [synth setRate:SPEECH_RATE];
-    [synth startSpeakingString:@"New Player."];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
+    {
+      [synth startSpeakingString:@"New Player."];
+    }
+    else
+    {
+      [synth startSpeakingString:[NSString stringWithFormat:@"%@ connected.", [player playerName]]];
+    }
   }  
 }
 
@@ -1068,6 +1091,20 @@ void UncaughtExceptionHandler(NSException *exception)
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
     
+  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
+  {
+    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
+    [synth setRate:SPEECH_RATE];
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
+    {
+      [synth startSpeakingString:@"Player left."];
+    }
+    else
+    {
+      [synth startSpeakingString:[NSString stringWithFormat:@"%@ disconnected.", [player playerName]]];
+    }
+  } 
+  
   TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   [blocker blockMainThread];
   
@@ -1083,13 +1120,6 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation setArgument:&channel atIndex:2];
   [invocation setArgument:&reloadChildren atIndex:3];
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
-  
-  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
-  {
-    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
-    [synth setRate:SPEECH_RATE];
-    [synth startSpeakingString:@"Player left."];
-  }  
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags

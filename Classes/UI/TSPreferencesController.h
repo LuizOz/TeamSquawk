@@ -27,6 +27,9 @@ typedef enum {
   IBOutlet NSView *soundPreferencesView;
   IBOutlet NSView *hotkeysPreferencesView;
   
+  // general
+  IBOutlet NSPopUpButton *generalVoicesPopupButton;
+  
   // servers
   IBOutlet NSTableView *serversTableView;
   IBOutlet NSButton *serversDeleteServerButton;
@@ -71,6 +74,10 @@ typedef enum {
 - (void)setupServersPreferences;
 - (void)setupSoundPreferences;
 - (void)setupHotkeyPreferences;
+
+#pragma mark General Toolbar
+
+- (IBAction)voicesPopupButtonAction:(id)sender;
 
 #pragma mark Servers Toolbar
 

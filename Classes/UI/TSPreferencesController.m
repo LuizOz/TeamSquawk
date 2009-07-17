@@ -11,6 +11,8 @@
 
 NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 
+#define SPEECH_RATE 150.0f
+
 @implementation TSPreferencesController
 
 - (void)setupToolbar
@@ -30,7 +32,36 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 
 - (void)setupGeneralPreferences
 {
+  [generalVoicesPopupButton removeAllItems];
+  [[generalVoicesPopupButton menu] setAutoenablesItems:NO];
   
+  NSArray *voices = [NSArray array];
+  for (NSString *voice in [NSSpeechSynthesizer availableVoices])
+  {
+    voices = [voices arrayByAddingObject:[NSSpeechSynthesizer attributesForVoice:voice]];
+  }
+  
+  NSArray *maleVoices = [voices filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF.VoiceGender == %@", @"VoiceGenderMale"]];
+  NSArray *femaleVoices = [voices filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF.VoiceGender == %@", @"VoiceGenderFemale"]];
+    
+  [[[generalVoicesPopupButton menu] addItemWithTitle:@"Male" action:nil keyEquivalent:@""] setEnabled:NO];
+  for (NSDictionary *voice in maleVoices)
+  {
+    NSMenuItem *item = [[generalVoicesPopupButton menu] addItemWithTitle:[voice objectForKey:@"VoiceName"] action:nil keyEquivalent:@""];
+    [item setRepresentedObject:[voice objectForKey:@"VoiceIdentifier"]];
+    [item setState:([[item representedObject] isEqual:[[NSUserDefaults standardUserDefaults] stringForKey:@"SpeechVoice"]])];
+  }
+  
+  [[generalVoicesPopupButton menu] addItem:[NSMenuItem separatorItem]];
+  [[[generalVoicesPopupButton menu] addItemWithTitle:@"Female" action:nil keyEquivalent:@""] setEnabled:NO];
+  for (NSDictionary *voice in femaleVoices)
+  {
+    NSMenuItem *item = [[generalVoicesPopupButton menu] addItemWithTitle:[voice objectForKey:@"VoiceName"] action:nil keyEquivalent:@""];
+    [item setRepresentedObject:[voice objectForKey:@"VoiceIdentifier"]];
+    [item setState:([[item representedObject] isEqual:[[NSUserDefaults standardUserDefaults] stringForKey:@"SpeechVoice"]])];
+  }
+  
+  [generalVoicesPopupButton selectItemWithTitle:[[NSSpeechSynthesizer attributesForVoice:[[NSUserDefaults standardUserDefaults] stringForKey:@"SpeechVoice"]] objectForKey:@"VoiceName"]];
 }
 
 - (void)setupServersPreferences
@@ -143,6 +174,20 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   [hotkeyTableView reloadData];
   
   [hotkeyDeleteHotkeyButton setEnabled:([hotkeyTableView selectedRow] != -1)];
+}
+
+#pragma mark General Toolbar
+
+- (IBAction)voicesPopupButtonAction:(id)sender
+{
+  NSDictionary *voice = [NSSpeechSynthesizer attributesForVoice:[[generalVoicesPopupButton selectedItem] representedObject]];
+  
+  NSSpeechSynthesizer *synth = [[NSSpeechSynthesizer alloc] initWithVoice:[voice objectForKey:@"VoiceIdentifier"]];
+  [synth setRate:SPEECH_RATE];
+  [synth startSpeakingString:[voice objectForKey:@"VoiceDemoText"]];
+  [synth release];
+  
+  [[NSUserDefaults standardUserDefaults] setObject:[voice objectForKey:@"VoiceIdentifier"] forKey:@"SpeechVoice"];  
 }
 
 #pragma mark Servers Toolbar
