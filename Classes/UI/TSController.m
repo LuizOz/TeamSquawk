@@ -14,6 +14,7 @@
 #import "TSAudioExtraction.h"
 #import "TSPlayer.h"
 #import "TSChannel.h"
+#import "TSThreadBlocker.h"
 
 void UncaughtExceptionHandler(NSException *exception)
 {
@@ -929,6 +930,7 @@ void UncaughtExceptionHandler(NSException *exception)
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
 {
   NSArray *channelsDictionary = [channelDictionary objectForKey:@"SLChannels"];
+  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   
   for (NSDictionary *channelDictionary in channelsDictionary)
   {
@@ -943,7 +945,8 @@ void UncaughtExceptionHandler(NSException *exception)
     [channel setFlags:[[channelDictionary objectForKey:@"SLChannelFlags"] unsignedIntValue]];
     [channel setMaxUsers:[[channelDictionary objectForKey:@"SLChannelMaxUsers"] unsignedIntValue]];
     [channel setSortOrder:[[channelDictionary objectForKey:@"SLChannelSortOrder"] unsignedIntValue]];
-   
+
+    [blocker blockMainThread];
     [flattenedChannels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
     
     // root channels have a parent of 0xffffffff, if we've got a real parent and we haven't
@@ -962,22 +965,25 @@ void UncaughtExceptionHandler(NSException *exception)
       }
       [(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
     }
+    [blocker unblockThread];
   }
   
-  [mainWindowOutlineView lock];
+  [blocker blockMainThread];
   [sortedChannels autorelease];
   NSArray *sortDescriptors = [NSArray arrayWithObjects:
                               [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],
                               [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],
                               nil];
   sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
-  [mainWindowOutlineView unlock];
+  [blocker unblockThread];
+  [blocker release];
   
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary
 {
+  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   NSArray *playersDictionary = [playerDictionary objectForKey:@"SLPlayers"];
   
   for (NSDictionary *playerDictionary in playersDictionary)
@@ -996,14 +1002,16 @@ void UncaughtExceptionHandler(NSException *exception)
     
     TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
     
-    [mainWindowOutlineView lock];
+    [blocker blockMainThread];
     [channel addPlayer:player];
-    [mainWindowOutlineView unlock];
+    [blocker unblockThread];
   }
+  [blocker release];
 }
 
 - (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname channelPrivFlags:(unsigned int)cFlags extendedFlags:(unsigned int)eFlags
 {
+  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
   
   [player setPlayerID:playerID];
@@ -1016,9 +1024,11 @@ void UncaughtExceptionHandler(NSException *exception)
   [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
   
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-  [mainWindowOutlineView lock];
+  
+  [blocker blockMainThread];
   [channel addPlayer:player];
-  [mainWindowOutlineView unlock];
+  [blocker unblockThread];
+  [blocker release];
 
   BOOL reloadChildren = YES;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
@@ -1034,8 +1044,14 @@ void UncaughtExceptionHandler(NSException *exception)
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
     
+  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
+  [blocker blockMainThread];
+  
   [channel removePlayer:player];
   [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  
+  [blocker unblockThread];
+  [blocker release];
   
   BOOL reloadChildren = YES;
   NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
@@ -1069,16 +1085,17 @@ void UncaughtExceptionHandler(NSException *exception)
 
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID
 {
+  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   TSChannel *oldChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:fromChannelID]];
   TSChannel *newChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:toChannelID]];
   
   [player setChannelID:[newChannel channelID]];
 
-  [mainWindowOutlineView lock];
+  [blocker blockMainThread];
   [oldChannel removePlayer:player];
   [newChannel addPlayer:player];
-  [mainWindowOutlineView unlock];
+  [blocker unblockThread];
     
   if ([player playerID] == [teamspeakConnection clientID])
   {
@@ -1098,6 +1115,8 @@ void UncaughtExceptionHandler(NSException *exception)
   
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:newChannel waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
+  
+  [blocker release];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag
