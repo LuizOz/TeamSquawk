@@ -55,7 +55,7 @@
   [self performSelector:@selector(_blocker) onThread:thread withObject:nil waitUntilDone:NO];
   
   // spin till we've got the thread blocked
-  while (!isBlocked) {}
+  while (!isBlocked) { /* do nothing */ }
 }
 
 - (void)blockMainThread

@@ -13,7 +13,7 @@
 // GAZZILION ways of updating data on the main thread
 
 @interface TSThreadBlocker : NSObject {
-  BOOL isBlocked;
+  volatile BOOL isBlocked;
   NSLock *lock;
 }
 
