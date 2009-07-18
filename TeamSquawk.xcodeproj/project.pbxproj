@@ -1312,7 +1312,8 @@
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
 				C9BD02740FFC1B9E00FC280A /* Copy Frameworks */,
-				C9BD03210FFCA14400FC280A /* ShellScript */,
+				C9BD03210FFCA14400FC280A /* Fix Library Paths */,
+				C939F1011011FBAE002CBED3 /* Update Git Version */,
 			);
 			buildRules = (
 			);
@@ -1384,6 +1385,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		C939F1011011FBAE002CBED3 /* Update Git Version */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Update Git Version";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /usr/bin/perl;
+			shellScript = "# Xcode auto-versioning script for Subversion by Axel Andersson\n# Updated for git by Marcus S. Zarra and Matt Long\n \nuse strict;\n \n# Get the current git commit hash and use it to set the CFBundleVersion value\nmy $REV = `git-show-ref --hash --abbrev --heads`;\nmy $INFO = \"$ENV{BUILT_PRODUCTS_DIR}/$ENV{WRAPPER_NAME}/Contents/Info.plist\";\n \nmy $version = $REV;\ndie \"$0: No Git revision found\" unless $version;\n \nchomp($version);\n\nopen(FH, \"$INFO\") or die \"$0: $INFO: $!\";\nmy $info = join(\"\", <FH>);\nclose(FH);\n \n$info =~ s/([\\t ]+<key>CFBundleVersion<\\/key>\\n[\\t ]+<string>).*?(<\\/string>)/$1$version$2/;\n \nopen(FH, \">$INFO\") or die \"$0: $INFO: $!\";\nprint FH $info;\nclose(FH);";
+		};
 		C9BD01D00FFB403000FC280A /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -1397,13 +1412,14 @@
 			shellPath = /bin/sh;
 			shellScript = "# shell script goes here\n\ncd \"$BUILD_DIR\"\nmkdir -p \"$BUILD_DIR/$BUILD_STYLE/Speex\"\ncd \"$BUILD_DIR/$BUILD_STYLE/Speex\"\n\nCFLAGS=\"-arch i386 -arch ppc -g\" $PROJECT_DIR/speex-1.2rc1/configure --disable-dependency-tracking && make clean && make\n\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeex.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"\ncp \"$BUILD_DIR/$BUILD_STYLE/Speex/libspeex/.libs/libspeexdsp.1.5.0.dylib\" \"$BUILD_DIR/$BUILD_STYLE\"";
 		};
-		C9BD03210FFCA14400FC280A /* ShellScript */ = {
+		C9BD03210FFCA14400FC280A /* Fix Library Paths */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
+			name = "Fix Library Paths";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1508,6 +1524,7 @@
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/speex-1.2rc1/include\"";
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_PREPROCESS = NO;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1532,6 +1549,7 @@
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
 				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/speex-1.2rc1/include\"";
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_PREPROCESS = NO;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
