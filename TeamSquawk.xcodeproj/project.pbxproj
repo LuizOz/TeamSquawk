@@ -45,6 +45,9 @@
 		C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */ = {isa = PBXBuildFile; fileRef = C939E2EE100DCA07002CBED3 /* TransmitRed.png */; };
 		C939E513100E8DB3002CBED3 /* General.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C939E512100E8DB3002CBED3 /* General.tiff */; };
 		C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */ = {isa = PBXBuildFile; fileRef = C939EB221010FD61002CBED3 /* TSThreadBlocker.m */; };
+		C939EDCE1011E7A1002CBED3 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C939EDCD1011E7A1002CBED3 /* Sparkle.framework */; };
+		C939F0221011E7CC002CBED3 /* Sparkle.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C939EDCD1011E7A1002CBED3 /* Sparkle.framework */; };
+		C939F0661011EA14002CBED3 /* TeamSquawk.pub in Resources */ = {isa = PBXBuildFile; fileRef = C939F0651011EA14002CBED3 /* TeamSquawk.pub */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
@@ -120,6 +123,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				C939F0221011E7CC002CBED3 /* Sparkle.framework in Copy Frameworks */,
 				C9BD027F0FFC1BB900FC280A /* libspeex.1.5.0.dylib in Copy Frameworks */,
 				C9BD02800FFC1BBC00FC280A /* libspeexdsp.1.5.0.dylib in Copy Frameworks */,
 				C9BD027E0FFC1BB400FC280A /* MTCoreAudio.framework in Copy Frameworks */,
@@ -152,6 +156,8 @@
 		C939E512100E8DB3002CBED3 /* General.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = General.tiff; sourceTree = "<group>"; };
 		C939EB211010FD61002CBED3 /* TSThreadBlocker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSThreadBlocker.h; sourceTree = "<group>"; };
 		C939EB221010FD61002CBED3 /* TSThreadBlocker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSThreadBlocker.m; sourceTree = "<group>"; };
+		C939EDCD1011E7A1002CBED3 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+		C939F0651011EA14002CBED3 /* TeamSquawk.pub */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TeamSquawk.pub; sourceTree = "<group>"; };
 		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
@@ -515,6 +521,7 @@
 				C9E2D1B1100662B700ED920D /* Carbon.framework in Frameworks */,
 				C9E2E452100ABB2000ED920D /* ExceptionHandling.framework in Frameworks */,
 				C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */,
+				C939EDCE1011E7A1002CBED3 /* Sparkle.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -537,6 +544,14 @@
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
+				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
+				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
+				C9BD02890FFC96DC00FC280A /* AudioToolbox.framework */,
+				C9BD028D0FFC96E200FC280A /* QuickTime.framework */,
+				C9E2D1B0100662B700ED920D /* Carbon.framework */,
+				C9E2E42C100AB95600ED920D /* ExceptionHandling.framework */,
+				C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */,
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
 			);
 			name = "Linked Frameworks";
@@ -545,12 +560,10 @@
 		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C939EDCD1011E7A1002CBED3 /* Sparkle.framework */,
 				C9BD02560FFC1B7C00FC280A /* MTCoreAudio.framework */,
 				C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */,
 				C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */,
-				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
-				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
-				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
 			);
 			name = "Other Frameworks";
 			sourceTree = "<group>";
@@ -571,11 +584,6 @@
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
-				C9BD02890FFC96DC00FC280A /* AudioToolbox.framework */,
-				C9BD028D0FFC96E200FC280A /* QuickTime.framework */,
-				C9E2D1B0100662B700ED920D /* Carbon.framework */,
-				C9E2E42C100AB95600ED920D /* ExceptionHandling.framework */,
-				C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */,
 			);
 			name = TeamSquawk;
 			sourceTree = "<group>";
@@ -597,6 +605,7 @@
 			children = (
 				C9E2CA1610032AAF00ED920D /* Images */,
 				C939E2D8100DC950002CBED3 /* TeamSquawk.icns */,
+				C939F0651011EA14002CBED3 /* TeamSquawk.pub */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				1DDD58140DA1D0A300B32029 /* MainMenu.xib */,
@@ -1364,6 +1373,7 @@
 				C939E2D9100DC950002CBED3 /* TeamSquawk.icns in Resources */,
 				C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */,
 				C939E513100E8DB3002CBED3 /* General.tiff in Resources */,
+				C939F0661011EA14002CBED3 /* TeamSquawk.pub in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
