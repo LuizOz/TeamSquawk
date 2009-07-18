@@ -8,7 +8,8 @@
 		<string key="IBDocument.HIToolboxVersion">353.00</string>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="58"/>
+			<integer value="371"/>
+			<integer value="29"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -816,14 +817,14 @@
 			<object class="NSWindowTemplate" id="972006081">
 				<int key="NSWindowStyleMask">15</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{1048, 444}, {271, 555}}</string>
+				<string key="NSWindowRect">{{798, 332}, {271, 555}}</string>
 				<int key="NSWTFlags">1946157056</int>
 				<string key="NSWindowTitle">TeamSquawk</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
 				<string key="NSWindowContentMaxSize">{3.40282e+38, 3.40282e+38}</string>
 				<object class="NSView" key="NSWindowView" id="439893737">
-					<nil key="NSNextResponder"/>
+					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
 					<object class="NSMutableArray" key="NSSubviews">
 						<bool key="EncodedWithXMLCoder">YES</bool>
@@ -934,6 +935,7 @@
 									</object>
 									<string key="NSFrame">{{1, 1}, {271, 555}}</string>
 									<reference key="NSSuperview" ref="905025283"/>
+									<reference key="NSNextKeyView" ref="611829221"/>
 									<reference key="NSDocView" ref="611829221"/>
 									<reference key="NSBGColor" ref="999959686"/>
 									<int key="NScvFlags">4</int>
@@ -961,6 +963,7 @@
 							</object>
 							<string key="NSFrame">{{-1, -1}, {273, 557}}</string>
 							<reference key="NSSuperview" ref="439893737"/>
+							<reference key="NSNextKeyView" ref="250855273"/>
 							<int key="NSsFlags">658</int>
 							<reference key="NSVScroller" ref="532945116"/>
 							<reference key="NSHScroller" ref="198888455"/>
@@ -969,9 +972,11 @@
 						</object>
 					</object>
 					<string key="NSFrameSize">{271, 555}</string>
+					<reference key="NSSuperview"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1920, 1178}}</string>
 				<string key="NSMaxSize">{3.40282e+38, 3.40282e+38}</string>
+				<string key="NSFrameAutosaveName">TeamSquawkMainWindow</string>
 			</object>
 			<object class="NSWindowTemplate" id="501238229">
 				<int key="NSWindowStyleMask">15</int>
