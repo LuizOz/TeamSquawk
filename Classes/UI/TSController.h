@@ -108,6 +108,8 @@ typedef enum {
 #pragma mark Contextual Menu Actions
 
 - (void)toggleMutePlayer:(id)sender;
+- (void)kickPlayer:(id)sender;
+- (void)channelKickPlayer:(id)sender;
 
 #pragma mark Toolbar Delegates
 
@@ -171,6 +173,7 @@ typedef enum {
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
 - (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
 - (void)connection:(SLConnection*)connection receivedPlayerServerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
+- (void)connection:(SLConnection*)connection receivedPlayerKickedFromChannel:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID intoChannel:(unsigned int)channelID reason:(NSString*)reason;
 
 #pragma mark Audio
 
@@ -178,6 +181,7 @@ typedef enum {
 - (void)outputDeviceGainChanged:(NSNotification*)notification;
 - (void)connection:(SLConnection*)connection receivedVoiceMessage:(NSData*)audioCodecData codec:(SLAudioCodecType)codec playerID:(unsigned int)playerID isWhisper:(BOOL)isWhisper senderPacketCounter:(unsigned short)count;
 - (void)idleAudioCheck:(NSTimer*)timer;
+- (void)speakVoiceEvent:(NSString*)eventText alternativeText:(NSString*)alternativeText;
 
 #pragma mark Hotkeys
 

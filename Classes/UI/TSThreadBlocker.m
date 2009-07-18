@@ -43,6 +43,12 @@
 
 - (void)blockThread:(NSThread*)thread
 {
+  if ([thread isEqual:[NSThread currentThread]])
+  {
+    isBlocked = NO;
+    return;
+  }
+  
   isBlocked = NO;
   [lock lock];
   
@@ -59,7 +65,10 @@
 
 - (void)unblockThread
 {
-  [lock unlock];
+  if (isBlocked)
+  {
+    [lock unlock];
+  }
   while (isBlocked) {}
 }
 

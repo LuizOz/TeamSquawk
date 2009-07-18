@@ -471,4 +471,56 @@
   return packetData;
 }
 
+#pragma mark Admin
+
+- (NSData*)buildKickMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID reason:(NSString*)reason
+{
+  VOMIT_INIT();
+  
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0x2d, 0x01 };
+  VOMIT_BYTES(headerChunk, 4);
+  
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
+  VOMIT_INT(sequenceID);
+  
+  unsigned short resendCount = 0, fragmentCount = 0;
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
+  
+  VOMIT_CRC_BLANKS();
+  
+  VOMIT_INT(playerID);
+  VOMIT_30BYTE_STRING(reason);
+  
+  VOMIT_CRC();
+  
+  return packetData;
+}
+
+- (NSData*)buildChannelKickMessageWithConnectionID:(unsigned int)connectionID clientID:(unsigned int)clientID sequenceID:(unsigned int)sequenceID playerID:(unsigned int)playerID reason:(NSString*)reason
+{
+  VOMIT_INIT();
+  
+  unsigned char headerChunk[] = { 0xf0, 0xbe, 0x2e, 0x01 };
+  VOMIT_BYTES(headerChunk, 4);
+  
+  VOMIT_INT(connectionID);
+  VOMIT_INT(clientID);
+  VOMIT_INT(sequenceID);
+  
+  unsigned short resendCount = 0, fragmentCount = 0;
+  VOMIT_SHORT(resendCount);
+  VOMIT_SHORT(fragmentCount);
+  
+  VOMIT_CRC_BLANKS();
+  
+  VOMIT_INT(playerID);
+  VOMIT_30BYTE_STRING(reason);
+  
+  VOMIT_CRC();
+  
+  return packetData;
+}
+
 @end

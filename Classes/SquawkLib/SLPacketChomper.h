@@ -24,6 +24,7 @@
 #define PACKET_TYPE_SERVERPRIV_UPDATE 0x006bbef0
 #define PACKET_TYPE_SERVERINFO_UPDATE 0x008cbef0
 #define PACKET_TYPE_PLAYER_MUTED      0x0141bef0
+#define PACKET_TYPE_PLAYER_CHANKICKED 0x0066bef0
 
 #define PACKET_TYPE_PING_REPLY        0x0002bef4
 
@@ -87,6 +88,7 @@
 - (NSDictionary*)chompPlayerMutedUpdate:(NSData*)data;
 - (NSDictionary*)chompChannelPrivUpdate:(NSData*)data;
 - (NSDictionary*)chompServerPrivUpdate:(NSData*)data;
+- (NSDictionary*)chompPlayerKicked:(NSData*)data;
 
 #pragma mark Text/Chat Messages
 

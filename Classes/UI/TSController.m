@@ -251,8 +251,8 @@ void UncaughtExceptionHandler(NSException *exception)
 {
   NSMenu *menu = [[NSMenu allocWithZone:[NSMenu menuZone]] init];
   
-  [menu addItemWithTitle:@"Kick Player" action:nil keyEquivalent:@""];
-  [menu addItemWithTitle:@"Kick Player From Channel" action:nil keyEquivalent:@""];
+  [menu addItemWithTitle:@"Kick Player" action:@selector(kickPlayer:) keyEquivalent:@""];
+  [menu addItemWithTitle:@"Kick Player From Channel" action:@selector(channelKickPlayer:) keyEquivalent:@""];
   [menu addItemWithTitle:@"Ban Player" action:nil keyEquivalent:@""];
   
   if ([player isLocallyMuted])
@@ -289,6 +289,28 @@ void UncaughtExceptionHandler(NSException *exception)
 {  
   TSPlayer *player = [mainWindowOutlineView itemAtRow:[mainWindowOutlineView clickedRow]];
   [teamspeakConnection changeMute:![player isLocallyMuted] onOtherPlayerID:[player playerID]];
+}
+
+- (void)kickPlayer:(id)sender
+{
+  TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  
+  if ([teamspeakConnection checkPermission:PERMS_MISC_SERVERKICK_BYTE5 permissionType:SLConnectionPermissionMisc forExtendedFlags:[me extendedFlags] andChannelPrivFlags:[me channelPrivFlags]])
+  {
+    TSPlayer *player = [mainWindowOutlineView itemAtRow:[mainWindowOutlineView clickedRow]];
+    [teamspeakConnection kickPlayer:[player playerID] withReason:@""];
+  }  
+}
+
+- (void)channelKickPlayer:(id)sender
+{
+  TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+  
+  if ([teamspeakConnection checkPermission:PERMS_MISC_CHANKICK_BYTE5 permissionType:SLConnectionPermissionMisc forExtendedFlags:[me extendedFlags] andChannelPrivFlags:[me channelPrivFlags]])
+  {
+    TSPlayer *player = [mainWindowOutlineView itemAtRow:[mainWindowOutlineView clickedRow]];
+    [teamspeakConnection kickPlayerFromChannel:[player playerID] withReason:@""];
+  }  
 }
 
 #pragma mark Toolbar Delegates
@@ -740,8 +762,11 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     return (!isConnected && !isConnecting);
   }
-  else if (([anItem action] == @selector(changeUserStatusAction:)) ||
-           ([anItem action] == @selector(toggleAway:)) ||
+  else if ([anItem action] == @selector(changeUserStatusAction:))
+  {
+    return (isConnected && (([currentChannel codec] >= SLCodecSpeex_3_4) && ([currentChannel codec] <= SLCodecSpeex_25_9)));
+  }
+  else if (([anItem action] == @selector(toggleAway:)) ||
            ([anItem action] == @selector(toggleBlockWhispers:)))
   {
     return isConnected;
@@ -758,6 +783,30 @@ void UncaughtExceptionHandler(NSException *exception)
       return hasChanCmdrPriv;
     }
     return NO;
+  }
+  else if ([anItem action] == @selector(kickPlayer:))
+  {
+    if (isConnected)
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      BOOL canServerKick = [teamspeakConnection checkPermission:PERMS_MISC_SERVERKICK_BYTE5
+                                                 permissionType:SLConnectionPermissionMisc 
+                                               forExtendedFlags:[me extendedFlags]
+                                            andChannelPrivFlags:[me channelPrivFlags]];
+      return canServerKick;
+    }
+  }
+  else if ([anItem action] == @selector(channelKickPlayer:))
+  {
+    if (isConnected)
+    {
+      TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+      BOOL canChannelKick = [teamspeakConnection checkPermission:PERMS_MISC_CHANKICK_BYTE5
+                                                  permissionType:SLConnectionPermissionMisc 
+                                                forExtendedFlags:[me extendedFlags]
+                                             andChannelPrivFlags:[me channelPrivFlags]];
+      return canChannelKick;
+    }
   }
   
   return YES;
@@ -888,19 +937,7 @@ void UncaughtExceptionHandler(NSException *exception)
     [self toggleChannelCommander:nil];
   }
   
-  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
-  {
-    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
-    [synth setRate:SPEECH_RATE];
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
-    {
-      [synth startSpeakingString:@"Link Engaged."];
-    }
-    else
-    {
-      [synth startSpeakingString:@"Connected."];
-    }
-  }
+  [self speakVoiceEvent:@"Link Engaged." alternativeText:@"Connected."];
 }
 
 - (void)connectionFailedToLogin:(SLConnection*)connection withError:(NSError*)error
@@ -920,11 +957,15 @@ void UncaughtExceptionHandler(NSException *exception)
 
 - (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error
 {
+  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
+  
   isConnected = NO;
   isConnecting = NO;
   [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
+  
+  [blocker blockMainThread];
   
   [sortedChannels release];
   sortedChannels = nil;
@@ -937,6 +978,8 @@ void UncaughtExceptionHandler(NSException *exception)
   [flattenedChannels removeAllObjects];
   [channels removeAllObjects];
   [players removeAllObjects];
+  
+  [blocker unblockThread];
     
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
 
@@ -945,19 +988,9 @@ void UncaughtExceptionHandler(NSException *exception)
     [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
   }
   
-  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
-  {
-    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
-    [synth setRate:SPEECH_RATE];
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
-    {
-      [synth startSpeakingString:@"Link Disengaged."];
-    }
-    else
-    {
-      [synth startSpeakingString:@"Disconnected."];
-    }
-  }  
+  [self speakVoiceEvent:@"Link Disengaged." alternativeText:@"Disconnected."];
+  
+  [blocker release];
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
@@ -1071,39 +1104,15 @@ void UncaughtExceptionHandler(NSException *exception)
   [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:channel waitUntilDone:YES];
   
-  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
-  {
-    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
-    [synth setRate:SPEECH_RATE];
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
-    {
-      [synth startSpeakingString:@"New Player."];
-    }
-    else
-    {
-      [synth startSpeakingString:[NSString stringWithFormat:@"%@ connected.", [player playerName]]];
-    }
-  }  
+  [self speakVoiceEvent:@"New Player." alternativeText:[NSString stringWithFormat:@"%@ connected.", [player playerName]]];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerLeftNotification:(unsigned int)playerID
 {
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-    
-  if ([[NSUserDefaults standardUserDefaults] boolForKey:@"SpeakChannelEvents"])
-  {
-    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:nil] autorelease];
-    [synth setRate:SPEECH_RATE];
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"UseTeamspeakPhrases"])
-    {
-      [synth startSpeakingString:@"Player left."];
-    }
-    else
-    {
-      [synth startSpeakingString:[NSString stringWithFormat:@"%@ disconnected.", [player playerName]]];
-    }
-  } 
+   
+  [self speakVoiceEvent:@"Player Left." alternativeText:[NSString stringWithFormat:@"%@ disconnected.", [player playerName]]];
   
   TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   [blocker blockMainThread];
@@ -1162,7 +1171,34 @@ void UncaughtExceptionHandler(NSException *exception)
   {
     [currentChannel autorelease];
     currentChannel = [newChannel retain];
-    [transmission setCodec:[currentChannel codec]];
+
+    if (([newChannel codec] >= SLCodecSpeex_3_4) && ([newChannel codec] <= SLCodecSpeex_25_9))
+    {
+      // if we were in a crap codec channel, put our status back to active
+      if (([oldChannel codec] < SLCodecSpeex_3_4) || ([oldChannel codec] > SLCodecSpeex_25_9))
+      {
+        unsigned int newFlags = ([player playerFlags] & ~(TSPlayerHasMutedSpeakers | TSPlayerHasMutedMicrophone));
+        [teamspeakConnection changeStatusTo:newFlags];
+      }
+      [transmission setCodec:[currentChannel codec]];
+    }
+    else
+    {
+      unsigned int newFlags = (([player playerFlags] & ~(TSPlayerHasMutedSpeakers | TSPlayerHasMutedMicrophone)) | TSPlayerHasMutedSpeakers);
+      [teamspeakConnection changeStatusTo:newFlags];
+      
+      NSAlert *alert = [NSAlert alertWithMessageText:@"Incompatible codec." defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:@"This channel uses a non-Speex codec, you can't listen or talk on this channel."];
+      
+      NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[alert methodSignatureForSelector:@selector(beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo:)]];
+      [invocation setSelector:@selector(beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo:)];
+      [invocation setArgument:&mainWindow atIndex:2];
+      [invocation setArgument:&self atIndex:3];
+      SEL selector = @selector(alertDidEnd:returnCode:contextInfo:);
+      [invocation setArgument:&selector atIndex:4];
+      id context = nil;
+      [invocation setArgument:&context atIndex:5];
+      [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:alert waitUntilDone:YES];
+    }
   }
   
   BOOL reloadChildren = YES;
@@ -1210,6 +1246,26 @@ void UncaughtExceptionHandler(NSException *exception)
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
 }
 
+- (void)connection:(SLConnection*)connection receivedPlayerKickedFromChannel:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID intoChannel:(unsigned int)channelID reason:(NSString*)reason
+{
+  // find the player
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  TSChannel *fromChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:fromChannelID]];
+  
+  // move the player
+  [self connection:connection receivedChannelChangeNotification:playerID fromChannel:fromChannelID toChannel:channelID];
+  
+  // if player is us
+  if (playerID == [teamspeakConnection clientID])
+  {
+    [self speakVoiceEvent:@"You were kicked from channel." alternativeText:[NSString stringWithFormat:@"You were kicked from %@.", [fromChannel channelName]]];
+  }
+  else
+  {
+    [self speakVoiceEvent:@"Player Kicked" alternativeText:[NSString stringWithFormat:@"%@ was kicked from %@", [player playerName], [fromChannel channelName]]];
+  }
+}
+
 #pragma mark Audio
 
 - (void)outputDeviceHasChanged:(NSNotification*)notification
@@ -1252,6 +1308,23 @@ void UncaughtExceptionHandler(NSException *exception)
 - (void)idleAudioCheck:(NSTimer*)timer
 {
   [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+}
+
+- (void)speakVoiceEvent:(NSString*)eventText alternativeText:(NSString*)alternativeText
+{
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  
+  if ([defaults boolForKey:@"SpeakChannelEvents"])
+  {    
+    NSString *voice = [defaults objectForKey:@"SpeechVoice"];
+    NSSpeechSynthesizer *synth = [[[NSSpeechSynthesizer alloc] initWithVoice:voice] autorelease];
+    
+    [synth setRate:SPEECH_RATE];
+    [synth setVolume:1.0];
+    
+    NSString *text = ([defaults boolForKey:@"UseTeamspeakPhrases"] ? eventText : alternativeText);
+    [synth startSpeakingString:text];
+  }
 }
 
 #pragma mark Hotkeys

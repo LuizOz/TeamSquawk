@@ -83,6 +83,7 @@ enum {
   SLConnectionErrorTimedOut = 1,
   SLConnectionErrorPingTimeout = 2,
   SLConnectionErrorBadLogin = 3,
+  SLConnectionErrorSelfLeft = 4,
 };
 
 typedef enum {
@@ -209,6 +210,11 @@ typedef enum {
 - (void)changeStatusTo:(unsigned short)flags;
 - (void)changeMute:(BOOL)isMuted onOtherPlayerID:(unsigned int)playerID;
 
+#pragma mark Admin Functions
+
+- (void)kickPlayer:(unsigned int)player withReason:(NSString*)reason;
+- (void)kickPlayerFromChannel:(unsigned int)player withReason:(NSString*)reason;
+
 @end
 
 @interface NSObject (SLConnectionDelegate)
@@ -230,6 +236,7 @@ typedef enum {
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID;
 - (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)player byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
 - (void)connection:(SLConnection*)connection receivedPlayerServerPriviledgeChangeNotification:(unsigned int)player byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag;
+- (void)connection:(SLConnection*)connection receivedPlayerKickedFromChannel:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID intoChannel:(unsigned int)channelID reason:(NSString*)reason;
 
 - (void)connectionPingReply:(SLConnection*)connection;
 

@@ -301,11 +301,51 @@
         {
           if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:withError:)])
           {
+            NSString *desc, *recoverySuggestion;
+            switch ([[packet objectForKey:@"SLBadLoginCode"] unsignedCharValue])
+            {
+              case 0xff:
+              {
+                desc = @"The server refused your credentials.";
+                recoverySuggestion = @"Please check your username and password and try again.";
+                break;
+              }
+              case 0xfe:
+              {
+                desc = @"Too many users logged in.";
+                recoverySuggestion = @"Too many users are logged in to this server, please try again later.";
+                break;
+              }
+              case 0xfa:
+              {
+                desc = @"You are banned.";
+                recoverySuggestion = @"You are banned from this server.";
+                break;
+              }
+              case 0xf9:
+              {
+                desc = @"Already logged in.";
+                recoverySuggestion = @"A user with your login details is already logged in to the server.";
+                break;
+              }
+              default:
+              {
+                NSLog(@"%x", [[packet objectForKey:@"SLBadLoginCode"] unsignedCharValue]);
+                desc = @"Server returned \"Bad Login\"";
+                recoverySuggestion = @"Please check your username and password and try again.";
+                break;
+              }
+            }
+            
+            [connectionTimer invalidate];
+            [connectionTimer release];
+            connectionTimer = nil;
+            
             NSError *error = [NSError errorWithDomain:@"SLConnectionError" 
                                                  code:SLConnectionErrorBadLogin 
                                              userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
-                                                       @"Server returned \"Bad Login\"", NSLocalizedDescriptionKey,
-                                                       @"Please check your username and password and try again.", NSLocalizedRecoverySuggestionErrorKey,
+                                                       desc, NSLocalizedDescriptionKey,
+                                                       recoverySuggestion, NSLocalizedRecoverySuggestionErrorKey,
                                                        nil]];
             [[self delegate] connectionFailedToLogin:self withError:error];
           }
@@ -375,7 +415,7 @@
         connectionTimer = nil;
         
         // we should probably schedule some auto-pings here
-        pingTimer = [[NSTimer scheduledTimerWithTimeInterval:5.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
+        pingTimer = [[NSTimer scheduledTimerWithTimeInterval:3.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
         
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
         {
@@ -468,10 +508,30 @@
           hasFinishedDisconnecting = YES;
         }
         
-        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
+        unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+        // check if we're not disconnecting but it was us that left. we've been kicked or the server went down
+        if (!isDisconnecting && (playerID == clientID) && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
         {
-          [[self delegate] connection:self receivedPlayerLeftNotification:[[packet objectForKey:@"SLPlayerID"] unsignedIntValue]];
+          if (pingTimer)
+          {
+            [pingTimer invalidate];
+            [pingTimer release];
+            pingTimer = nil;
+          }
+          
+          NSError *error = [NSError errorWithDomain:@"SLConnection" code:SLConnectionErrorSelfLeft userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
+                                                                                                             @"Disconnected from server", NSLocalizedDescriptionKey,
+                                                                                                             @"You were disconnected from the server.", NSLocalizedRecoverySuggestionErrorKey,
+                                                                                                             nil]];
+          [[self delegate] connectionDisconnected:self withError:error];
         }
+        else
+        {
+          if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
+          {
+            [[self delegate] connection:self receivedPlayerLeftNotification:playerID];
+          }
+        }        
         break;
       }
       case PACKET_TYPE_CHANNEL_CHANGE:
@@ -564,6 +624,19 @@
       {
         NSData *data = [packet objectForKey:@"SLPermissionsData"];
         [self parsePermissionData:data];
+        break;
+      }
+      case PACKET_TYPE_PLAYER_CHANKICKED:
+      {
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerKickedFromChannel:fromChannel:intoChannel:reason:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
+          unsigned int byPlayerID = [[packet objectForKey:@"SLFromChannelID"] unsignedIntValue];
+          unsigned int channelID = [[packet objectForKey:@"SLToChannelID"] unsignedIntValue];
+          NSString *reason = [packet objectForKey:@"SLReason"];
+          
+          [[self delegate] connection:self receivedPlayerKickedFromChannel:playerID fromChannel:byPlayerID intoChannel:channelID reason:reason];
+        }
         break;
       }
       default:
@@ -846,6 +919,32 @@
                                                                                           sequenceID:standardSequenceNumber++
                                                                                             playerID:playerID
                                                                                                muted:isMuted];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [pool release];
+}
+
+#pragma mark Admin Functions
+
+- (void)kickPlayer:(unsigned int)player withReason:(NSString*)reason
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildKickMessageWithConnectionID:connectionID 
+                                                                            clientID:clientID
+                                                                          sequenceID:standardSequenceNumber++
+                                                                            playerID:player
+                                                                              reason:reason];
+  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [pool release];
+}
+
+- (void)kickPlayerFromChannel:(unsigned int)player withReason:(NSString*)reason
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildChannelKickMessageWithConnectionID:connectionID
+                                                                                   clientID:clientID 
+                                                                                 sequenceID:standardSequenceNumber++
+                                                                                   playerID:player
+                                                                                     reason:reason];
   [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
   [pool release];
 }
