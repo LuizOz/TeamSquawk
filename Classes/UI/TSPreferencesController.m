@@ -17,15 +17,19 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
 
 - (void)setupToolbar
 {
+  [generalPreferencesView retain];
   [self addView:generalPreferencesView label:@"General" image:[NSImage imageNamed:@"General"]];
   [self setupGeneralPreferences];
   
+  [serversPreferencesView retain];
   [self addView:serversPreferencesView label:@"Servers" image:[NSImage imageNamed:@"Servers"]];
   [self setupServersPreferences];
   
+  [soundPreferencesView retain];
   [self addView:soundPreferencesView label:@"Sound" image:[NSImage imageNamed:@"Mic"]];
   [self setupSoundPreferences];
   
+  [hotkeysPreferencesView retain];
   [self addView:hotkeysPreferencesView label:@"HotKeys" image:[NSImage imageNamed:@"Keyboard"]];
   [self setupHotkeyPreferences];
 }

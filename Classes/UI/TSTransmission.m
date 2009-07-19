@@ -41,7 +41,8 @@
     fragmentBuffer = [[MTByteBuffer alloc] initWithCapacity:((([encoder frameSize] * sizeof(short) * [encoder inputSampleRate]) / [encoder sampleRate]) * 5)];
     
     [inputDevice setIOTarget:self withSelector:@selector(ioCycleForDevice:timeStamp:inputData:inputTime:outputData:outputTime:clientData:) withClientData:nil];
-    [inputDevice setDevicePaused:NO];
+    [inputDevice setDevicePaused:YES];
+    [inputDevice deviceStart];
     
     converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:inputDeviceStreamDescription andOutputStreamDescription:[encoder encoderStreamDescription]];
     if (!converter)
@@ -49,10 +50,6 @@
       [self release];
       return nil;
     }
-
-    // start the thread
-    transmissionThread = [[NSThread alloc] initWithTarget:self selector:@selector(_transmissionThread) object:nil];
-    [transmissionThread start];
   }
   return self;
 }
@@ -68,33 +65,6 @@
   [super dealloc];
 }
 
-- (void)_transmissionThread
-{
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
-  // put at timer on this thread so that we don't spin in the runloop
-  [NSTimer scheduledTimerWithTimeInterval:[[NSDate distantFuture] timeIntervalSinceNow] target:nil selector:nil userInfo:nil repeats:NO];
-  
-  while (![[NSThread currentThread] isCancelled])
-  {
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-    [pool release];
-    pool = [[NSAutoreleasePool alloc] init];
-  }
-  [pool release];
-}
-
-- (void)_startTransmitting
-{
-  [inputDevice deviceStart];
-  transmissionCount++;
-}
-
-- (void)_stopTransmitting
-{
-  [inputDevice deviceStop];
-}
-
 - (BOOL)isTransmitting
 {
   return isTransmitting;
@@ -102,8 +72,8 @@
 
 - (void)close
 {
+  [inputDevice deviceStop];
   [inputDevice removeIOTarget];
-  [transmissionThread cancel];
 }
 
 - (void)setIsTransmitting:(BOOL)flag
@@ -111,11 +81,12 @@
   [transmissionLock lock];
   if (flag && (flag != isTransmitting))
   {
-    [self performSelector:@selector(_startTransmitting) onThread:transmissionThread withObject:nil waitUntilDone:YES];
+    [inputDevice setDevicePaused:!flag];
+    transmissionCount++;
   }
   else if (!flag && (flag != isTransmitting))
   {
-    [self performSelector:@selector(_stopTransmitting) onThread:transmissionThread withObject:nil waitUntilDone:YES];
+    [inputDevice setDevicePaused:!flag];
     [fragmentBuffer flush];
   }
   isTransmitting = flag;
