@@ -1463,37 +1463,6 @@ void UncaughtExceptionHandler(NSException *exception)
   }
 }
 
-#pragma mark Sparkle
-
-NSInteger compareVersions(SUAppcastItem *a, SUAppcastItem *b, void* context)
-{
-  return [(TSStandardVersionComparator*)context compareVersion:[b versionString] toVersion:[a versionString]];
-}
-
-- (SUAppcastItem*)bestValidUpdateInAppcast:(SUAppcast *)appcast forUpdater:(SUUpdater *)bundle;
-{
-  TSStandardVersionComparator *comparison = [[TSStandardVersionComparator alloc] init];
-  NSMutableArray *possibles = [[NSMutableArray alloc] init];
-  
-  NSString *realBundleVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-  
-  for (SUAppcastItem *item in [appcast items])
-  {
-    BOOL ignoreNormally = [[[item propertiesDictionary] objectForKey:@"sparkle:ignorenormally"] isEqualTo:@"1"];
-    
-    if (!ignoreNormally && ([comparison compareVersion:realBundleVersion toVersion:[item versionString]] == NSOrderedAscending))
-    {
-      [possibles addObject:item];
-    }
-  }
-
-  if ([possibles count] > 0)
-  {
-    return [possibles objectAtIndex:0];
-  }
-  return nil;
-}
-
 //- (void)audioDecoderThread2
 //{
 //  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
