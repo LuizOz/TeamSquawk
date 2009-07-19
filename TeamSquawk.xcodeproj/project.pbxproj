@@ -49,6 +49,7 @@
 		C939F0661011EA14002CBED3 /* TeamSquawk.pub in Resources */ = {isa = PBXBuildFile; fileRef = C939F0651011EA14002CBED3 /* TeamSquawk.pub */; };
 		C939F06D1011EE86002CBED3 /* TeamSquawk.icns in Resources */ = {isa = PBXBuildFile; fileRef = C939F06C1011EE86002CBED3 /* TeamSquawk.icns */; };
 		C939F0BA1011F3E9002CBED3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = C939F0B91011F3E9002CBED3 /* Credits.rtf */; };
+		C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */ = {isa = PBXBuildFile; fileRef = C95462C91013579B00FCF935 /* TSStandardVersionComparator.m */; };
 		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
 		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
@@ -160,6 +161,8 @@
 		C939F0651011EA14002CBED3 /* TeamSquawk.pub */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TeamSquawk.pub; sourceTree = "<group>"; };
 		C939F06C1011EE86002CBED3 /* TeamSquawk.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = TeamSquawk.icns; sourceTree = "<group>"; };
 		C939F0B91011F3E9002CBED3 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
+		C95462C81013579B00FCF935 /* TSStandardVersionComparator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSStandardVersionComparator.h; sourceTree = "<group>"; };
+		C95462C91013579B00FCF935 /* TSStandardVersionComparator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSStandardVersionComparator.m; sourceTree = "<group>"; };
 		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
 		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
 		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
@@ -593,6 +596,8 @@
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				C95462C81013579B00FCF935 /* TSStandardVersionComparator.h */,
+				C95462C91013579B00FCF935 /* TSStandardVersionComparator.m */,
 				C9E2D27B1006740A00ED920D /* PreferencesController */,
 				C9E2D2641006710E00ED920D /* SRRecorder */,
 				C9BDFF9A0FFA02CD00FC280A /* speex-1.2rc1 */,
@@ -1474,6 +1479,7 @@
 				C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */,
 				C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */,
 				C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */,
+				C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
