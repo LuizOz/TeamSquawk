@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1</string>
+	<string>0.2</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright (c) Matt Wright 2009.</string>
 	<key>SUPublicDSAKeyFile</key>
