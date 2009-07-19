@@ -531,6 +531,7 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   [inputPreviewDevice deviceStop];
   [inputPreviewDevice removeIOTarget];
   [inputPreviewDevice release];
+  inputPreviewDevice = nil;
   
   if (outputPreviewDevice)
   {
@@ -541,11 +542,16 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
   }
   
   [inputConverter release];
-  [outputConverter release];
-  [preEncodingBuffer release];
-  [postDecodingBuffer release];
+  inputConverter = nil;
   
-  [[NSNotificationCenter defaultCenter] removeObserver:self name:NSWindowWillCloseNotification object:[self window]];
+  [outputConverter release];
+  outputConverter = nil;
+  
+  [preEncodingBuffer release];
+  preEncodingBuffer = nil;
+  
+  [postDecodingBuffer release];
+  postDecodingBuffer = nil;
 }
 
 #pragma mark Hotkey Toolbar
