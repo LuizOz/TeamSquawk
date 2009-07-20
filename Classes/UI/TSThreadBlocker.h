@@ -14,6 +14,7 @@
 
 @interface TSThreadBlocker : NSObject {
   volatile BOOL isBlocked;
+  NSInvocation *doneInvocation;
   NSLock *lock;
 }
 
@@ -23,5 +24,10 @@
 - (void)blockThread:(NSThread*)thread;
 - (void)blockMainThread;
 - (void)unblockThread;
+
+- (void)unblockAndPerformSelector:(SEL)selector onObject:(id)object;
+- (void)unblockAndPerformSelector:(SEL)selector onObject:(id)object withObject:(id)arg;
+- (void)unblockAndPerformSelector:(SEL)selector onObject:(id)object withObject:(id)arg andObject:(id)arg2;
+- (void)unblockAndInvoke:(NSInvocation*)invocation onObject:(id)object;
 
 @end

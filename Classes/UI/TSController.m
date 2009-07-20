@@ -982,9 +982,7 @@ void UncaughtExceptionHandler(NSException *exception)
   [channels removeAllObjects];
   [players removeAllObjects];
   
-  [blocker unblockThread];
-    
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+  [blocker unblockAndPerformSelector:@selector(reloadData) onObject:mainWindowOutlineView];
 
   if (error)
   {
@@ -1030,6 +1028,7 @@ void UncaughtExceptionHandler(NSException *exception)
       
       if (![flattenedChannels objectForKey:parentChannel])
       {
+        [blocker unblockThread];
         [[NSException exceptionWithName:@"ParentChannelNotFound" reason:@"Subchannel defined before parent channel." userInfo:nil] raise];
       }
       [(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
@@ -1067,11 +1066,10 @@ void UncaughtExceptionHandler(NSException *exception)
     [player setChannelID:[[playerDictionary objectForKey:@"SLChannelID"] unsignedIntValue]];
     [player setLastVoicePacketCount:0];
     
+    [blocker blockMainThread];
     [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
     
     TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-    
-    [blocker blockMainThread];
     [channel addPlayer:player];
     [blocker unblockThread];
   }
@@ -1090,21 +1088,15 @@ void UncaughtExceptionHandler(NSException *exception)
   [player setExtendedFlags:eFlags];
   [player setChannelPrivFlags:cFlags];
   
+  [blocker blockMainThread];
   [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
   
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-  
-  [blocker blockMainThread];
   [channel addPlayer:player];
-  [blocker unblockThread];
+  
+  [blocker unblockAndPerformSelector:@selector(reloadItem:reloadChildren:) onObject:mainWindowOutlineView withObject:channel andObject:(id)YES];
   [blocker release];
   
-  BOOL reloadChildren = YES;
-  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
-  [invocation setSelector:@selector(reloadItem:reloadChildren:)];
-  [invocation setArgument:&channel atIndex:2];
-  [invocation setArgument:&reloadChildren atIndex:3];
-  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:channel waitUntilDone:YES];
   
   [self speakVoiceEvent:@"New Player." alternativeText:[NSString stringWithFormat:@"%@ connected.", [player playerName]]];
@@ -1123,15 +1115,8 @@ void UncaughtExceptionHandler(NSException *exception)
   [channel removePlayer:player];
   [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   
-  [blocker unblockThread];
+  [blocker unblockAndPerformSelector:@selector(reloadItem:reloadChildren:) onObject:mainWindowOutlineView withObject:channel andObject:(id)YES];
   [blocker release];
-  
-  BOOL reloadChildren = YES;
-  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
-  [invocation setSelector:@selector(reloadItem:reloadChildren:)];
-  [invocation setArgument:&channel atIndex:2];
-  [invocation setArgument:&reloadChildren atIndex:3];
-  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags
@@ -1168,7 +1153,7 @@ void UncaughtExceptionHandler(NSException *exception)
   [blocker blockMainThread];
   [oldChannel removePlayer:player];
   [newChannel addPlayer:player];
-  [blocker unblockThread];
+  [blocker unblockAndPerformSelector:@selector(reloadData) onObject:mainWindowOutlineView];
     
   if ([player playerID] == [teamspeakConnection clientID])
   {
@@ -1203,15 +1188,6 @@ void UncaughtExceptionHandler(NSException *exception)
       [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:alert waitUntilDone:YES];
     }
   }
-  
-  BOOL reloadChildren = YES;
-  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(reloadItem:reloadChildren:)]];
-  [invocation setSelector:@selector(reloadItem:reloadChildren:)];
-  [invocation setArgument:&oldChannel atIndex:2];
-  [invocation setArgument:&reloadChildren atIndex:3];
-  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
-  [invocation setArgument:&newChannel atIndex:2];
-  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
   
   [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:newChannel waitUntilDone:YES];
   [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
@@ -1305,7 +1281,7 @@ void UncaughtExceptionHandler(NSException *exception)
   [[player decodeQueue] addOperation:invocation];
   [invocation release];
 
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:NO];
 }
 
 - (void)idleAudioCheck:(NSTimer*)timer

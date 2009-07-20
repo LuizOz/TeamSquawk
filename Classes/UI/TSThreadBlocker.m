@@ -23,6 +23,7 @@
   {
     lock = [[NSLock alloc] init];
     isBlocked = NO;
+    doneInvocation = nil;
   }
   return self;
 }
@@ -38,6 +39,12 @@
   isBlocked = YES;
   [lock lock];
   [lock unlock];
+  
+  if (doneInvocation)
+  {
+    [doneInvocation invoke];
+  }
+  
   isBlocked = NO;
 }
 
@@ -70,6 +77,39 @@
     [lock unlock];
   }
   while (isBlocked) {}
+}
+
+- (void)unblockAndPerformSelector:(SEL)selector onObject:(id)object
+{
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[object methodSignatureForSelector:selector]];
+  [invocation setSelector:selector];
+  [self unblockAndInvoke:invocation onObject:object];
+}
+
+- (void)unblockAndPerformSelector:(SEL)selector onObject:(id)object withObject:(id)arg;
+{
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[object methodSignatureForSelector:selector]];
+  [invocation setSelector:selector];
+  [invocation setArgument:&arg atIndex:2];
+  
+  [self unblockAndInvoke:invocation onObject:object];
+}
+
+- (void)unblockAndPerformSelector:(SEL)selector onObject:(id)object withObject:(id)arg andObject:(id)arg2;
+{
+  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[object methodSignatureForSelector:selector]];
+  [invocation setSelector:selector];
+  [invocation setArgument:&arg atIndex:2];
+  [invocation setArgument:&arg2 atIndex:3];
+  
+  [self unblockAndInvoke:invocation onObject:object];
+}
+
+- (void)unblockAndInvoke:(NSInvocation*)invocation onObject:(id)object
+{
+  [invocation setTarget:object];
+  doneInvocation = invocation;
+  [self unblockThread];
 }
 
 @end
