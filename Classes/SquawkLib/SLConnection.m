@@ -426,7 +426,7 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
-        pingReplysPending--;
+        pingReplysPending = 0;
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
         {
           [[self delegate] connectionPingReply:self];
