@@ -10,7 +10,7 @@
 #import "TSStandardVersionComparator.h"
 
 #import <MTCoreAudio/MTCoreAudio.h>
-#import <ExceptionHandling/ExceptionHandling.h>
+#import <MWFramework/MWFramework.h>
 
 #import "TSPreferencesController.h"
 #import "TSController.h"
@@ -21,37 +21,13 @@
 
 #define SPEECH_RATE 150.0f
 
-void UncaughtExceptionHandler(NSException *exception)
-{
-  if ([exception callStackReturnAddresses]) 
-  {
-    NSTask *ls = [[NSTask alloc] init];
-    NSString *pid = [[NSNumber numberWithInt:[[NSProcessInfo processInfo] processIdentifier]] stringValue];
-    NSMutableArray *args = [NSMutableArray arrayWithCapacity:20];
-    
-    [args addObject:@"-p"];
-    [args addObject:pid];
-    [args addObjectsFromArray:[[exception callStackReturnAddresses] valueForKeyPath:@"stringValue"]];
-    // Note: function addresses are separated by double spaces, not a single space.
-    
-    [ls setLaunchPath:@"/usr/bin/atos"];
-    [ls setArguments:args];
-    [ls launch];
-    [ls release];
-    
-  } 
-  else 
-  {
-    NSLog(@"No stack trace available.");
-  }
-}
-
 @implementation TSController
 
 - (void)awakeFromNib
 {  
-  NSSetUncaughtExceptionHandler(&UncaughtExceptionHandler);
-  
+  [MWBetterCrashes createBetterCrashes];
+  UKCrashReporterCheckForCrash();
+    
   NSDictionary *defaults = [NSDictionary dictionaryWithObjectsAndKeys:
                             [NSNumber numberWithFloat:1.0], @"InputGain",
                             [NSNumber numberWithFloat:1.0], @"OutputGain",
