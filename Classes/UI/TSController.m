@@ -1055,7 +1055,7 @@
 - (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname channelPrivFlags:(unsigned int)cFlags extendedFlags:(unsigned int)eFlags
 {
   TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
-  TSPlayer *player = [[[TSPlayer alloc] init] autorelease];
+  TSPlayer *player = [[[TSPlayer alloc] initWithGraphPlayer:graphPlayer] autorelease];
   
   [player setPlayerID:playerID];
   [player setPlayerName:nickname];
