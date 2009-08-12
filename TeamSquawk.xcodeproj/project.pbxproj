@@ -61,6 +61,7 @@
 		C97174A20FF7756B008FC21C /* NSData+Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174A10FF7756B008FC21C /* NSData+Extensions.m */; };
 		C97174D70FF777CF008FC21C /* TSController.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174D60FF777CF008FC21C /* TSController.m */; };
 		C97174E50FF778E8008FC21C /* SLPacketChomper.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174E40FF778E8008FC21C /* SLPacketChomper.m */; };
+		C98B0B3B10334391004F8627 /* AsyncUdpSocket+Extras.m in Sources */ = {isa = PBXBuildFile; fileRef = C98B0B3A10334391004F8627 /* AsyncUdpSocket+Extras.m */; };
 		C9BD01F80FFB440900FC280A /* libspeex.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */; };
 		C9BD01F90FFB440900FC280A /* libspeexdsp.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */; };
 		C9BD020C0FFB47BE00FC280A /* SpeexDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD020B0FFB47BE00FC280A /* SpeexDecoder.m */; };
@@ -185,6 +186,8 @@
 		C97174D60FF777CF008FC21C /* TSController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSController.m; sourceTree = "<group>"; };
 		C97174E30FF778E8008FC21C /* SLPacketChomper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLPacketChomper.h; sourceTree = "<group>"; };
 		C97174E40FF778E8008FC21C /* SLPacketChomper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SLPacketChomper.m; sourceTree = "<group>"; };
+		C98B0B3910334391004F8627 /* AsyncUdpSocket+Extras.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "AsyncUdpSocket+Extras.h"; sourceTree = "<group>"; };
+		C98B0B3A10334391004F8627 /* AsyncUdpSocket+Extras.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "AsyncUdpSocket+Extras.m"; sourceTree = "<group>"; };
 		C9BD00000FFA02CD00FC280A /* quant_lsp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = quant_lsp.c; sourceTree = "<group>"; };
 		C9BD00010FFA02CD00FC280A /* quant_lsp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quant_lsp.h; sourceTree = "<group>"; };
 		C9BD00020FFA02CD00FC280A /* quant_lsp_bfin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quant_lsp_bfin.h; sourceTree = "<group>"; };
@@ -645,6 +648,8 @@
 				C971748D0FF6DA13008FC21C /* AsyncSocket.m */,
 				C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */,
 				C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */,
+				C98B0B3910334391004F8627 /* AsyncUdpSocket+Extras.h */,
+				C98B0B3A10334391004F8627 /* AsyncUdpSocket+Extras.m */,
 			);
 			path = Socket;
 			sourceTree = "<group>";
@@ -1492,6 +1497,7 @@
 				C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */,
 				C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */,
 				C954686E1015381100FCF935 /* NSApplication+Exceptions.m in Sources */,
+				C98B0B3B10334391004F8627 /* AsyncUdpSocket+Extras.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

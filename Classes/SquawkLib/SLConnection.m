@@ -76,9 +76,9 @@
     serverConnectionSequenceNumber = 0;
     serverStandardSequenceNumber = 0;
 
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[socket methodSignatureForSelector:@selector(connectToHost:onPort:error:)]];
+    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[socket methodSignatureForSelector:@selector(connectToHost:onPort:retainingError:)]];
     [invocation setTarget:socket];
-    [invocation setSelector:@selector(connectToHost:onPort:error:)];
+    [invocation setSelector:@selector(connectToHost:onPort:retainingError:)];
     [invocation setArgument:&host atIndex:2];
     [invocation setArgument:&port atIndex:3];
     [invocation setArgument:&error atIndex:4];
@@ -89,7 +89,7 @@
     
     if (!connected)
     {
-      NSLog(@"initWithHost error, %@", *error);
+      [*error autorelease];
       [socket release];
       [self release];
       return nil;

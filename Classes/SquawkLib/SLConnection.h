@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "AsyncUdpSocket.h"
+#import "AsyncUdpSocket+Extras.h"
 
 #define PERMS_8BYTE                         0x00
 #define PERMS_10BYTE                        0x01

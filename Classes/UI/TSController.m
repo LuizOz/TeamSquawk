@@ -843,6 +843,31 @@
     
   // create a connection
   teamspeakConnection = [[SLConnection alloc] initWithHost:currentServerAddress withPort:port withError:&error];
+  
+  if (!teamspeakConnection)
+  {
+    isConnected = NO;
+    isConnecting = NO;
+    
+    [self setupDisconnectedToolbarStatusPopupButton];
+    [self updatePlayerStatusView];
+    [self setupChannelsMenu];
+    
+    if (error)
+    {
+      if ([[error domain] isEqual:@"kCFStreamErrorDomainNetDB"])
+      {
+        NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[[error localizedDescription] capitalizedString], NSLocalizedDescriptionKey, 
+                              @"Could not resolve the address of the server you specified, please check the address and try again. Alternatively, the server may not exist.", NSLocalizedRecoverySuggestionErrorKey, nil];
+        error = [NSError errorWithDomain:[error domain] code:[error code] userInfo:dict];
+      }
+      
+      [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
+    }
+    
+    return;
+  }
+  
   [teamspeakConnection setDelegate:self];
     
   // setup some basic things about this client
