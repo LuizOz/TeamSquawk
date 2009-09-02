@@ -120,7 +120,7 @@ typedef enum {
   
   NSTimer *pingTimer;
   NSTimer *connectionTimer;
-  NSDictionary *textFragments;
+  NSMutableData *fragments;
 
   unsigned int connectionID;
   unsigned int clientID;

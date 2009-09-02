@@ -9,6 +9,10 @@
 #import <Cocoa/Cocoa.h>
 #import "AsyncUdpSocket.h"
 
+#define PACKET_CLASS_CONNECTION       0x0000bef4
+#define PACKET_CLASS_STANDARD         0x0000bef0
+#define PACKET_CLASS_MASK             0x0000ffff
+
 #define PACKET_TYPE_LOGIN_REPLY       0x0004bef4
 #define PACKET_TYPE_LOGIN_END         0x0008bef0
 #define PACKET_TYPE_ACKNOWELDGE       0x0000bef1
@@ -53,7 +57,11 @@
 
 @interface SLPacketChomper : NSObject {
   AsyncUdpSocket *socket;
+  
   NSDictionary *fragment;
+  
+  NSMutableData *packetFragment;
+  unsigned int fragmentHeader;
 }
 
 + (id)packetChomper;
@@ -62,7 +70,8 @@
 - (id)initWithSocket:(AsyncUdpSocket*)aSocket;
 - (void)dealloc;
 - (void)setSocket:(AsyncUdpSocket*)aSocket;
-- (void)setFragment:(NSDictionary*)dictionary;
+- (NSMutableData*)fragment;
+- (void)setFragment:(NSMutableData*)frag;
 
 #pragma mark Chomper
 

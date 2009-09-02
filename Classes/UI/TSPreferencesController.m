@@ -656,6 +656,7 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
     
     [[NSUserDefaults standardUserDefaults] setObject:hotkeys forKey:@"Hotkeys"];
     [[NSUserDefaults standardUserDefaults] synchronize];
+    [hotkeys release];
     
     [[NSNotificationCenter defaultCenter] postNotificationName:@"TSHotkeysDidChange" object:nil];
     [hotkeyTableView reloadData];

@@ -88,6 +88,7 @@
     // nada
     socket = nil;
     fragment = nil;
+    packetFragment = nil;
   }
   return self;
 }
@@ -114,10 +115,15 @@
   socket = [aSocket retain];
 }
 
-- (void)setFragment:(NSDictionary*)dictionary
+- (NSData*)fragment
 {
-  [fragment autorelease];
-  fragment = [dictionary retain];
+  return packetFragment;
+}
+
+- (void)setFragment:(NSMutableData*)frag
+{
+  [packetFragment autorelease];
+  packetFragment = [frag retain];
 }
 
 #pragma mark Chomper
@@ -141,6 +147,57 @@
   SNARF_INT(connectionID);
   SNARF_INT(clientID);
   SNARF_INT(sequenceNumber);
+  
+  // if we're standard class, we need to know the fragment number incase we need to coalese
+  if ((packetType & PACKET_CLASS_MASK) == PACKET_CLASS_STANDARD)
+  {
+    unsigned short resendCount, fragmentNumber;
+    SNARF_SHORT(resendCount);
+    SNARF_SHORT(fragmentNumber);
+    
+    if ((fragmentNumber > 0) && !packetFragment)
+    {
+      SNARF_CRC();
+      
+      // copy the fragment and save it
+      [self setFragment:[[data mutableCopy] autorelease]];
+      
+      // ack it before we go
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
+      [socket maybeDequeueSend];
+      
+      return nil;
+    }
+    else if ((fragmentNumber > 0) && packetFragment)
+    {
+      // we need to extract the data chunks out of this
+      SNARF_CRC();
+      
+      NSData *dataBody;
+      SNARF_DATA(dataBody, [data length] - SNARF_POS());
+      
+      [packetFragment appendData:dataBody];
+      
+      // ack it
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
+      [socket maybeDequeueSend];
+
+      return nil;
+    }
+    else if ((fragmentNumber == 0) && packetFragment)
+    {
+      SNARF_CRC();
+      
+      // append the data and replace our incoming packet with it
+      [packetFragment appendData:data];
+      data = [packetFragment autorelease];
+      
+      // remove fragment from our info
+      [self setFragment:nil];
+    }
+  }
   
   switch (packetType) 
   {
@@ -354,7 +411,6 @@
   // build this all into a dictionary
   NSDictionary *packetDescriptionDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                                [NSNumber numberWithUnsignedInt:PACKET_TYPE_LOGIN_REPLY], @"SLPacketType",
-                                               [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                                [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                                [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
                                                serverName, @"SLServerName",
@@ -393,8 +449,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
 
-  // crc
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   // number of channels
   unsigned int currentChannel = 0, numberOfChannels = 0;
@@ -403,7 +459,6 @@
   NSMutableArray *channels = [NSMutableArray array];
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_LIST], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -477,7 +532,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int currentPlayer = 0, numberOfPlayers = 0;
   SNARF_INT(numberOfPlayers);
@@ -485,7 +541,6 @@
   NSMutableArray *players = [NSMutableArray array];
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_LIST], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -545,14 +600,14 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   NSData *serverPermissions;
   SNARF_DATA(serverPermissions, 80);
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_SERVERINFO_UPDATE], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -582,7 +637,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -606,7 +662,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_NEW_PLAYER], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -638,7 +693,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
 
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -651,7 +707,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_LEFT], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -679,7 +734,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -694,7 +750,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_CHANGE], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -724,7 +779,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
 
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -736,7 +792,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_UPDATE], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -765,7 +820,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -775,7 +831,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_MUTED], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
@@ -803,7 +858,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();  
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -819,7 +875,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PRIV_UPDATE], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
@@ -851,7 +906,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();  
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -867,7 +923,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_SERVERPRIV_UPDATE], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
@@ -899,7 +954,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();  
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   unsigned int playerID;
   SNARF_INT(playerID);
@@ -918,7 +974,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_PLAYER_CHANKICKED], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
@@ -959,7 +1014,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
   
   // there appears to be 5 bytes of crap here, probably 4 + 1 but the length
   // of the sending nickname is at the 6th
@@ -976,7 +1032,6 @@
   
   NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                     [NSNumber numberWithUnsignedInt:PACKET_TYPE_TEXT_MESSAGE], @"SLPacketType",
-                                    [NSNumber numberWithUnsignedInt:crc], @"SLCRC32",
                                     [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
                                     [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
                                     [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
@@ -1008,7 +1063,8 @@
   SNARF_SHORT(resendCount);
   SNARF_SHORT(fragmentCount);
   
-  SNARF_CRC();
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
 
   NSString *moreMessage;
   SNARF_NULLTERM_STRING(moreMessage);
@@ -1020,7 +1076,7 @@
   [mutableFragment setObject:betterMessageFragment forKey:@"SLMessage"];
   [mutableFragment setObject:[NSNumber numberWithUnsignedShort:fragmentCount] forKey:@"SLFragmentCount"];
   
-  return mutableFragment;
+  return [mutableFragment autorelease];
 }
 
 #pragma mark Voice Packet

@@ -207,10 +207,11 @@ SInt64 ExtractionFileSize (void *inClientData)
 
 - (unsigned long)numOfFrames
 {
-  OSErr err;
+  //OSErr err;
   UInt32 size = sizeof(numFramesFile);
   
-  err = ExtAudioFileGetProperty(extAudioRef, kExtAudioFileProperty_FileLengthFrames, &size, &numFramesFile);
+  //err = 
+  ExtAudioFileGetProperty(extAudioRef, kExtAudioFileProperty_FileLengthFrames, &size, &numFramesFile);
   return numFramesFile;
 }
 

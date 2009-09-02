@@ -1034,6 +1034,8 @@
       }
       [(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
     }
+    
+    [channel release];
     [blocker unblockThread];
   }
   

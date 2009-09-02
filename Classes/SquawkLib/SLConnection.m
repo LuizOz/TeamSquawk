@@ -64,7 +64,7 @@
     
     [self performSelector:@selector(initSocketOnThread) onThread:connectionThread withObject:nil waitUntilDone:YES];
     
-    textFragments = nil;
+    fragments = nil;
     audioSequenceCounter = 0;
     isDisconnecting = NO;
     hasFinishedDisconnecting = NO;
@@ -113,7 +113,7 @@
   [connectionThread cancel];
   [socket release];
   [connectionThread release];
-  [textFragments release];
+  [fragments release];
   [sendReceiveLock release];
   [super dealloc];
 }
@@ -253,14 +253,11 @@
   
   pendingReceive = NO;
   
-  if (textFragments && ([[textFragments objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0))
-  {
-    // we've got leftovers from the last part of the text message. let the chomper glue them
-    // together.
-    [chomper setFragment:textFragments];
-  }
-  
+  [chomper setFragment:fragments];
   NSDictionary *packet = [chomper chompPacket:data];
+  
+  [fragments autorelease];
+  fragments = [[chomper fragment] retain];
   
   if (packet)
   {
@@ -435,18 +432,6 @@
       }
       case PACKET_TYPE_TEXT_MESSAGE:
       {
-        if ([[packet objectForKey:@"SLFragmentCount"] unsignedIntValue] > 0)
-        {
-          textFragments = [packet retain];
-          
-          // don't tell the delegate about this packet till we've got all of it
-          break;
-        }
-        
-        // we got all of a fragment, so print it and ditch the last parts we had
-        [textFragments release];
-        textFragments = nil;
-        
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedTextMessage:fromNickname:playerID:)])
         {
           [[self delegate] connection:self
