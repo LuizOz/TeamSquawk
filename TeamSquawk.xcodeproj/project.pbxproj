@@ -43,7 +43,6 @@
 		C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */; };
 		C939E2EF100DCA07002CBED3 /* TransmitRed.png in Resources */ = {isa = PBXBuildFile; fileRef = C939E2EE100DCA07002CBED3 /* TransmitRed.png */; };
 		C939E513100E8DB3002CBED3 /* General.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C939E512100E8DB3002CBED3 /* General.tiff */; };
-		C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */ = {isa = PBXBuildFile; fileRef = C939EB221010FD61002CBED3 /* TSThreadBlocker.m */; };
 		C939EDCE1011E7A1002CBED3 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C939EDCD1011E7A1002CBED3 /* Sparkle.framework */; };
 		C939F0221011E7CC002CBED3 /* Sparkle.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C939EDCD1011E7A1002CBED3 /* Sparkle.framework */; };
 		C939F0661011EA14002CBED3 /* TeamSquawk.pub in Resources */ = {isa = PBXBuildFile; fileRef = C939F0651011EA14002CBED3 /* TeamSquawk.pub */; };
@@ -160,8 +159,6 @@
 		C939E1E6100DB5FA002CBED3 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		C939E2EE100DCA07002CBED3 /* TransmitRed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TransmitRed.png; sourceTree = "<group>"; };
 		C939E512100E8DB3002CBED3 /* General.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = General.tiff; sourceTree = "<group>"; };
-		C939EB211010FD61002CBED3 /* TSThreadBlocker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSThreadBlocker.h; sourceTree = "<group>"; };
-		C939EB221010FD61002CBED3 /* TSThreadBlocker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSThreadBlocker.m; sourceTree = "<group>"; };
 		C939EDCD1011E7A1002CBED3 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = Frameworks/Sparkle.framework; sourceTree = "<group>"; };
 		C939F0651011EA14002CBED3 /* TeamSquawk.pub */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TeamSquawk.pub; sourceTree = "<group>"; };
 		C939F06C1011EE86002CBED3 /* TeamSquawk.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = TeamSquawk.icns; sourceTree = "<group>"; };
@@ -698,8 +695,6 @@
 				C9E2E0B21009698700ED920D /* RPImageAndTextCell.h */,
 				C9E2E0B31009698700ED920D /* RPImageAndTextCell.m */,
 				C9E2D294100676EA00ED920D /* Preferences.xib */,
-				C939EB211010FD61002CBED3 /* TSThreadBlocker.h */,
-				C939EB221010FD61002CBED3 /* TSThreadBlocker.m */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -1494,7 +1489,6 @@
 				C9E2D4D01006BCBA00ED920D /* TSTransmission.m in Sources */,
 				C9E2E0B41009698700ED920D /* RPImageAndTextCell.m in Sources */,
 				C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */,
-				C939EB231010FD61002CBED3 /* TSThreadBlocker.m in Sources */,
 				C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */,
 				C954686E1015381100FCF935 /* NSApplication+Exceptions.m in Sources */,
 				C98B0B3B10334391004F8627 /* AsyncUdpSocket+Extras.m in Sources */,
@@ -1602,7 +1596,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 			};
 			name = Debug;
 		};
@@ -1614,7 +1608,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 			};
 			name = Release;
 		};

@@ -6,6 +6,8 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
+#import <dispatch/dispatch.h>
+
 #import <Cocoa/Cocoa.h>
 #import "SpeexDecoder.h"
 #import "TSAUGraphPlayer.h"
@@ -23,7 +25,7 @@ typedef enum {
   TSAUGraphPlayer *graphPlayer;
   TSAudioConverter *converter;
   SpeexDecoder *speex;
-  NSOperationQueue *decodeQueue;
+  dispatch_queue_t queue;
   
   unsigned int graphPlayerChannel;
   
@@ -43,7 +45,7 @@ typedef enum {
 @property (readonly) SpeexDecoder *decoder;
 @property (readonly) TSAudioConverter *converter;
 @property (retain) TSAUGraphPlayer *graphPlayer;
-@property (readonly) NSOperationQueue *decodeQueue;
+@property (readonly) dispatch_queue_t queue;
 @property (assign) unsigned int lastVoicePacketCount;
 @property (assign) unsigned int extendedFlags;
 @property (assign) unsigned int channelPrivFlags;
@@ -53,6 +55,8 @@ typedef enum {
 
 - (id)initWithGraphPlayer:(TSAUGraphPlayer*)player;
 - (id)copyWithZone:(NSZone *)zone;
+
+- (void)backgroundDecodeData:(NSData*)audioCodecData;
 
 - (NSString*)playerName;
 - (void)setPlayerName:(NSString*)name;

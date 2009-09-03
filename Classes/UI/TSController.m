@@ -6,6 +6,8 @@
 //  Copyright 2009 Matt Wright Consulting. All rights reserved.
 //
 
+#import <dispatch/dispatch.h>
+
 #import <Sparkle/Sparkle.h>
 #import "TSStandardVersionComparator.h"
 
@@ -17,7 +19,6 @@
 #import "TSAudioExtraction.h"
 #import "TSPlayer.h"
 #import "TSChannel.h"
-#import "TSThreadBlocker.h"
 
 #define SPEECH_RATE 150.0f
 
@@ -893,10 +894,13 @@
   isConnecting = NO;
     
   // do some UI sugar
-  [self performSelectorOnMainThread:@selector(setupConnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
-  [toolbarViewStatusPopupButton setTitle:currentServerAddress];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self setupConnectedToolbarStatusPopupButton];
+    [self updatePlayerStatusView];
+    [self setupChannelsMenu];
+
+    [toolbarViewStatusPopupButton setTitle:currentServerAddress];
+  });
   
   // get the TSPlayer for who we are
   TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
@@ -924,17 +928,10 @@
   // setup transmission
   transmission = [[TSTransmission alloc] initWithConnection:teamspeakConnection codec:[currentChannel codec] voiceActivated:NO];
   
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
-
-  id item = nil;
-  BOOL expandChildren = YES;
-  
-  NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[mainWindowOutlineView methodSignatureForSelector:@selector(expandItem:expandChildren:)]];
-  [invocation setSelector:@selector(expandItem:expandChildren:)];
-  [invocation setArgument:&item atIndex:2];
-  [invocation setArgument:&expandChildren atIndex:3];
-  
-  [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:mainWindowOutlineView waitUntilDone:YES];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [mainWindowOutlineView reloadData];
+    [mainWindowOutlineView expandItem:nil expandChildren:YES];
+  });
   
   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"AutoChannelCommander"])
   {
@@ -948,10 +945,12 @@
 {
   isConnected = NO;
   isConnecting = NO;
-  [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self setupDisconnectedToolbarStatusPopupButton];
+    [self updatePlayerStatusView];
+    [self setupChannelsMenu];
+    [mainWindowOutlineView reloadData];
+  });
   
   if (error)
   {
@@ -960,45 +959,41 @@
 }
 
 - (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error
-{
-  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
-  
+{  
   isConnected = NO;
   isConnecting = NO;
-  [self performSelectorOnMainThread:@selector(setupDisconnectedToolbarStatusPopupButton) withObject:nil waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
   
-  [blocker blockMainThread];
-  
-  [sortedChannels release];
-  sortedChannels = nil;
-  
-  [transmission setIsTransmitting:NO];
-  [transmission close];
-  [transmission release];
-  transmission = nil;
-  
-  [flattenedChannels removeAllObjects];
-  [channels removeAllObjects];
-  [players removeAllObjects];
-  
-  [blocker unblockAndPerformSelector:@selector(reloadData) onObject:mainWindowOutlineView];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [self setupDisconnectedToolbarStatusPopupButton];
+    [self updatePlayerStatusView];
+    [self setupChannelsMenu];
 
+    [sortedChannels release];
+    sortedChannels = nil;
+    
+    [transmission setIsTransmitting:NO];
+    [transmission close];
+    [transmission release];
+    transmission = nil;
+    
+    [flattenedChannels removeAllObjects];
+    [channels removeAllObjects];
+    [players removeAllObjects];
+    
+    [mainWindowOutlineView reloadData];
+  });
+  
   if (error)
   {
     [[NSAlert alertWithError:error] beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
   }
   
   [self speakVoiceEvent:@"Link Disengaged." alternativeText:@"Disconnected."];
-  
-  [blocker release];
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelList:(NSDictionary*)channelDictionary
 {
   NSArray *channelsDictionary = [channelDictionary objectForKey:@"SLChannels"];
-  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   
   for (NSDictionary *channelDictionary in channelsDictionary)
   {
@@ -1014,47 +1009,45 @@
     [channel setMaxUsers:[[channelDictionary objectForKey:@"SLChannelMaxUsers"] unsignedIntValue]];
     [channel setSortOrder:[[channelDictionary objectForKey:@"SLChannelSortOrder"] unsignedIntValue]];
 
-    [blocker blockMainThread];
-    [flattenedChannels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
-    
-    // root channels have a parent of 0xffffffff, if we've got a real parent and we haven't
-    // encountered yet then we should crater
-    if ([channel parent] == 0xffffffff)
-    {
-      [channels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
-    }
-    else
-    {
-      NSNumber *parentChannel = [NSNumber numberWithUnsignedInt:[channel parent]];
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [flattenedChannels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
       
-      if (![flattenedChannels objectForKey:parentChannel])
+      // root channels have a parent of 0xffffffff, if we've got a real parent and we haven't
+      // encountered yet then we should crater
+      if ([channel parent] == 0xffffffff)
       {
-        [blocker unblockThread];
-        [[NSException exceptionWithName:@"ParentChannelNotFound" reason:@"Subchannel defined before parent channel." userInfo:nil] raise];
+        [channels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
       }
-      [(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
-    }
-    
-    [channel release];
-    [blocker unblockThread];
+      else
+      {
+        NSNumber *parentChannel = [NSNumber numberWithUnsignedInt:[channel parent]];
+        
+        if (![flattenedChannels objectForKey:parentChannel])
+        {
+          [[NSException exceptionWithName:@"ParentChannelNotFound" reason:@"Subchannel defined before parent channel." userInfo:nil] raise];
+          return;
+        }
+        [(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
+      }
+      
+      [channel release];
+    });
   }
   
-  [blocker blockMainThread];
-  [sortedChannels autorelease];
-  NSArray *sortDescriptors = [NSArray arrayWithObjects:
-                              [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],
-                              [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],
-                              nil];
-  sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
-  [blocker unblockThread];
-  [blocker release];
-  
-  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [sortedChannels autorelease];
+    NSArray *sortDescriptors = [NSArray arrayWithObjects:
+                                [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],
+                                [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],
+                                nil];
+    sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
+    
+    [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerList:(NSDictionary*)playerDictionary
 {
-  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   NSArray *playersDictionary = [playerDictionary objectForKey:@"SLPlayers"];
   
   for (NSDictionary *playerDictionary in playersDictionary)
@@ -1069,19 +1062,17 @@
     [player setChannelID:[[playerDictionary objectForKey:@"SLChannelID"] unsignedIntValue]];
     [player setLastVoicePacketCount:0];
     
-    [blocker blockMainThread];
-    [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
-    
-    TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-    [channel addPlayer:player];
-    [blocker unblockThread];
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
+      
+      TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+      [channel addPlayer:player];
+    });
   }
-  [blocker release];
 }
 
 - (void)connection:(SLConnection*)connection receivedNewPlayerNotification:(unsigned int)playerID channel:(unsigned int)channelID nickname:(NSString*)nickname channelPrivFlags:(unsigned int)cFlags extendedFlags:(unsigned int)eFlags
 {
-  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   TSPlayer *player = [[[TSPlayer alloc] initWithGraphPlayer:graphPlayer] autorelease];
   
   [player setPlayerID:playerID];
@@ -1091,16 +1082,15 @@
   [player setExtendedFlags:eFlags];
   [player setChannelPrivFlags:cFlags];
   
-  [blocker blockMainThread];
-  [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
-  
-  TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
-  [channel addPlayer:player];
-  
-  [blocker unblockAndPerformSelector:@selector(reloadItem:reloadChildren:) onObject:mainWindowOutlineView withObject:channel andObject:(id)YES];
-  [blocker release];
-  
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:channel waitUntilDone:YES];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [players setObject:player forKey:[NSNumber numberWithUnsignedInt:[player playerID]]];
+    
+    TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+    [channel addPlayer:player];
+    
+    [mainWindowOutlineView reloadItem:channel reloadChildren:YES];
+    [mainWindowOutlineView expandItem:channel];
+  });
   
   [self speakVoiceEvent:@"New Player." alternativeText:[NSString stringWithFormat:@"%@ connected.", [player playerName]]];
 }
@@ -1111,29 +1101,28 @@
   TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
    
   [self speakVoiceEvent:@"Player Left." alternativeText:[NSString stringWithFormat:@"%@ disconnected.", [player playerName]]];
-  
-  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
-  [blocker blockMainThread];
-  
-  [channel removePlayer:player];
-  [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
-  
-  [blocker unblockAndPerformSelector:@selector(reloadItem:reloadChildren:) onObject:mainWindowOutlineView withObject:channel andObject:(id)YES];
-  [blocker release];
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [channel removePlayer:player];
+    [players removeObjectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+    [mainWindowOutlineView reloadItem:channel reloadChildren:YES];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerUpdateNotification:(unsigned int)playerID flags:(unsigned short)flags
 {
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   [player setPlayerFlags:flags];
-  
-  // if this is us, update some menu stuff
-  if (playerID == [teamspeakConnection clientID])
-  {
-    [self performSelectorOnMainThread:@selector(updatePlayerStatusView) withObject:nil waitUntilDone:YES];
-  }
-  
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+ 
+  dispatch_async(dispatch_get_main_queue(), ^{
+    // if this is us, update some menu stuff
+    if (playerID == [teamspeakConnection clientID])
+    {
+      [self updatePlayerStatusView];
+    }
+    
+    [mainWindowOutlineView reloadItem:player];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerMutedNotification:(unsigned int)playerID wasMuted:(BOOL)muted
@@ -1141,22 +1130,24 @@
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   [player setIsLocallyMuted:muted];
   
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [mainWindowOutlineView reloadItem:player];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedChannelChangeNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID toChannel:(unsigned int)toChannelID
 {
-  TSThreadBlocker *blocker = [[TSThreadBlocker alloc] init];
   TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
   TSChannel *oldChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:fromChannelID]];
   TSChannel *newChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:toChannelID]];
   
   [player setChannelID:[newChannel channelID]];
 
-  [blocker blockMainThread];
-  [oldChannel removePlayer:player];
-  [newChannel addPlayer:player];
-  [blocker unblockAndPerformSelector:@selector(reloadData) onObject:mainWindowOutlineView];
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    [oldChannel removePlayer:player];
+    [newChannel addPlayer:player];
+    [mainWindowOutlineView reloadData];
+  });
     
   if ([player playerID] == [teamspeakConnection clientID])
   {
@@ -1180,22 +1171,16 @@
       
       NSAlert *alert = [NSAlert alertWithMessageText:@"Incompatible codec." defaultButton:@"OK" alternateButton:nil otherButton:nil informativeTextWithFormat:@"This channel uses a non-Speex codec, you can't listen or talk on this channel."];
       
-      NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[alert methodSignatureForSelector:@selector(beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo:)]];
-      [invocation setSelector:@selector(beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo:)];
-      [invocation setArgument:&mainWindow atIndex:2];
-      [invocation setArgument:&self atIndex:3];
-      SEL selector = @selector(alertDidEnd:returnCode:contextInfo:);
-      [invocation setArgument:&selector atIndex:4];
-      id context = nil;
-      [invocation setArgument:&context atIndex:5];
-      [invocation performSelectorOnMainThread:@selector(invokeWithTarget:) withObject:alert waitUntilDone:YES];
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [alert beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
+      });
     }
   }
   
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(expandItem:) withObject:newChannel waitUntilDone:YES];
-  [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
-  
-  [blocker release];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [mainWindowOutlineView expandItem:newChannel];
+    [self setupChannelsMenu];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag
@@ -1210,7 +1195,10 @@
   {
     [player setChannelPrivFlags:([player channelPrivFlags] & ~flag)];
   }
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [mainWindowOutlineView reloadItem:player reloadChildren:YES];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerServerPriviledgeChangeNotification:(unsigned int)playerID byPlayerID:(unsigned int)byPlayerID changeType:(SLConnectionPrivChange)changeType privFlag:(SLConnectionChannelPrivFlags)flag
@@ -1225,7 +1213,10 @@
   {
     [player setExtendedFlags:([player extendedFlags] & ~flag)];
   }
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:YES];
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [mainWindowOutlineView reloadItem:player reloadChildren:YES];
+  });
 }
 
 - (void)connection:(SLConnection*)connection receivedPlayerKickedFromChannel:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID intoChannel:(unsigned int)channelID reason:(NSString*)reason
@@ -1280,16 +1271,14 @@
   // out-of-band, I know, least messy way though
   [player setIsWhispering:isWhisper];
   
-  NSInvocationOperation *invocation = [[NSInvocationOperation alloc] initWithTarget:player selector:@selector(backgroundDecodeData:) object:[audioCodecData retain]];
-  [[player decodeQueue] addOperation:invocation];
-  [invocation release];
-
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadItem:) withObject:player waitUntilDone:NO];
+  dispatch_async([player queue], ^{
+    [player backgroundDecodeData:audioCodecData];    
+  });
 }
 
 - (void)idleAudioCheck:(NSTimer*)timer
 {
-  [mainWindowOutlineView performSelectorOnMainThread:@selector(reloadData) withObject:nil waitUntilDone:YES];
+
 }
 
 - (void)speakVoiceEvent:(NSString*)eventText alternativeText:(NSString*)alternativeText

@@ -14,7 +14,7 @@
 @synthesize decoder = speex;
 @synthesize converter;
 @synthesize graphPlayer;
-@synthesize decodeQueue;
+@synthesize queue;
 @synthesize lastVoicePacketCount;
 @synthesize extendedFlags;
 @synthesize channelPrivFlags;
@@ -30,8 +30,7 @@
     [self setGraphPlayer:player];
     
     converter = [[TSAudioConverter alloc] initConverterWithInputStreamDescription:[speex decoderStreamDescription] andOutputStreamDescription:[graphPlayer audioStreamDescription]];
-    decodeQueue = [[NSOperationQueue alloc] init];
-    [decodeQueue setMaxConcurrentOperationCount:1];
+    queue = dispatch_queue_create("uk.co.sysctl.teamsquawk.playerqueue", 0);
         
     playerName = nil;
   }
@@ -45,7 +44,6 @@
     speex = nil;
     graphPlayer = nil;
     converter = nil;
-    decodeQueue = nil;
     playerName = nil;
   }
   return self;
@@ -58,8 +56,10 @@
   copyPlayer->speex = [speex retain];
   copyPlayer->graphPlayer = [graphPlayer retain];
   copyPlayer->converter = [converter retain];
-  copyPlayer->decodeQueue = [decodeQueue retain];
   copyPlayer->graphPlayerChannel = graphPlayerChannel;
+  
+  dispatch_retain(queue);
+  copyPlayer->queue = queue;
   
   [copyPlayer setPlayerName:[self playerName]];
   [copyPlayer setPlayerID:[self playerID]];
@@ -79,7 +79,8 @@
 {
   [self setPlayerName:nil];
   
-  [decodeQueue release];
+  dispatch_release(queue);
+  
   [graphPlayer release];
   [converter release];
   [speex release];
@@ -150,7 +151,7 @@
   
   MTAudioBufferListDispose(resampledBufferList);
   MTAudioBufferListDispose(decodedBufferList);
-  [audioCodecData release];
+
   [pool release];
 }
 
