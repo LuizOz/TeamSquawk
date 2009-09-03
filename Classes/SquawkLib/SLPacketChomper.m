@@ -76,7 +76,7 @@
   return [[[[self class] alloc] init] autorelease];
 }
 
-+ (id)packetChomperWithSocket:(AsyncUdpSocket*)socket
++ (id)packetChomperWithSocket:(GCDUDPSocket*)socket
 {
   return [[[[self class] alloc] initWithSocket:socket] autorelease];
 }
@@ -93,7 +93,7 @@
   return self;
 }
 
-- (id)initWithSocket:(AsyncUdpSocket*)aSocket
+- (id)initWithSocket:(GCDUDPSocket*)aSocket
 {
   if (self = [self init])
   {
@@ -109,7 +109,7 @@
   [super dealloc];
 }
 
-- (void)setSocket:(AsyncUdpSocket*)aSocket
+- (void)setSocket:(GCDUDPSocket*)aSocket
 {
   [socket autorelease];
   socket = [aSocket retain];
@@ -164,8 +164,7 @@
       
       // ack it before we go
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       
       return nil;
     }
@@ -181,8 +180,7 @@
       
       // ack it
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
 
       return nil;
     }
@@ -210,16 +208,14 @@
     {
       NSDictionary *chompedPacket = [self chompChannelList:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_LIST:
     {
       NSDictionary *chompedPacket = [self chompPlayerList:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_LOGIN_END:
@@ -227,8 +223,7 @@
       // there is some data in this packet but i'm not convinced I care enough about it. looked like a url to the server website or something
       // in wireshark
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithUnsignedInt:packetType], @"SLPacketType", [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber", nil];
     }
     case PACKET_TYPE_PING_REPLY:
@@ -240,8 +235,7 @@
     {
       NSDictionary *chompedPacket = [self chompTextMessage:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_VOICE_SPEEX_3_4:
@@ -263,88 +257,77 @@
     {
       NSDictionary *chompedPacket = [self chompVoiceMessage:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_NEW_PLAYER:
     {
       NSDictionary *chompedPacket = [self chompNewPlayer:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_LEFT:
     {
       NSDictionary *chompedPacket = [self chompPlayerLeft:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_CHANNEL_CHANGE:
     {
       NSDictionary *chompedPacket = [self chompChannelChange:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_UPDATE:
     {
       NSDictionary *chompedPacket = [self chompPlayerUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_MUTED:
     {
       NSDictionary *chompedPacket = [self chompPlayerMutedUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_PRIV_UPDATE:
     {
       NSDictionary *chompedPacket = [self chompChannelPrivUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_SERVERPRIV_UPDATE:
     {
       NSDictionary *chompedPacket = [self chompServerPrivUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_SERVERINFO_UPDATE:
     {
       NSDictionary *chompedPacket = [self chompServerInfoUpdate:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     case PACKET_TYPE_PLAYER_CHANKICKED:
     {
       NSDictionary *chompedPacket = [self chompPlayerKicked:data];
       NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
     default:
     {
       NSLog(@"unknown packet type: 0x%08x", packetType);
       NSData *packet = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
-      [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT tag:0];
-      [socket maybeDequeueSend];
+      [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
       break;
     }
   }

@@ -7,7 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "AsyncUdpSocket.h"
+#import "GCDUDPSocket.h"
 
 #define PACKET_CLASS_CONNECTION       0x0000bef4
 #define PACKET_CLASS_STANDARD         0x0000bef0
@@ -56,7 +56,7 @@
 #define RECEIVE_TIMEOUT 10
 
 @interface SLPacketChomper : NSObject {
-  AsyncUdpSocket *socket;
+  GCDUDPSocket *socket;
   
   NSDictionary *fragment;
   
@@ -65,11 +65,11 @@
 }
 
 + (id)packetChomper;
-+ (id)packetChomperWithSocket:(AsyncUdpSocket*)socket;
++ (id)packetChomperWithSocket:(GCDUDPSocket*)socket;
 - (id)init;
-- (id)initWithSocket:(AsyncUdpSocket*)aSocket;
+- (id)initWithSocket:(GCDUDPSocket*)aSocket;
 - (void)dealloc;
-- (void)setSocket:(AsyncUdpSocket*)aSocket;
+- (void)setSocket:(GCDUDPSocket*)aSocket;
 - (NSMutableData*)fragment;
 - (void)setFragment:(NSMutableData*)frag;
 

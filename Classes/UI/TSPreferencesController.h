@@ -21,7 +21,7 @@ typedef enum {
   TSHotkeyCommandChannel = 2,
 } TSHotkeyActions;
 
-@interface TSPreferencesController : DBPrefsWindowController {
+@interface TSPreferencesController : DBPrefsWindowController <NSTableViewDelegate, NSTableViewDataSource> {
   IBOutlet NSView *generalPreferencesView;
   IBOutlet NSView *serversPreferencesView;
   IBOutlet NSView *soundPreferencesView;

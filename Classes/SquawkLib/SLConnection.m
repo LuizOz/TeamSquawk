@@ -57,12 +57,8 @@
 {
   if (self = [super init])
   {
-    sendReceiveLock = [[NSRecursiveLock alloc] init];
-    
-    connectionThread = [[NSThread alloc] initWithTarget:self selector:@selector(spawnThread) object:nil];
-    [connectionThread start];
-    
-    [self performSelector:@selector(initSocketOnThread) onThread:connectionThread withObject:nil waitUntilDone:YES];
+    socket = [[GCDUDPSocket alloc] initWithDelegate:self];
+    BOOL connected = [socket connectToHost:host port:port error:error];
     
     fragments = nil;
     audioSequenceCounter = 0;
@@ -76,17 +72,6 @@
     serverConnectionSequenceNumber = 0;
     serverStandardSequenceNumber = 0;
 
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[socket methodSignatureForSelector:@selector(connectToHost:onPort:retainingError:)]];
-    [invocation setTarget:socket];
-    [invocation setSelector:@selector(connectToHost:onPort:retainingError:)];
-    [invocation setArgument:&host atIndex:2];
-    [invocation setArgument:&port atIndex:3];
-    [invocation setArgument:&error atIndex:4];
-    [invocation performSelector:@selector(invoke) onThread:connectionThread withObject:nil waitUntilDone:YES];
-    
-    BOOL connected;
-    [invocation getReturnValue:&connected];
-    
     if (!connected)
     {
       [*error autorelease];
@@ -110,79 +95,9 @@
   [pingTimer release];
   pingTimer = nil;
   
-  [connectionThread cancel];
   [socket release];
-  [connectionThread release];
   [fragments release];
-  [sendReceiveLock release];
   [super dealloc];
-}
-
-#pragma mark Threading
-    
-- (void)spawnThread
-{
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  [NSTimer scheduledTimerWithTimeInterval:[[NSDate distantFuture] timeIntervalSinceNow] target:nil selector:nil userInfo:nil repeats:NO];
-  
-  while (![[NSThread currentThread] isCancelled])
-  {
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
-    [pool release];
-    pool = [[NSAutoreleasePool alloc] init];
-  }
-  [pool release];
-}
-
-- (void)initSocketOnThread
-{
-  socket = [[AsyncUdpSocket alloc] initWithDelegate:self];
-  connectionThread = [[NSThread currentThread] retain];
-  
-  [socket setRunLoopModes:[NSArray arrayWithObjects:NSRunLoopCommonModes, nil]];
-}
-
-- (void)sendData:(NSData*)data
-{
-  while (![sendReceiveLock tryLock])
-  {
-    // allow a deadlocked runloop to break itself
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-  }
-  
-  // intended to be run on the socket's thread
-  [socket sendData:data withTimeout:TRANSMIT_TIMEOUT tag:0];
-  
-  [sendReceiveLock unlock];
-}
-
-- (void)queueReceiveData
-{
-  while (![sendReceiveLock tryLock])
-  {
-    // allow a deadlocked runloop to break itself
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-  }
-  
-  // queue up a recieve
-  [socket receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
-  
-  [sendReceiveLock unlock];
-}
-
-- (void)waitForSend
-{
-  [socket maybeDequeueSend];
-}
-
-- (void)queueReceiveDataAndWait
-{
-  pendingReceive = YES;
-  [socket receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
-  while (pendingReceive)
-  {
-    [[NSRunLoop currentRunLoop] runMode:NSRunLoopCommonModes beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-  }
 }
 
 #pragma mark Commands
@@ -203,11 +118,8 @@
                                                    loginPassword:password
                                                    loginNickName:nickName];  
   // send the packet
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
-  
-  // queue up a read
-  [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
-  
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
+   
   connectionTimer = [[NSTimer scheduledTimerWithTimeInterval:TRANSMIT_TIMEOUT target:self selector:@selector(connectionTimer:) userInfo:nil repeats:NO] retain];
   
   [pool release];
@@ -225,11 +137,7 @@
   isDisconnecting = YES;
   
   NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:standardSequenceNumber++];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
-  [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
-  
-  // we get a player packet here, we need to queue a send then close waiting for receive. then poll till we're closed
-  [self performSelector:@selector(queueReceiveData) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   
   while (!hasFinishedDisconnecting)
   {
@@ -244,13 +152,11 @@
 
 #pragma mark Incoming Events
 
-- (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
+- (void)GCDUDPSocket:(GCDUDPSocket*)sock didReceiveData:(NSData*)data fromHost:(NSString*)host port:(unsigned short)port
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
-  
-  [sendReceiveLock lock];
-  
+    
   pendingReceive = NO;
   
   [chomper setFragment:fragments];
@@ -272,7 +178,7 @@
         // connection sequence
         if (seq <= serverConnectionSequenceNumber)
         {
-          return NO;
+          return;
         }
         serverConnectionSequenceNumber = seq;
       }
@@ -281,7 +187,7 @@
         // standard sequence
         if (seq <= serverStandardSequenceNumber)
         {
-          return NO;
+          return;
         }
         serverStandardSequenceNumber = seq;
       }
@@ -358,8 +264,7 @@
                                                                                              sequenceID:standardSequenceNumber++
                                                                                               lastCRC32:lastCRC32];
           // this only gets called form the socket's thread. so should be thread safe.
-          [sock sendData:newPacket withTimeout:TRANSMIT_TIMEOUT tag:0];
-          [sock maybeDequeueSend];
+          [sock sendData:newPacket withTimeout:TRANSMIT_TIMEOUT];
           
           // setup a new timeout
           [connectionTimer invalidate];
@@ -627,31 +532,9 @@
       default:
         NSLog(@"got chomped packet I don't know about: %@", packet);
     }
-    
-    [sock receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
-    [sendReceiveLock unlock];
-    [pool release];
-    return YES;
   }
-  [sendReceiveLock unlock];
   [pool release];
-  return NO;
-}
-
-- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error
-{
-  // for now, just queue up again
-  [sock receiveWithTimeout:RECEIVE_TIMEOUT tag:0];
-}
-
-- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error
-{
-  // we couldn't send a packet? this is pretty bad, especially for UDP where the only reportable errors are to do
-  // with local sending.
-  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:withError:)])
-  {
-    [[self delegate] connectionDisconnected:self withError:error];
-  }
+  return;
 }
 
 #pragma mark Permissions
@@ -802,8 +685,7 @@
   
   // fire a ping every time this goes off
   NSData *data = [[SLPacketBuilder packetBuilder] buildPingPacketWithConnectionID:connectionID clientID:clientID sequenceID:connectionSequenceNumber++];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:data waitUntilDone:YES];
-  [self performSelector:@selector(waitForSend) onThread:connectionThread withObject:nil waitUntilDone:YES];
+  [socket sendData:data withTimeout:TRANSMIT_TIMEOUT];
   
   pingReplysPending++;
   
@@ -836,7 +718,7 @@
                                                                                 sequenceID:standardSequenceNumber++
                                                                                   playerID:playerID
                                                                                    message:message];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -852,7 +734,7 @@
                                                                        transmissionID:transmissionID
                                                                             audioData:audioCodecData
                                                                           audioFrames:frames];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -867,7 +749,7 @@
                                                                             audioData:audioCodecData
                                                                           audioFrames:frames
                                                                            recipients:recipients];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:YES];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -881,7 +763,7 @@
                                                                                    sequenceID:standardSequenceNumber++
                                                                                  newChannelID:newChannel
                                                                                      password:password];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -892,7 +774,7 @@
                                                                                           clientID:clientID
                                                                                         sequenceID:standardSequenceNumber++
                                                                                     newStatusFlags:flags];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -904,7 +786,7 @@
                                                                                           sequenceID:standardSequenceNumber++
                                                                                             playerID:playerID
                                                                                                muted:isMuted];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -918,7 +800,7 @@
                                                                           sequenceID:standardSequenceNumber++
                                                                             playerID:player
                                                                               reason:reason];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 
@@ -930,7 +812,7 @@
                                                                                  sequenceID:standardSequenceNumber++
                                                                                    playerID:player
                                                                                      reason:reason];
-  [self performSelector:@selector(sendData:) onThread:connectionThread withObject:packet waitUntilDone:NO];
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
 

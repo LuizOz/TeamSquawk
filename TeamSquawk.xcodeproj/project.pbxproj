@@ -53,14 +53,12 @@
 		C954686E1015381100FCF935 /* NSApplication+Exceptions.m in Sources */ = {isa = PBXBuildFile; fileRef = C954686D1015381100FCF935 /* NSApplication+Exceptions.m */; };
 		C95468FC101540CD00FCF935 /* MWFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C95468FB101540CD00FCF935 /* MWFramework.framework */; };
 		C9546905101540D100FCF935 /* MWFramework.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C95468FB101540CD00FCF935 /* MWFramework.framework */; };
-		C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748D0FF6DA13008FC21C /* AsyncSocket.m */; };
-		C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */; };
 		C97174960FF76700008FC21C /* SLConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174950FF76700008FC21C /* SLConnection.m */; };
 		C971749A0FF7688E008FC21C /* SLPacketBuilder.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174990FF7688E008FC21C /* SLPacketBuilder.m */; };
 		C97174A20FF7756B008FC21C /* NSData+Extensions.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174A10FF7756B008FC21C /* NSData+Extensions.m */; };
 		C97174D70FF777CF008FC21C /* TSController.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174D60FF777CF008FC21C /* TSController.m */; };
 		C97174E50FF778E8008FC21C /* SLPacketChomper.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174E40FF778E8008FC21C /* SLPacketChomper.m */; };
-		C98B0B3B10334391004F8627 /* AsyncUdpSocket+Extras.m in Sources */ = {isa = PBXBuildFile; fileRef = C98B0B3A10334391004F8627 /* AsyncUdpSocket+Extras.m */; };
+		C98E6988104F99E80004C8F0 /* GCDUDPSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C98E6987104F99E80004C8F0 /* GCDUDPSocket.m */; };
 		C9BD01F80FFB440900FC280A /* libspeex.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */; };
 		C9BD01F90FFB440900FC280A /* libspeexdsp.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */; };
 		C9BD020C0FFB47BE00FC280A /* SpeexDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD020B0FFB47BE00FC280A /* SpeexDecoder.m */; };
@@ -169,10 +167,6 @@
 		C954686C1015381100FCF935 /* NSApplication+Exceptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSApplication+Exceptions.h"; sourceTree = "<group>"; };
 		C954686D1015381100FCF935 /* NSApplication+Exceptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSApplication+Exceptions.m"; sourceTree = "<group>"; };
 		C95468FB101540CD00FCF935 /* MWFramework.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MWFramework.framework; path = Frameworks/MWFramework.framework; sourceTree = "<group>"; };
-		C971748D0FF6DA13008FC21C /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncSocket.m; sourceTree = "<group>"; };
-		C971748E0FF6DA13008FC21C /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncSocket.h; sourceTree = "<group>"; };
-		C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AsyncUdpSocket.m; sourceTree = "<group>"; };
-		C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AsyncUdpSocket.h; sourceTree = "<group>"; };
 		C97174940FF76700008FC21C /* SLConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLConnection.h; sourceTree = "<group>"; };
 		C97174950FF76700008FC21C /* SLConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SLConnection.m; sourceTree = "<group>"; };
 		C97174980FF7688E008FC21C /* SLPacketBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLPacketBuilder.h; sourceTree = "<group>"; };
@@ -183,8 +177,8 @@
 		C97174D60FF777CF008FC21C /* TSController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSController.m; sourceTree = "<group>"; };
 		C97174E30FF778E8008FC21C /* SLPacketChomper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SLPacketChomper.h; sourceTree = "<group>"; };
 		C97174E40FF778E8008FC21C /* SLPacketChomper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SLPacketChomper.m; sourceTree = "<group>"; };
-		C98B0B3910334391004F8627 /* AsyncUdpSocket+Extras.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "AsyncUdpSocket+Extras.h"; sourceTree = "<group>"; };
-		C98B0B3A10334391004F8627 /* AsyncUdpSocket+Extras.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "AsyncUdpSocket+Extras.m"; sourceTree = "<group>"; };
+		C98E6986104F99E80004C8F0 /* GCDUDPSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDUDPSocket.h; sourceTree = "<group>"; };
+		C98E6987104F99E80004C8F0 /* GCDUDPSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDUDPSocket.m; sourceTree = "<group>"; };
 		C9BD00000FFA02CD00FC280A /* quant_lsp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = quant_lsp.c; sourceTree = "<group>"; };
 		C9BD00010FFA02CD00FC280A /* quant_lsp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quant_lsp.h; sourceTree = "<group>"; };
 		C9BD00020FFA02CD00FC280A /* quant_lsp_bfin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quant_lsp_bfin.h; sourceTree = "<group>"; };
@@ -641,12 +635,8 @@
 		C971748B0FF6D9ED008FC21C /* Socket */ = {
 			isa = PBXGroup;
 			children = (
-				C971748E0FF6DA13008FC21C /* AsyncSocket.h */,
-				C971748D0FF6DA13008FC21C /* AsyncSocket.m */,
-				C97174900FF6DA13008FC21C /* AsyncUdpSocket.h */,
-				C971748F0FF6DA13008FC21C /* AsyncUdpSocket.m */,
-				C98B0B3910334391004F8627 /* AsyncUdpSocket+Extras.h */,
-				C98B0B3A10334391004F8627 /* AsyncUdpSocket+Extras.m */,
+				C98E6986104F99E80004C8F0 /* GCDUDPSocket.h */,
+				C98E6987104F99E80004C8F0 /* GCDUDPSocket.m */,
 			);
 			path = Socket;
 			sourceTree = "<group>";
@@ -1463,8 +1453,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
-				C97174910FF6DA13008FC21C /* AsyncSocket.m in Sources */,
-				C97174920FF6DA13008FC21C /* AsyncUdpSocket.m in Sources */,
 				C97174960FF76700008FC21C /* SLConnection.m in Sources */,
 				C971749A0FF7688E008FC21C /* SLPacketBuilder.m in Sources */,
 				C97174A20FF7756B008FC21C /* NSData+Extensions.m in Sources */,
@@ -1491,7 +1479,7 @@
 				C939E194100D3C61002CBED3 /* TSAUGraphPlayer.m in Sources */,
 				C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */,
 				C954686E1015381100FCF935 /* NSApplication+Exceptions.m in Sources */,
-				C98B0B3B10334391004F8627 /* AsyncUdpSocket+Extras.m in Sources */,
+				C98E6988104F99E80004C8F0 /* GCDUDPSocket.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

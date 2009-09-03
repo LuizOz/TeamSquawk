@@ -7,8 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "AsyncUdpSocket.h"
-#import "AsyncUdpSocket+Extras.h"
+#import "GCDUDPSocket.h"
 
 #define PERMS_8BYTE                         0x00
 #define PERMS_10BYTE                        0x01
@@ -114,9 +113,7 @@ typedef enum {
 } SLConnectionPermissionType;
 
 @interface SLConnection : NSObject {
-  AsyncUdpSocket *socket;
-  NSThread *connectionThread;
-  NSRecursiveLock *sendReceiveLock;
+  GCDUDPSocket *socket;
   
   NSTimer *pingTimer;
   NSTimer *connectionTimer;
@@ -166,15 +163,6 @@ typedef enum {
 - (id)initWithHost:(NSString*)host withPort:(short)port withError:(NSError**)error;
 - (void)dealloc;
 
-#pragma mark Threading
-
-- (void)spawnThread;
-- (void)initSocketOnThread;
-- (void)sendData:(NSData*)data;
-- (void)queueReceiveData;
-- (void)waitForSend;
-- (void)queueReceiveDataAndWait;
-
 #pragma mark Commands
 
 - (void)beginAsynchronousLogin:(NSString*)username password:(NSString*)password nickName:(NSString*)nickName isRegistered:(BOOL)isRegistered;
@@ -182,9 +170,7 @@ typedef enum {
 
 #pragma mark Incoming Events
 
-- (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port;
-- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error;
-- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error;
+- (void)GCDUDPSocket:(GCDUDPSocket*)sock didReceiveData:(NSData*)data fromHost:(NSString*)host port:(unsigned short)port;
 
 #pragma mark Permissions
 
