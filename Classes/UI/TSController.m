@@ -1246,6 +1246,24 @@
   // setup a new graph player and tell any TSPlayer objects we have a new one
   NSString *outputDeviceUID = [[NSUserDefaults standardUserDefaults] stringForKey:@"OutputDeviceUID"];
   MTCoreAudioDevice *outputDevice = (outputDeviceUID ? [MTCoreAudioDevice deviceWithUID:outputDeviceUID] : [MTCoreAudioDevice defaultOutputDevice]);
+  
+  // STOP, this can be nil if the device has fooked off.
+  if (!outputDevice)
+  {
+    // we could display a message here
+    dispatch_async(dispatch_get_main_queue(), ^{
+      NSAlert *alert = [NSAlert alertWithMessageText:@"Audio Device not found."
+                                       defaultButton:@"OK"
+                                     alternateButton:nil
+                                         otherButton:nil
+                           informativeTextWithFormat:@"Your default audio device could not be found, the default system device has been selected instead."];
+      
+      [alert beginSheetModalForWindow:mainWindow modalDelegate:self didEndSelector:@selector(alertDidEnd:returnCode:contextInfo:) contextInfo:nil];
+    });
+    
+    outputDevice = [MTCoreAudioDevice defaultOutputDevice];
+  }
+  
   MTCoreAudioStreamDescription *outputDeviceFormat = [outputDevice streamDescriptionForChannel:0 forDirection:kMTCoreAudioDevicePlaybackDirection];
   
   [graphPlayer close];
