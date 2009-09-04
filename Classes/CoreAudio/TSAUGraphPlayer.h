@@ -11,9 +11,12 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 
+#import <dispatch/dispatch.h>
+
 @interface TSAUGraphPlayer : NSObject {
   NSThread *renderThread;
   NSMutableDictionary *inputBuffers;
+  dispatch_queue_t queue;
   
   MTCoreAudioDevice *outputDevice;
   MTCoreAudioStreamDescription *inputStreamDescription;

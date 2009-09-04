@@ -396,6 +396,8 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
                    outputTime:(const AudioTimeStamp *)inOutputTime
                    clientData:(void *)inClientData
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
   if ([theDevice isEqual:inputPreviewDevice])
   {
     // input is in input data
@@ -460,6 +462,8 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
       ((float*)(outOutputData->mBuffers[0].mData))[i] *= outputGain;
     }
   }
+  
+  [pool release];
   
   return noErr;
 }
