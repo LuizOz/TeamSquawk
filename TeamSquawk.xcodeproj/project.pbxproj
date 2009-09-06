@@ -72,6 +72,7 @@
 		C9BD028E0FFC96E200FC280A /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD028D0FFC96E200FC280A /* QuickTime.framework */; };
 		C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */; };
 		C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */; };
+		C9C9D4BE105088350042A5B0 /* NSObject+Blocks.m in Sources */ = {isa = PBXBuildFile; fileRef = C9C9D4BD105088350042A5B0 /* NSObject+Blocks.m */; };
 		C9E1443B10544A5A0085F206 /* WiganWallgate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1443A10544A5A0085F206 /* WiganWallgate.framework */; };
 		C9E1446A10544AB40085F206 /* WiganWallgate.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1443A10544A5A0085F206 /* WiganWallgate.framework */; };
 		C9E1448910544B4B0085F206 /* PLBlocks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1448810544B4B0085F206 /* PLBlocks.framework */; };
@@ -471,6 +472,8 @@
 		C9BDFFFD0FFA02CD00FC280A /* os_support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_support.h; sourceTree = "<group>"; };
 		C9BDFFFE0FFA02CD00FC280A /* preprocess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = preprocess.c; sourceTree = "<group>"; };
 		C9BDFFFF0FFA02CD00FC280A /* pseudofloat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pseudofloat.h; sourceTree = "<group>"; };
+		C9C9D4BC105088350042A5B0 /* NSObject+Blocks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+Blocks.h"; sourceTree = "<group>"; };
+		C9C9D4BD105088350042A5B0 /* NSObject+Blocks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+Blocks.m"; sourceTree = "<group>"; };
 		C9E1443A10544A5A0085F206 /* WiganWallgate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WiganWallgate.framework; path = Frameworks/WiganWallgate.framework; sourceTree = "<group>"; };
 		C9E1448810544B4B0085F206 /* PLBlocks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PLBlocks.framework; path = Frameworks/PLBlocks.framework; sourceTree = "<group>"; };
 		C9E2CA1810032ACB00ED920D /* Graphite.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Graphite.tiff; sourceTree = "<group>"; };
@@ -616,6 +619,8 @@
 				C9BDFF9A0FFA02CD00FC280A /* speex-1.2rc1 */,
 				32CA4F630368D1EE00C91783 /* TeamSquawk_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.m */,
+				C9C9D4BC105088350042A5B0 /* NSObject+Blocks.h */,
+				C9C9D4BD105088350042A5B0 /* NSObject+Blocks.m */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
@@ -1492,6 +1497,7 @@
 				C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */,
 				C954686E1015381100FCF935 /* NSApplication+Exceptions.m in Sources */,
 				C98E6988104F99E80004C8F0 /* GCDUDPSocket.m in Sources */,
+				C9C9D4BE105088350042A5B0 /* NSObject+Blocks.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1594,6 +1600,7 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1607,6 +1614,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;

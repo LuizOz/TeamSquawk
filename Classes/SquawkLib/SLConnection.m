@@ -91,8 +91,10 @@
   connectionTimer = nil;
   
   // clear the ping timer
-  [pingTimer invalidate];
-  [pingTimer release];
+  if (pingTimer)
+  {
+    dispatch_release(pingTimer);
+  }
   pingTimer = nil;
   
   [socket release];
@@ -129,8 +131,7 @@
 {
   if (pingTimer)
   {
-    [pingTimer invalidate];
-    [pingTimer release];
+    dispatch_release(pingTimer);
     pingTimer = nil;
   }
   
@@ -317,7 +318,12 @@
         connectionTimer = nil;
         
         // we should probably schedule some auto-pings here
-        pingTimer = [[NSTimer scheduledTimerWithTimeInterval:3.0f target:self selector:@selector(pingTimer:) userInfo:nil repeats:YES] retain];
+        pingTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+        dispatch_source_set_timer(pingTimer, dispatch_walltime(NULL, 0), 3ull * NSEC_PER_SEC, 1ull * NSEC_PER_SEC);
+        dispatch_source_set_event_handler(pingTimer, ^{
+          [self pingTimer:nil];
+        });
+        dispatch_resume(pingTimer);
         
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
         {
@@ -404,8 +410,7 @@
         {
           if (pingTimer)
           {
-            [pingTimer invalidate];
-            [pingTimer release];
+            dispatch_release(pingTimer);
             pingTimer = nil;
           }
           
@@ -676,8 +681,7 @@
       [[self delegate] connectionDisconnected:self withError:error];
     }
     
-    [pingTimer invalidate];
-    [pingTimer release];
+    dispatch_release(pingTimer);
     pingTimer = nil;
     
     return;

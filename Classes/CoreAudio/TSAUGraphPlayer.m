@@ -7,6 +7,7 @@
 //
 
 #import "TSAUGraphPlayer.h"
+#import "NSObject+Blocks.h"
 
 #define MAX_ELEMENTS  128
 #define BUFFER_SIZE   0.5f
@@ -48,6 +49,7 @@ OSStatus InputRenderCallback(void *inRefCon,
     inputStreamDescription = [streamDesc retain];
     isInitialised = YES;
     availableChannels = 0;
+    queue = dispatch_queue_create("uk.co.sysctl.teamsquawk.augraphplayer", 0);
     
     // create a new thread to run on and setup the augraph on there
     renderThread = [[NSThread alloc] initWithTarget:self selector:@selector(_createRenderThread) object:nil];
@@ -70,6 +72,7 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (void)dealloc
 {
+  dispatch_release(queue);
   [inputBuffers release];
   NSLog(@"dealloc");
   [super dealloc];
@@ -131,7 +134,7 @@ OSStatus InputRenderCallback(void *inRefCon,
   
   {
     // output unit
-    ComponentDescription outputComponentDescription;
+    AudioComponentDescription outputComponentDescription;
     outputComponentDescription.componentType = kAudioUnitType_Output;
     outputComponentDescription.componentSubType = kAudioUnitSubType_HALOutput;
     outputComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -175,7 +178,7 @@ OSStatus InputRenderCallback(void *inRefCon,
   
   {
     // converter unit
-    ComponentDescription converterComponentDescription;
+    AudioComponentDescription converterComponentDescription;
     converterComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
     converterComponentDescription.componentType = kAudioUnitType_FormatConverter;
     converterComponentDescription.componentSubType = kAudioUnitSubType_AUConverter;
@@ -198,7 +201,7 @@ OSStatus InputRenderCallback(void *inRefCon,
   {
     // mixer unit
     
-    ComponentDescription mixerComponentDescription;
+    AudioComponentDescription mixerComponentDescription;
     mixerComponentDescription.componentType = kAudioUnitType_Mixer;
     mixerComponentDescription.componentSubType = kAudioUnitSubType_StereoMixer;
     mixerComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -328,29 +331,33 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (void)removeInputStream:(int)index
 {
-  if ([inputBuffers objectForKey:[NSNumber numberWithInt:index]] != nil)
-  {
-    [inputBuffers removeObjectForKey:[NSNumber numberWithInt:index]];
-  }
-  
-  if (index == (availableChannels - 1))
-  {
-    // if the index was the last, jiggle around so we're not rendering too many buffers
-    
-    AUGraphStop(outputGraph);
-    AUGraphUninitialize(outputGraph);
-    
-    availableChannels--;
-    OSStatus err = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &availableChannels, sizeof(availableChannels));
-    if (err != noErr)
-    {
-      // failed, wtf
-      NSLog(@"Failed to reduce number of rendered audio channels: %@", [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
-    }
-    
-    AUGraphInitialize(outputGraph);
-    AUGraphStart(outputGraph);
-  }
+  dispatch_sync(queue, ^{
+    [self performBlock:^{
+      if ([inputBuffers objectForKey:[NSNumber numberWithInt:index]] != nil)
+      {
+        [inputBuffers removeObjectForKey:[NSNumber numberWithInt:index]];
+      }
+      
+      if (index == (availableChannels - 1))
+      {
+        // if the index was the last, jiggle around so we're not rendering too many buffers
+        
+        AUGraphStop(outputGraph);
+        AUGraphUninitialize(outputGraph);
+        
+        availableChannels--;
+        OSStatus err = AudioUnitSetProperty(mixerUnit, kAudioUnitProperty_ElementCount, kAudioUnitScope_Input, 0, &availableChannels, sizeof(availableChannels));
+        if (err != noErr)
+        {
+          // failed, wtf
+          NSLog(@"Failed to reduce number of rendered audio channels: %@", [NSError errorWithDomain:NSOSStatusErrorDomain code:err userInfo:nil]);
+        }
+        
+        AUGraphInitialize(outputGraph);
+        AUGraphStart(outputGraph);
+      }    
+    } onThread:renderThread];
+  });
 }
 
 - (unsigned long)numberOfFramesInInputStream:(unsigned int)index
