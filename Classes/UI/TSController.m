@@ -6,7 +6,7 @@
 //  Copyright 2009 Matt Wright Consulting. All rights reserved.
 //
 
-#import <dispatch/dispatch.h>
+#import <WiganWallgate/dispatch.h>
 
 #import <Sparkle/Sparkle.h>
 #import "TSStandardVersionComparator.h"
@@ -26,6 +26,9 @@
 
 - (void)awakeFromNib
 {  
+  dispatch_manager_init();
+  dispatch_manager_runloop_init();
+  
   [MWBetterCrashes createBetterCrashes];
   UKCrashReporterCheckForCrash();
     

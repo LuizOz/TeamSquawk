@@ -72,6 +72,10 @@
 		C9BD028E0FFC96E200FC280A /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD028D0FFC96E200FC280A /* QuickTime.framework */; };
 		C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */; };
 		C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */; };
+		C9E1443B10544A5A0085F206 /* WiganWallgate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1443A10544A5A0085F206 /* WiganWallgate.framework */; };
+		C9E1446A10544AB40085F206 /* WiganWallgate.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1443A10544A5A0085F206 /* WiganWallgate.framework */; };
+		C9E1448910544B4B0085F206 /* PLBlocks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1448810544B4B0085F206 /* PLBlocks.framework */; };
+		C9E1448E10544B530085F206 /* PLBlocks.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1448810544B4B0085F206 /* PLBlocks.framework */; };
 		C9E2CA1F10032ACB00ED920D /* Graphite.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1810032ACB00ED920D /* Graphite.tiff */; };
 		C9E2CA2010032ACB00ED920D /* Green.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1910032ACB00ED920D /* Green.tiff */; };
 		C9E2CA2110032ACB00ED920D /* Grey.tiff in Resources */ = {isa = PBXBuildFile; fileRef = C9E2CA1A10032ACB00ED920D /* Grey.tiff */; };
@@ -126,6 +130,8 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				C9E1448E10544B530085F206 /* PLBlocks.framework in Copy Frameworks */,
+				C9E1446A10544AB40085F206 /* WiganWallgate.framework in Copy Frameworks */,
 				C9546905101540D100FCF935 /* MWFramework.framework in Copy Frameworks */,
 				C939F0221011E7CC002CBED3 /* Sparkle.framework in Copy Frameworks */,
 				C9BD027F0FFC1BB900FC280A /* libspeex.1.5.0.dylib in Copy Frameworks */,
@@ -465,6 +471,8 @@
 		C9BDFFFD0FFA02CD00FC280A /* os_support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = os_support.h; sourceTree = "<group>"; };
 		C9BDFFFE0FFA02CD00FC280A /* preprocess.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = preprocess.c; sourceTree = "<group>"; };
 		C9BDFFFF0FFA02CD00FC280A /* pseudofloat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pseudofloat.h; sourceTree = "<group>"; };
+		C9E1443A10544A5A0085F206 /* WiganWallgate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WiganWallgate.framework; path = Frameworks/WiganWallgate.framework; sourceTree = "<group>"; };
+		C9E1448810544B4B0085F206 /* PLBlocks.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PLBlocks.framework; path = Frameworks/PLBlocks.framework; sourceTree = "<group>"; };
 		C9E2CA1810032ACB00ED920D /* Graphite.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Graphite.tiff; sourceTree = "<group>"; };
 		C9E2CA1910032ACB00ED920D /* Green.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Green.tiff; sourceTree = "<group>"; };
 		C9E2CA1A10032ACB00ED920D /* Grey.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = Grey.tiff; sourceTree = "<group>"; };
@@ -528,6 +536,8 @@
 				C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */,
 				C939EDCE1011E7A1002CBED3 /* Sparkle.framework in Frameworks */,
 				C95468FC101540CD00FCF935 /* MWFramework.framework in Frameworks */,
+				C9E1443B10544A5A0085F206 /* WiganWallgate.framework in Frameworks */,
+				C9E1448910544B4B0085F206 /* PLBlocks.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -550,6 +560,8 @@
 		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C9E1448810544B4B0085F206 /* PLBlocks.framework */,
+				C9E1443A10544A5A0085F206 /* WiganWallgate.framework */,
 				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
 				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
 				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
@@ -1529,6 +1541,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
+				GCC_VERSION = coop.plausible.blocks.compilers.gcc.4_2;
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/Frameworks\"/**",
 					"\"$(SRCROOT)/speex-1.2rc1/include\"",
@@ -1558,6 +1571,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
+				GCC_VERSION = coop.plausible.blocks.compilers.gcc.4_2;
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/Frameworks\"/**",
 					"\"$(SRCROOT)/speex-1.2rc1/include\"",
@@ -1584,7 +1598,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.6;
+				SDKROOT = macosx10.5;
 			};
 			name = Debug;
 		};
@@ -1596,7 +1610,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.6;
+				SDKROOT = macosx10.5;
 			};
 			name = Release;
 		};
