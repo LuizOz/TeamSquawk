@@ -52,6 +52,7 @@ typedef enum {
 @property (assign) BOOL isTransmitting;
 @property (assign) BOOL isWhispering;
 @property (assign) BOOL isLocallyMuted;
+@property (readonly) unsigned int graphPlayerChannel;
 
 - (id)initWithGraphPlayer:(TSAUGraphPlayer*)player;
 - (id)copyWithZone:(NSZone *)zone;

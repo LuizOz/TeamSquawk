@@ -98,6 +98,16 @@ OSStatus InputRenderCallback(void *inRefCon,
   [inputBuffers removeAllObjects];
 }
 
+- (id)delegate
+{
+  return delegate;
+}
+
+- (void)setDelegate:(id)aDelegate
+{
+  delegate = aDelegate;
+}
+
 #pragma mark Threading
 
 - (void)_createRenderThread
@@ -405,7 +415,20 @@ OSStatus InputRenderCallback(void *inRefCon,
   if ([inputBuffers objectForKey:[NSNumber numberWithInt:inBusNumber]] != nil)
   {
     MTAudioBuffer *buffer = [inputBuffers objectForKey:[NSNumber numberWithInt:inBusNumber]];
+    
+    int count = [buffer count];
     [buffer readToAudioBufferList:ioData maxFrames:inNumberFrames waitForData:NO];
+    
+    if ((count > 0) && ([buffer count] == 0))
+    {
+      if (delegate && [delegate respondsToSelector:@selector(graphPlayer:bufferUnderunForInputStream:)])
+      {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+          // I don't want to delay the render thread by running this, so put it on a queue.
+          [delegate graphPlayer:self bufferUnderunForInputStream:inBusNumber];
+        });
+      }
+    }
   }
   
   [pool release];

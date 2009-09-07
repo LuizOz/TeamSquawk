@@ -21,6 +21,7 @@
 @synthesize isTransmitting;
 @synthesize isWhispering;
 @synthesize isLocallyMuted;
+@synthesize graphPlayerChannel;
 
 - (id)initWithGraphPlayer:(TSAUGraphPlayer*)player
 {

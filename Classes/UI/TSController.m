@@ -1272,6 +1272,7 @@
   [graphPlayer close];
   [graphPlayer autorelease];
   graphPlayer = [[TSAUGraphPlayer alloc] initWithAudioDevice:outputDevice inputStreamDescription:outputDeviceFormat];
+  [graphPlayer setDelegate:self];
   
   for (TSPlayer *player in [players allValues])
   {
@@ -1293,13 +1294,34 @@
   [player setIsWhispering:isWhisper];
   
   dispatch_async([player queue], ^{
-    [player backgroundDecodeData:audioCodecData];    
+    BOOL wasTransmitting = [player isTransmitting];
+    [player backgroundDecodeData:audioCodecData];
+    if (wasTransmitting != [player isTransmitting])
+    {
+      // its different, please redraw
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [mainWindowOutlineView reloadItem:player];
+      });
+    }    
   });
 }
 
 - (void)idleAudioCheck:(NSTimer*)timer
 {
 
+}
+
+- (void)graphPlayer:(TSAUGraphPlayer*)player bufferUnderunForInputStream:(unsigned int)index
+{
+  for (TSPlayer *player in [players allValues])
+  {
+    if ([player graphPlayerChannel] == index)
+    {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [mainWindowOutlineView reloadItem:player];
+      });
+    }
+  }
 }
 
 - (void)speakVoiceEvent:(NSString*)eventText alternativeText:(NSString*)alternativeText

@@ -34,6 +34,8 @@
   
   BOOL isInitialised;
   unsigned int availableChannels;
+  
+  id delegate;
 }
 
 #pragma mark Init
@@ -41,6 +43,8 @@
 - (id)initWithAudioDevice:(MTCoreAudioDevice*)device inputStreamDescription:(MTCoreAudioStreamDescription*)streamDesc;
 - (void)dealloc;
 - (void)close;
+- (id)delegate;
+- (void)setDelegate:(id)aDelegate;
 
 #pragma mark Threading
 
@@ -68,5 +72,11 @@
 #pragma mark Audio Queue
 
 - (unsigned int)writeAudioBufferList:(AudioBufferList*)abl toInputStream:(unsigned int)index withForRoom:(BOOL)waitForRoom;
+
+@end
+
+@interface NSObject (TSAUGraphPlayerDelegate)
+
+- (void)graphPlayer:(TSAUGraphPlayer*)player bufferUnderunForInputStream:(unsigned int)index;
 
 @end
