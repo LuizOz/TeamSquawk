@@ -75,7 +75,6 @@
     if (!connected)
     {
       [*error autorelease];
-      [socket release];
       [self release];
       return nil;
     }
@@ -319,7 +318,7 @@
         
         // we should probably schedule some auto-pings here
         pingTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-        dispatch_source_set_timer(pingTimer, dispatch_walltime(NULL, 0), 3ull * NSEC_PER_SEC, 1ull * NSEC_PER_SEC);
+        dispatch_source_set_timer(pingTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 3ull * NSEC_PER_SEC, 1ull * NSEC_PER_SEC);
         dispatch_source_set_event_handler(pingTimer, ^{
           [self pingTimer:nil];
         });

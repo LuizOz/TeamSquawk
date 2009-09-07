@@ -134,7 +134,7 @@ OSStatus InputRenderCallback(void *inRefCon,
   
   {
     // output unit
-    AudioComponentDescription outputComponentDescription;
+    ComponentDescription outputComponentDescription;
     outputComponentDescription.componentType = kAudioUnitType_Output;
     outputComponentDescription.componentSubType = kAudioUnitSubType_HALOutput;
     outputComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -178,7 +178,7 @@ OSStatus InputRenderCallback(void *inRefCon,
   
   {
     // converter unit
-    AudioComponentDescription converterComponentDescription;
+    ComponentDescription converterComponentDescription;
     converterComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
     converterComponentDescription.componentType = kAudioUnitType_FormatConverter;
     converterComponentDescription.componentSubType = kAudioUnitSubType_AUConverter;
@@ -201,7 +201,7 @@ OSStatus InputRenderCallback(void *inRefCon,
   {
     // mixer unit
     
-    AudioComponentDescription mixerComponentDescription;
+    ComponentDescription mixerComponentDescription;
     mixerComponentDescription.componentType = kAudioUnitType_Mixer;
     mixerComponentDescription.componentSubType = kAudioUnitSubType_StereoMixer;
     mixerComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;

@@ -8,7 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "GCDUDPSocket.h"
-#import <dispatch/dispatch.h>
+#import <WiganWallgate/dispatch.h>
 
 #define PERMS_8BYTE                         0x00
 #define PERMS_10BYTE                        0x01

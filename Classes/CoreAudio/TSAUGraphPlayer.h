@@ -11,7 +11,7 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioUnit/AudioUnit.h>
 
-#import <dispatch/dispatch.h>
+#import <WiganWallgate/dispatch.h>
 
 @interface TSAUGraphPlayer : NSObject {
   NSThread *renderThread;
