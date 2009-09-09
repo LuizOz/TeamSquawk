@@ -341,6 +341,10 @@ OSStatus InputRenderCallback(void *inRefCon,
 
 - (void)removeInputStream:(int)index
 {
+  // if we're mid way through removing this player, it could get released while we're waiting for the
+  // block
+  [self release];
+  
   dispatch_sync(queue, ^{
     [self performBlock:^{
       if ([inputBuffers objectForKey:[NSNumber numberWithInt:index]] != nil)
@@ -365,7 +369,9 @@ OSStatus InputRenderCallback(void *inRefCon,
         
         AUGraphInitialize(outputGraph);
         AUGraphStart(outputGraph);
-      }    
+      }
+      
+      [self release];
     } onThread:renderThread];
   });
 }

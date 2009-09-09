@@ -11,6 +11,12 @@
 #import "SLPacketChomper.h"
 
 //#define PERMS_DEBUG 1
+#define LOGIN_DEBUG 1
+#ifdef LOGIN_DEBUG
+# define LOGIN_DBG(x...) NSLog(x)
+#else
+# define LOGIN_DBG(x...)
+#endif
 
 @implementation SLConnection
 
@@ -71,6 +77,13 @@
     standardSequenceNumber = 0;
     serverConnectionSequenceNumber = 0;
     serverStandardSequenceNumber = 0;
+    
+    // setup the ping source here but don't start it
+    pingTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(pingTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 3ull * NSEC_PER_SEC, 1ull * NSEC_PER_SEC);
+    dispatch_source_set_event_handler(pingTimer, ^{
+      [self pingTimer:nil];
+    });    
 
     if (!connected)
     {
@@ -90,11 +103,7 @@
   connectionTimer = nil;
   
   // clear the ping timer
-  if (pingTimer)
-  {
-    dispatch_release(pingTimer);
-  }
-  pingTimer = nil;
+  dispatch_release(pingTimer);
   
   [socket release];
   [fragments release];
@@ -107,6 +116,8 @@
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   connectionSequenceNumber = 1;
+  
+  LOGIN_DBG(@"LOGIN_DBG: begin login");
   
   SLPacketBuilder *packetBuilder = [SLPacketBuilder packetBuilder];
   NSData *packet = [packetBuilder buildLoginPacketWithSequenceID:connectionSequenceNumber
@@ -128,21 +139,23 @@
 
 - (void)disconnect
 {
-  if (pingTimer)
-  {
-    dispatch_release(pingTimer);
-    pingTimer = nil;
-  }
+  dispatch_suspend(pingTimer);
   
   isDisconnecting = YES;
   
+  LOGIN_DBG(@"LOGIN_DBG: begin disconnect");
+  
   NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:standardSequenceNumber++];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
+  
+  LOGIN_DBG(@"LOGIN_DBG: waiting for disconnect");
   
   while (!hasFinishedDisconnecting)
   {
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
+  
+  LOGIN_DBG(@"LOGIN_DBG: disconnect completed");
   
   if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
   {
@@ -197,6 +210,8 @@
     {
       case PACKET_TYPE_LOGIN_REPLY:
       {
+        LOGIN_DBG(@"LOGIN_DBG: server login reply, part 1");
+        
         BOOL isBadLogin = [[packet objectForKey:@"SLBadLogin"] boolValue];
         standardSequenceNumber = 1;
 
@@ -292,6 +307,7 @@
       }
       case PACKET_TYPE_CHANNEL_LIST:
       {
+        LOGIN_DBG(@"LOGIN_DBG: recieved channel list");
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
         {
           [[self delegate] connection:self receivedChannelList:packet];
@@ -300,6 +316,7 @@
       }
       case PACKET_TYPE_PLAYER_LIST:
       {
+        LOGIN_DBG(@"LOGIN_DBG: recieved player list");
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerList:)])
         {
           [[self delegate] connection:self receivedPlayerList:packet];
@@ -308,6 +325,8 @@
       }
       case PACKET_TYPE_LOGIN_END:
       {
+        LOGIN_DBG(@"LOGIN_DBG: login complete");
+        
         // reset the sequence ids
         connectionSequenceNumber = 0;
         
@@ -316,14 +335,9 @@
         [connectionTimer release];
         connectionTimer = nil;
         
-        // we should probably schedule some auto-pings here
-        pingTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-        dispatch_source_set_timer(pingTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 3ull * NSEC_PER_SEC, 1ull * NSEC_PER_SEC);
-        dispatch_source_set_event_handler(pingTimer, ^{
-          [self pingTimer:nil];
-        });
+        // start the ping timer
         dispatch_resume(pingTimer);
-        
+                
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionFinishedLogin:)])
         {
           [[self delegate] connectionFinishedLogin:self];
@@ -333,6 +347,8 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
+        LOGIN_DBG(@"LOGIN_DBG: ping counter reset");
+        
         pingReplysPending = 0;
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
         {
@@ -407,11 +423,7 @@
         // check if we're not disconnecting but it was us that left. we've been kicked or the server went down
         if (!isDisconnecting && (playerID == clientID) && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
         {
-          if (pingTimer)
-          {
-            dispatch_release(pingTimer);
-            pingTimer = nil;
-          }
+          dispatch_suspend(pingTimer);
           
           NSError *error = [NSError errorWithDomain:@"SLConnection" code:SLConnectionErrorSelfLeft userInfo:[NSDictionary dictionaryWithObjectsAndKeys:
                                                                                                              @"Disconnected from server", NSLocalizedDescriptionKey,
@@ -679,10 +691,8 @@
                                                  nil]];
       [[self delegate] connectionDisconnected:self withError:error];
     }
-    
-    dispatch_release(pingTimer);
-    pingTimer = nil;
-    
+
+    dispatch_suspend(pingTimer);
     return;
   }
   
@@ -691,6 +701,8 @@
   [socket sendData:data withTimeout:TRANSMIT_TIMEOUT];
   
   pingReplysPending++;
+  
+  LOGIN_DBG(@"LOGIN_DBG: ping sent, %d pending", pingReplysPending);
   
   [pool release];
 }
