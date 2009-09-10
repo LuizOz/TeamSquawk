@@ -11,7 +11,8 @@
 #import "SLPacketChomper.h"
 
 //#define PERMS_DEBUG 1
-#define LOGIN_DEBUG 1
+//#define LOGIN_DEBUG 1
+
 #ifdef LOGIN_DEBUG
 # define LOGIN_DBG(x...) NSLog(x)
 #else
@@ -145,7 +146,7 @@
   
   LOGIN_DBG(@"LOGIN_DBG: begin disconnect");
   
-  NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:standardSequenceNumber++];
+  NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   
   LOGIN_DBG(@"LOGIN_DBG: waiting for disconnect");
@@ -169,7 +170,7 @@
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   SLPacketChomper *chomper = [SLPacketChomper packetChomperWithSocket:socket];
-    
+      
   pendingReceive = NO;
   
   [chomper setFragment:fragments];
@@ -213,7 +214,7 @@
         LOGIN_DBG(@"LOGIN_DBG: server login reply, part 1");
         
         BOOL isBadLogin = [[packet objectForKey:@"SLBadLogin"] boolValue];
-        standardSequenceNumber = 1;
+        standardSequenceNumber = 0;
 
         if (isBadLogin)
         {
@@ -276,7 +277,7 @@
           
           NSData *newPacket = [[SLPacketBuilder packetBuilder] buildLoginResponsePacketWithConnectionID:connectionID
                                                                                                clientID:clientID
-                                                                                             sequenceID:standardSequenceNumber++
+                                                                                             sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                               lastCRC32:lastCRC32];
           // this only gets called form the socket's thread. so should be thread safe.
           [sock sendData:newPacket withTimeout:TRANSMIT_TIMEOUT];
@@ -310,7 +311,9 @@
         LOGIN_DBG(@"LOGIN_DBG: recieved channel list");
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
         {
-          [[self delegate] connection:self receivedChannelList:packet];
+          dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [[self delegate] connection:self receivedChannelList:packet];
+          });
         }
         break;
       }
@@ -730,7 +733,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildTextMessagePacketWithConnectionID:connectionID
                                                                                   clientID:clientID
-                                                                                sequenceID:standardSequenceNumber++
+                                                                                sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                   playerID:playerID
                                                                                    message:message];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
@@ -775,7 +778,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildSwitchChannelMessageWithConnectionID:connectionID
                                                                                      clientID:clientID
-                                                                                   sequenceID:standardSequenceNumber++
+                                                                                   sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                  newChannelID:newChannel
                                                                                      password:password];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
@@ -787,7 +790,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildChangePlayerStatusMessageWithConnectionID:connectionID
                                                                                           clientID:clientID
-                                                                                        sequenceID:standardSequenceNumber++
+                                                                                        sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                     newStatusFlags:flags];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
@@ -798,7 +801,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildChangeOtherPlayerMuteStatusWithConnectionID:connectionID
                                                                                             clientID:clientID
-                                                                                          sequenceID:standardSequenceNumber++
+                                                                                          sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                             playerID:playerID
                                                                                                muted:isMuted];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
@@ -812,7 +815,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildKickMessageWithConnectionID:connectionID 
                                                                             clientID:clientID
-                                                                          sequenceID:standardSequenceNumber++
+                                                                          sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                             playerID:player
                                                                               reason:reason];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
@@ -824,7 +827,7 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   NSData *packet = [[SLPacketBuilder packetBuilder] buildChannelKickMessageWithConnectionID:connectionID
                                                                                    clientID:clientID 
-                                                                                 sequenceID:standardSequenceNumber++
+                                                                                 sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                    playerID:player
                                                                                      reason:reason];
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];

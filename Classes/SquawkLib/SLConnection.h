@@ -124,8 +124,8 @@ typedef enum {
   unsigned int connectionID;
   unsigned int clientID;
   
-  unsigned int connectionSequenceNumber;
-  unsigned int standardSequenceNumber;
+  int connectionSequenceNumber;
+  int standardSequenceNumber;
   
   unsigned int serverConnectionSequenceNumber;
   unsigned int serverStandardSequenceNumber;

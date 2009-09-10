@@ -1038,6 +1038,16 @@
   }
   
   dispatch_async(dispatch_get_main_queue(), ^{
+    // channels can come in async after players have. so hoover up any orphans we may have lying arounf
+    for (TSPlayer *player in [players allValues])
+    {
+      TSChannel *channel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:[player channelID]]];
+      if (![[channel players] containsObject:player])
+      {
+        [channel addPlayer:player];
+      }
+    }
+    
     [sortedChannels autorelease];
     NSArray *sortDescriptors = [NSArray arrayWithObjects:
                                 [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],

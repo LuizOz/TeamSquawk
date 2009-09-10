@@ -408,7 +408,7 @@
                                                welcomeMessage, @"SLWelcomeMessage",
                                                permissions, @"SLPermissionsData",
                                                nil];
-
+  
   return packetDescriptionDictionary;
 }
 
