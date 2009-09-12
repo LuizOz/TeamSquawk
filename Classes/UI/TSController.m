@@ -26,9 +26,6 @@
 
 - (void)awakeFromNib
 {  
-  dispatch_manager_init();
-  dispatch_manager_runloop_init();
-  
   [MWBetterCrashes createBetterCrashes];
   UKCrashReporterCheckForCrash();
     
