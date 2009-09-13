@@ -1,10 +1,25 @@
 /*
- *  base.h
- *  WiganWallgate
- *
- *  Created by Matt Wright on 06/09/2009.
- *  Copyright 2009 Matt Wright. All rights reserved.
- *
+ Wigan Wallgate: An open-source implementation of Grand Central Dispatch
+ 
+ Copyright (c) 2009 Matt Wright
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
  */
 
 #ifndef __DISPATCH_BASE_H__
@@ -23,20 +38,6 @@ typedef union {
   struct dispatch_list_s *_dl;
   struct dispatch_source_s *_ds;
 } dispatch_object_t __attribute__((transparent_union));
-
-/*
- We don't really want to present all of the manager's internals to the public
- so the init function and other useful ones are defined here
- */
-
-void dispatch_manager_init();
-
-/*
- We can't avoid having to make the use setup the main thread consumer because
- we can't hook into Foundation ourselves and make it automagically appear like
- in Grand Central. Boo.
- */
-void dispatch_manager_runloop_init();
 
 /*
  A debug function, zomg ;)
