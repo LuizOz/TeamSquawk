@@ -80,7 +80,7 @@
     serverStandardSequenceNumber = 0;
     
     // setup the ping source here but don't start it
-    pingTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    pingTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0));
     dispatch_source_set_timer(pingTimer, dispatch_time(DISPATCH_TIME_NOW, 0), 3ull * NSEC_PER_SEC, 1ull * NSEC_PER_SEC);
     dispatch_source_set_event_handler(pingTimer, ^{
       [self pingTimer:nil];

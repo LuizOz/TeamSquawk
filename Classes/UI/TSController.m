@@ -893,15 +893,6 @@
   isConnected = YES;
   isConnecting = NO;
     
-  // do some UI sugar
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self setupConnectedToolbarStatusPopupButton];
-    [self updatePlayerStatusView];
-    [self setupChannelsMenu];
-
-    [toolbarViewStatusPopupButton setTitle:currentServerAddress];
-  });
-  
   // get the TSPlayer for who we are
   TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
     
@@ -921,14 +912,20 @@
   // double check
   if (!currentChannel)
   {
-    [[NSException exceptionWithName:@"ChannelFail" reason:@"Teamspeak connection established but failed to find user in any channel." userInfo:nil] raise];
-    return;
+//    [[NSException exceptionWithName:@"ChannelFail" reason:@"Teamspeak connection established but failed to find user in any channel." userInfo:nil] raise];
+//    return;
   }
   
   // setup transmission
   transmission = [[TSTransmission alloc] initWithConnection:teamspeakConnection codec:[currentChannel codec] voiceActivated:NO];
   
   dispatch_async(dispatch_get_main_queue(), ^{
+    [self setupConnectedToolbarStatusPopupButton];
+    [self updatePlayerStatusView];
+    [self setupChannelsMenu];
+    
+    [toolbarViewStatusPopupButton setTitle:currentServerAddress];
+    
     [mainWindowOutlineView reloadData];
     [mainWindowOutlineView expandItem:nil expandChildren:YES];
   });
@@ -1052,7 +1049,9 @@
                                 nil];
     sortedChannels = [[[channels allValues] sortedArrayUsingDescriptors:sortDescriptors] retain];
     
-    [self performSelectorOnMainThread:@selector(setupChannelsMenu) withObject:nil waitUntilDone:YES];
+    [self setupChannelsMenu];
+    [mainWindowOutlineView reloadData];
+    [mainWindowOutlineView expandItem:nil expandChildren:YES];
   });
 }
 
