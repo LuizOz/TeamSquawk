@@ -48,6 +48,7 @@
 		C939F0661011EA14002CBED3 /* TeamSquawk.pub in Resources */ = {isa = PBXBuildFile; fileRef = C939F0651011EA14002CBED3 /* TeamSquawk.pub */; };
 		C939F06D1011EE86002CBED3 /* TeamSquawk.icns in Resources */ = {isa = PBXBuildFile; fileRef = C939F06C1011EE86002CBED3 /* TeamSquawk.icns */; };
 		C939F0BA1011F3E9002CBED3 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = C939F0B91011F3E9002CBED3 /* Credits.rtf */; };
+		C943EA1C10604F1600DBD09F /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C943EA1B10604F1600DBD09F /* LICENSE */; };
 		C95462CA1013579B00FCF935 /* TSStandardVersionComparator.m in Sources */ = {isa = PBXBuildFile; fileRef = C95462C91013579B00FCF935 /* TSStandardVersionComparator.m */; };
 		C95466F81015318E00FCF935 /* UKCrashReporter.strings in Resources */ = {isa = PBXBuildFile; fileRef = C95466F71015318E00FCF935 /* UKCrashReporter.strings */; };
 		C954686E1015381100FCF935 /* NSApplication+Exceptions.m in Sources */ = {isa = PBXBuildFile; fileRef = C954686D1015381100FCF935 /* NSApplication+Exceptions.m */; };
@@ -168,6 +169,7 @@
 		C939F0651011EA14002CBED3 /* TeamSquawk.pub */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TeamSquawk.pub; sourceTree = "<group>"; };
 		C939F06C1011EE86002CBED3 /* TeamSquawk.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = TeamSquawk.icns; sourceTree = "<group>"; };
 		C939F0B91011F3E9002CBED3 /* Credits.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = Credits.rtf; sourceTree = "<group>"; };
+		C943EA1B10604F1600DBD09F /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		C95462C81013579B00FCF935 /* TSStandardVersionComparator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSStandardVersionComparator.h; sourceTree = "<group>"; };
 		C95462C91013579B00FCF935 /* TSStandardVersionComparator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSStandardVersionComparator.m; sourceTree = "<group>"; };
 		C95466F71015318E00FCF935 /* UKCrashReporter.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; path = UKCrashReporter.strings; sourceTree = "<group>"; };
@@ -630,6 +632,7 @@
 			children = (
 				C9E2CA1610032AAF00ED920D /* Images */,
 				C939F0B91011F3E9002CBED3 /* Credits.rtf */,
+				C943EA1B10604F1600DBD09F /* LICENSE */,
 				C939F0651011EA14002CBED3 /* TeamSquawk.pub */,
 				C939F06C1011EE86002CBED3 /* TeamSquawk.icns */,
 				8D1107310486CEB800E47090 /* Info.plist */,
@@ -1402,6 +1405,7 @@
 				C939F06D1011EE86002CBED3 /* TeamSquawk.icns in Resources */,
 				C939F0BA1011F3E9002CBED3 /* Credits.rtf in Resources */,
 				C95466F81015318E00FCF935 /* UKCrashReporter.strings in Resources */,
+				C943EA1C10604F1600DBD09F /* LICENSE in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
