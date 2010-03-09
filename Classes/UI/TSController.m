@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#import <WiganWallgate/dispatch.h>
+#import <dispatch/dispatch.h>
 
 #import <Sparkle/Sparkle.h>
 #import "TSStandardVersionComparator.h"

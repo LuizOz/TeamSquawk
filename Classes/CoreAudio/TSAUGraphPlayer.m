@@ -90,7 +90,6 @@ OSStatus InputRenderCallback(void *inRefCon,
 {
   dispatch_release(queue);
   [inputBuffers release];
-  NSLog(@"dealloc");
   [super dealloc];
 }
 

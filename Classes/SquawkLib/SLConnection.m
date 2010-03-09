@@ -22,6 +22,8 @@
  * THE SOFTWARE.
  */
 
+#import <libkern/OSAtomic.h>
+
 #import "SLConnection.h"
 #import "SLPacketBuilder.h"
 #import "SLPacketChomper.h"
