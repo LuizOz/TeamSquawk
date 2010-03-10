@@ -115,6 +115,7 @@
 - (NSDictionary*)chompChannelPrivUpdate:(NSData*)data;
 - (NSDictionary*)chompServerPrivUpdate:(NSData*)data;
 - (NSDictionary*)chompPlayerKicked:(NSData*)data;
+- (NSDictionary*)chompChannelMove:(NSData*)data;
 
 #pragma mark Text/Chat Messages
 
