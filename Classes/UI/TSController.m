@@ -96,9 +96,9 @@
   // reset our internal state
   isConnected = NO;
   isConnecting = NO;
-  players = [[NSMutableDictionary alloc] init];
-  channels = [[NSMutableDictionary alloc] init];
-  flattenedChannels = [[NSMutableDictionary alloc] init];
+  players = [[TSSafeMutableDictionary alloc] init];
+  channels = [[TSSafeMutableDictionary alloc] init];
+  flattenedChannels = [[TSSafeMutableDictionary alloc] init];
   sortedChannels = nil;
   transmission = nil;
   graphPlayer = nil;

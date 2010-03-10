@@ -30,6 +30,8 @@
 #import "TSHotkeyManager.h"
 #import "TSTransmission.h"
 
+#import "TSSafeMutableDictionary.h"
+
 #import "SpeexEncoder.h"
 #import "SpeexDecoder.h"
 
@@ -82,9 +84,9 @@ typedef enum {
   BOOL isConnected;
   NSString *currentServerAddress;
   
-  NSMutableDictionary *players;
-  NSMutableDictionary *channels;
-  NSMutableDictionary *flattenedChannels;
+  TSSafeMutableDictionary *players;
+  TSSafeMutableDictionary *channels;
+  TSSafeMutableDictionary *flattenedChannels;
   NSArray *sortedChannels;
   
   TSChannel *currentChannel;
