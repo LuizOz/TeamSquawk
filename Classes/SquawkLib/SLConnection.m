@@ -27,15 +27,9 @@
 #import "SLConnection.h"
 #import "SLPacketBuilder.h"
 #import "SLPacketChomper.h"
+#import "TSLogger.h"
 
-//#define PERMS_DEBUG 1
-//#define LOGIN_DEBUG 1
-
-#ifdef LOGIN_DEBUG
-# define LOGIN_DBG(x...) NSLog(x)
-#else
-# define LOGIN_DBG(x...)
-#endif
+#define SLLog(fmt, args...) TSLog(fmt, ##args)
 
 @implementation SLConnection
 
@@ -136,7 +130,14 @@
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   connectionSequenceNumber = 1;
   
-  LOGIN_DBG(@"LOGIN_DBG: begin login");
+  SLLog(@"LOGIN(%d): client: %@ v%d.%d, OS: %@, user: %@, nick: %@", 
+        connectionSequenceNumber,
+        [self clientName],
+        [self clientMajorVersion],
+        [self clientMinorVersion],
+        [self clientOperatingSystem],
+        username,
+        nickName);
   
   SLPacketBuilder *packetBuilder = [SLPacketBuilder packetBuilder];
   NSData *packet = [packetBuilder buildLoginPacketWithSequenceID:connectionSequenceNumber
@@ -162,19 +163,18 @@
   
   isDisconnecting = YES;
   
-  LOGIN_DBG(@"LOGIN_DBG: begin disconnect");
-  
   NSData *packet = [[SLPacketBuilder packetBuilder] buildDisconnectPacketWithConnectionID:connectionID clientID:clientID sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)];
-  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
+  SLLog(@"LOGOUT(%d): begin disconnect", standardSequenceNumber);
   
-  LOGIN_DBG(@"LOGIN_DBG: waiting for disconnect");
+  [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
+  SLLog(@"LOGOUT(%d): waiting for disconnect timeout (%ds)", standardSequenceNumber, TRANSMIT_TIMEOUT);
   
   while (!hasFinishedDisconnecting)
   {
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
-  
-  LOGIN_DBG(@"LOGIN_DBG: disconnect completed");
+
+  SLLog(@"LOGOUT(%d): disconnected");
   
   if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
   {
@@ -229,9 +229,9 @@
     {
       case PACKET_TYPE_LOGIN_REPLY:
       {
-        LOGIN_DBG(@"LOGIN_DBG: server login reply, part 1");
-        
         BOOL isBadLogin = [[packet objectForKey:@"SLBadLogin"] boolValue];
+        SLLog(@"LOGIN(%d): login reply (part 1) from server, login reply is %@. resetting standard sequence.", connectionSequenceNumber, (isBadLogin ? @"BAD" : @"GOOD"));
+        
         standardSequenceNumber = 0;
 
         if (isBadLogin)
@@ -297,6 +297,8 @@
                                                                                                clientID:clientID
                                                                                              sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                               lastCRC32:lastCRC32];
+          SLLog(@"LOGIN(%d): sending login packet (part 2), clientid: %d", standardSequenceNumber, clientID);
+          
           // this only gets called form the socket's thread. so should be thread safe.
           [sock sendData:newPacket withTimeout:TRANSMIT_TIMEOUT];
           
@@ -326,7 +328,7 @@
       }
       case PACKET_TYPE_CHANNEL_LIST:
       {
-        LOGIN_DBG(@"LOGIN_DBG: recieved channel list");
+        SLLog(@"CHANNEL(%d): received channel list packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
         {
           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -337,7 +339,7 @@
       }
       case PACKET_TYPE_PLAYER_LIST:
       {
-        LOGIN_DBG(@"LOGIN_DBG: recieved player list");
+        SLLog(@"PLAYER(%d): received player list packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerList:)])
         {
           [[self delegate] connection:self receivedPlayerList:packet];
@@ -346,7 +348,7 @@
       }
       case PACKET_TYPE_LOGIN_END:
       {
-        LOGIN_DBG(@"LOGIN_DBG: login complete");
+        SLLog(@"LOGIN(%d): login complete.", connectionSequenceNumber);
         
         // reset the sequence ids
         connectionSequenceNumber = 0;
@@ -368,7 +370,7 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
-        LOGIN_DBG(@"LOGIN_DBG: ping counter reset");
+        SLLog(@"PING(%d): received ping, resetting ping counter after %d missed pings.", standardSequenceNumber, pingReplysPending);
         
         pingReplysPending = 0;
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
@@ -420,6 +422,7 @@
       }
       case PACKET_TYPE_NEW_PLAYER:
       {
+        SLLog(@"PLAYER(%d): received new player packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedNewPlayerNotification:channel:nickname:channelPrivFlags:extendedFlags:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -439,6 +442,8 @@
         {
           hasFinishedDisconnecting = YES;
         }
+        
+        SLLog(@"PLAYER(%d): received player left packet, disconnecting: %d: %@", standardSequenceNumber, isDisconnecting, packet);
         
         unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
         // check if we're not disconnecting but it was us that left. we've been kicked or the server went down
@@ -463,6 +468,7 @@
       }
       case PACKET_TYPE_CHANNEL_CHANGE:
       {
+        SLLog(@"CHANNEL(%d): received channel change packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelChangeNotification:fromChannel:toChannel:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -475,6 +481,7 @@
       }
       case PACKET_TYPE_PLAYER_UPDATE:
       {
+        SLLog(@"PLAYER(%d): received player update packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerUpdateNotification:flags:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -486,6 +493,7 @@
       }
       case PACKET_TYPE_PLAYER_MUTED:
       {
+        SLLog(@"PLAYER(%d): received player muted packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerMutedNotification:wasMuted:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -497,6 +505,7 @@
       }
       case PACKET_TYPE_PRIV_UPDATE:
       {
+        SLLog(@"PLAYER(%d): received player privs update packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerPriviledgeChangeNotification:byPlayerID:changeType:privFlag:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -526,6 +535,7 @@
       }
       case PACKET_TYPE_SERVERPRIV_UPDATE:
       {
+        SLLog(@"SERVER(%d): received server privs update packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerServerPriviledgeChangeNotification:byPlayerID:changeType:privFlag:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -549,12 +559,14 @@
       }
       case PACKET_TYPE_SERVERINFO_UPDATE:
       {
+        SLLog(@"SERVER(%d): received server info packet: %@", standardSequenceNumber, packet);
         NSData *data = [packet objectForKey:@"SLPermissionsData"];
         [self parsePermissionData:data];
         break;
       }
       case PACKET_TYPE_PLAYER_CHANKICKED:
       {
+        SLLog(@"PLAYER(%d): received player chankicked packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerKickedFromChannel:fromChannel:intoChannel:reason:)])
         {
           unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
@@ -723,7 +735,7 @@
   
   pingReplysPending++;
   
-  LOGIN_DBG(@"LOGIN_DBG: ping sent, %d pending", pingReplysPending);
+  SLLog(@"PING(%d): sending ping, currently waiting for %d replies.", standardSequenceNumber, pingReplysPending);
   
   [pool release];
 }

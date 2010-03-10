@@ -61,6 +61,7 @@
 		C97174E50FF778E8008FC21C /* SLPacketChomper.m in Sources */ = {isa = PBXBuildFile; fileRef = C97174E40FF778E8008FC21C /* SLPacketChomper.m */; };
 		C98E6988104F99E80004C8F0 /* GCDUDPSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = C98E6987104F99E80004C8F0 /* GCDUDPSocket.m */; };
 		C99EE62411473F8D008CA805 /* TSSafeMutableDictionary.m in Sources */ = {isa = PBXBuildFile; fileRef = C99EE61F11473BD9008CA805 /* TSSafeMutableDictionary.m */; };
+		C99EE64F11474197008CA805 /* TSLogger.m in Sources */ = {isa = PBXBuildFile; fileRef = C99EE64E11474197008CA805 /* TSLogger.m */; };
 		C9BD01F80FFB440900FC280A /* libspeex.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F60FFB440900FC280A /* libspeex.1.5.0.dylib */; };
 		C9BD01F90FFB440900FC280A /* libspeexdsp.1.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C9BD01F70FFB440900FC280A /* libspeexdsp.1.5.0.dylib */; };
 		C9BD020C0FFB47BE00FC280A /* SpeexDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD020B0FFB47BE00FC280A /* SpeexDecoder.m */; };
@@ -185,6 +186,8 @@
 		C98E6987104F99E80004C8F0 /* GCDUDPSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDUDPSocket.m; sourceTree = "<group>"; };
 		C99EE61E11473BD9008CA805 /* TSSafeMutableDictionary.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSSafeMutableDictionary.h; sourceTree = "<group>"; };
 		C99EE61F11473BD9008CA805 /* TSSafeMutableDictionary.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSSafeMutableDictionary.m; sourceTree = "<group>"; };
+		C99EE64D11474197008CA805 /* TSLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSLogger.h; sourceTree = "<group>"; };
+		C99EE64E11474197008CA805 /* TSLogger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSLogger.m; sourceTree = "<group>"; };
 		C9BD00000FFA02CD00FC280A /* quant_lsp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = quant_lsp.c; sourceTree = "<group>"; };
 		C9BD00010FFA02CD00FC280A /* quant_lsp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quant_lsp.h; sourceTree = "<group>"; };
 		C9BD00020FFA02CD00FC280A /* quant_lsp_bfin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = quant_lsp_bfin.h; sourceTree = "<group>"; };
@@ -683,6 +686,8 @@
 			children = (
 				C97174D50FF777CF008FC21C /* TSController.h */,
 				C97174D60FF777CF008FC21C /* TSController.m */,
+				C99EE64D11474197008CA805 /* TSLogger.h */,
+				C99EE64E11474197008CA805 /* TSLogger.m */,
 				C9E2D4CE1006BCBA00ED920D /* TSTransmission.h */,
 				C9E2D4CF1006BCBA00ED920D /* TSTransmission.m */,
 				C9E2CBB91003EDC500ED920D /* TSPlayerCell.h */,
@@ -1496,6 +1501,7 @@
 				C98E6988104F99E80004C8F0 /* GCDUDPSocket.m in Sources */,
 				C9C9D4BE105088350042A5B0 /* NSObject+Blocks.m in Sources */,
 				C99EE62411473F8D008CA805 /* TSSafeMutableDictionary.m in Sources */,
+				C99EE64F11474197008CA805 /* TSLogger.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
