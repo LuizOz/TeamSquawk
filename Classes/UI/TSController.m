@@ -523,7 +523,8 @@
   {
     TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
     
-    [toolbarViewNicknameField setStringValue:[player playerName]];
+    NSString *playerName = ([player playerName] ? [player playerName] : @"Unknown");
+    [toolbarViewNicknameField setStringValue:playerName];
     
     [[[toolbarViewStatusPopupButton menu] itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerHasMutedSpeakers)) == 0)];
     [[statusMenu itemWithTag:TSControllerPlayerActive] setState:(([player playerFlags] & (TSPlayerHasMutedMicrophone | TSPlayerHasMutedSpeakers)) == 0)];

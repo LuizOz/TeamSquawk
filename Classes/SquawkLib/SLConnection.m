@@ -289,6 +289,9 @@
         }
         else
         {
+          NSAssert([packet objectForKey:@"SLNewConnectionID"] != nil, @"SLNewConnectionID != nil");
+          NSAssert([packet objectForKey:@"SLClientID"] != nil, @"SLClientID != nil");
+          
           connectionID = [[packet objectForKey:@"SLNewConnectionID"] unsignedIntValue];
           clientID = [[packet objectForKey:@"SLClientID"] unsignedIntValue];
           unsigned int lastCRC32 = [[packet objectForKey:@"SLCRC32"] unsignedIntValue];
