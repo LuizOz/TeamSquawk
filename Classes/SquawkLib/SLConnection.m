@@ -598,23 +598,11 @@
   [data getBytes:serverAdminPermissions range:NSMakeRange(position, 10)];
   position += 10;
   
-#ifdef PERMS_DEBUG
-  NSLog(@"server admin: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", 
-        serverAdminPermissions[0], serverAdminPermissions[1], serverAdminPermissions[2], serverAdminPermissions[3], serverAdminPermissions[4],
-        serverAdminPermissions[5], serverAdminPermissions[6], serverAdminPermissions[7], serverAdminPermissions[8], serverAdminPermissions[9]);
-#endif
-  
   // skip 4 bytes
   position += 4;
   
   [data getBytes:channelAdminPermissions range:NSMakeRange(position, 8)];
   position += 8;
-  
-#ifdef PERMS_DEBUG
-  NSLog(@"channel admin: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
-        channelAdminPermissions[0], channelAdminPermissions[1], channelAdminPermissions[2], channelAdminPermissions[3],
-        channelAdminPermissions[4], channelAdminPermissions[5], channelAdminPermissions[6], channelAdminPermissions[7]);
-#endif
   
   // skip 3 bytes
   position += 3;
@@ -622,45 +610,21 @@
   [data getBytes:operatorPemissions range:NSMakeRange(position, 8)];
   position += 8;
   
-#ifdef PERMS_DEBUG
-  NSLog(@"operator: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
-        operatorPemissions[0], operatorPemissions[1], operatorPemissions[2], operatorPemissions[3],
-        operatorPemissions[4], operatorPemissions[5], operatorPemissions[6], operatorPemissions[7]);
-#endif
-  
   // skip 3 bytes
   position += 3;
   
   [data getBytes:voicePermissions range:NSMakeRange(position, 8)];
   position += 8;
   
-#ifdef PERMS_DEBUG
-  NSLog(@"voice: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
-        voicePermissions[0], voicePermissions[1], voicePermissions[2], voicePermissions[3],
-        voicePermissions[4], voicePermissions[5], voicePermissions[6], voicePermissions[7]);
-#endif
-  
   // skip no bytes here
   
   [data getBytes:registeredPermissions range:NSMakeRange(position, 10)];
   position += 10;
   
-#ifdef PERMS_DEBUG
-  NSLog(@"registered: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x", 
-        registeredPermissions[0], registeredPermissions[1], registeredPermissions[2], registeredPermissions[3], registeredPermissions[4],
-        registeredPermissions[5], registeredPermissions[6], registeredPermissions[7], registeredPermissions[8], registeredPermissions[9]);
-#endif
-  
   // skip 4 bytes
   position += 4;
   
   [data getBytes:anonymousPermissions range:NSMakeRange(position, 8)];
-  
-#ifdef PERMS_DEBUG
-  NSLog(@"anonymous: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x ", 
-        anonymousPermissions[0], anonymousPermissions[1], anonymousPermissions[2], anonymousPermissions[3],
-        anonymousPermissions[4], anonymousPermissions[5], anonymousPermissions[6], anonymousPermissions[7]);
-#endif
 }
 
 - (BOOL)checkPermission:(unsigned char)permission permissionType:(SLConnectionPermissionType)type forExtendedFlags:(SLConnectionExtendedFlags)extendedFlags andChannelPrivFlags:(SLConnectionChannelPrivFlags)channelPrivFlags
@@ -744,6 +708,7 @@
 {
   // if we hit this then we've got a connection timeout. UDP can't tell us if a packet came in or not, we just have to setup our
   // own timer and guess when its taken too long.
+  SLLog(@"TIMER: connection timer expired.");
   if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionFailedToLogin:withError:)])
   {
     NSError *error = [NSError errorWithDomain:@"SLConnectionError" 
@@ -766,6 +731,7 @@
                                                                                 sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                   playerID:playerID
                                                                                    message:message];
+  SLLog(@"MSG(%d): sending text message, to id %d, \"%@\"", standardSequenceNumber, playerID, message);
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
@@ -811,6 +777,7 @@
                                                                                    sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                  newChannelID:newChannel
                                                                                      password:password];
+  SLLog(@"CHANNEL(%d): sending change channel to %d%@", standardSequenceNumber, (password ? @" with password" : @""));
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
@@ -822,6 +789,7 @@
                                                                                           clientID:clientID
                                                                                         sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                     newStatusFlags:flags];
+  SLLog(@"STATUS(%d): changing status to flags 0x%x", standardSequenceNumber, flags);
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
@@ -834,6 +802,7 @@
                                                                                           sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                             playerID:playerID
                                                                                                muted:isMuted];
+  SLLog(@"PLAYER(%d): changing mute status to %d on playerid %d", standardSequenceNumber, isMuted, playerID);
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
@@ -848,6 +817,7 @@
                                                                           sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                             playerID:player
                                                                               reason:reason];
+  SLLog(@"PLAYER(%d): sending kick player %d from server with reason \"%@\"", standardSequenceNumber, player, reason);
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
@@ -860,6 +830,7 @@
                                                                                  sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                    playerID:player
                                                                                      reason:reason];
+  SLLog(@"PLAYER(%d): sending kick player %d from channel with reason \"%@\"", standardSequenceNumber, player, reason);
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }

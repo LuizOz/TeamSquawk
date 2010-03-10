@@ -13,7 +13,6 @@
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
 			<integer value="372"/>
-			<integer value="607"/>
 			<integer value="57"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
@@ -1552,6 +1551,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 											<int key="NSvFlags">2322</int>
 											<string key="NSFrameSize">{568, 21}</string>
 											<reference key="NSSuperview" ref="404863611"/>
+											<reference key="NSWindow"/>
 											<object class="NSTextContainer" key="NSTextContainer" id="42375116">
 												<object class="NSLayoutManager" key="NSLayoutManager">
 													<object class="NSTextStorage" key="NSTextStorage">
@@ -1631,6 +1631,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 									</object>
 									<string key="NSFrame">{{1, 1}, {568, 299}}</string>
 									<reference key="NSSuperview" ref="785911081"/>
+									<reference key="NSWindow"/>
 									<reference key="NSNextKeyView" ref="279198100"/>
 									<reference key="NSDocView" ref="279198100"/>
 									<reference key="NSBGColor" ref="656550397"/>
@@ -1645,6 +1646,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 									<int key="NSvFlags">-2147483392</int>
 									<string key="NSFrame">{{554, 1}, {15, 277}}</string>
 									<reference key="NSSuperview" ref="785911081"/>
+									<reference key="NSWindow"/>
 									<reference key="NSTarget" ref="785911081"/>
 									<string key="NSAction">_doScroller:</string>
 									<double key="NSCurValue">1</double>
@@ -1655,6 +1657,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 									<int key="NSvFlags">-2147483392</int>
 									<string key="NSFrame">{{1, 278}, {553, 15}}</string>
 									<reference key="NSSuperview" ref="785911081"/>
+									<reference key="NSWindow"/>
 									<int key="NSsFlags">1</int>
 									<reference key="NSTarget" ref="785911081"/>
 									<string key="NSAction">_doScroller:</string>
@@ -1664,24 +1667,26 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 							</object>
 							<string key="NSFrame">{{20, 53}, {570, 301}}</string>
 							<reference key="NSSuperview" ref="724473381"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="404863611"/>
 							<int key="NSsFlags">562</int>
 							<reference key="NSVScroller" ref="860007365"/>
 							<reference key="NSHScroller" ref="348130834"/>
 							<reference key="NSContentView" ref="404863611"/>
 						</object>
-						<object class="NSButton" id="415042271">
+						<object class="NSButton" id="929340850">
 							<reference key="NSNextResponder" ref="724473381"/>
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{500, 12}, {96, 32}}</string>
 							<reference key="NSSuperview" ref="724473381"/>
+							<reference key="NSWindow"/>
 							<bool key="NSEnabled">YES</bool>
-							<object class="NSButtonCell" key="NSCell" id="1048763868">
+							<object class="NSButtonCell" key="NSCell" id="770434369">
 								<int key="NSCellFlags">67239424</int>
 								<int key="NSCellFlags2">134217728</int>
 								<string key="NSContents">Copy</string>
 								<reference key="NSSupport" ref="1050593127"/>
-								<reference key="NSControlView" ref="415042271"/>
+								<reference key="NSControlView" ref="929340850"/>
 								<int key="NSButtonFlags">-2038284033</int>
 								<int key="NSButtonFlags2">129</int>
 								<string key="NSAlternateContents"/>
@@ -1693,6 +1698,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					</object>
 					<string key="NSFrameSize">{610, 374}</string>
 					<reference key="NSSuperview"/>
+					<reference key="NSWindow"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1440, 878}}</string>
 				<string key="NSMaxSize">{1.79769e+308, 1.79769e+308}</string>
@@ -2225,7 +2231,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					<object class="IBActionConnection" key="connection">
 						<string key="label">debugWindowCopyAction:</string>
 						<reference key="source" ref="1009119848"/>
-						<reference key="destination" ref="415042271"/>
+						<reference key="destination" ref="929340850"/>
 					</object>
 					<int key="connectionID">616</int>
 				</object>
@@ -3227,7 +3233,7 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<reference ref="785911081"/>
-							<reference ref="415042271"/>
+							<reference ref="929340850"/>
 						</object>
 						<reference key="parent" ref="355799495"/>
 					</object>
@@ -3259,17 +3265,17 @@ AAMAAAABAAEAAAFTAAMAAAAEAAAFwgAAAAAACAAIAAgACAABAAEAAQABA</bytes>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">614</int>
-						<reference key="object" ref="415042271"/>
+						<reference key="object" ref="929340850"/>
 						<object class="NSMutableArray" key="children">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<reference ref="1048763868"/>
+							<reference ref="770434369"/>
 						</object>
 						<reference key="parent" ref="724473381"/>
 					</object>
 					<object class="IBObjectRecord">
 						<int key="objectID">615</int>
-						<reference key="object" ref="1048763868"/>
-						<reference key="parent" ref="415042271"/>
+						<reference key="object" ref="770434369"/>
+						<reference key="parent" ref="929340850"/>
 					</object>
 				</object>
 			</object>
