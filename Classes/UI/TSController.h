@@ -60,6 +60,10 @@ typedef enum {
   IBOutlet NSMenu *statusMenu;
   IBOutlet NSMenu *channelsMenu;
   
+  // debug window
+  IBOutlet NSWindow *debugWindow;
+  IBOutlet NSTextView *debugTextView;
+  
   // connection window
   IBOutlet NSWindow *connectionWindow;
   IBOutlet NSTextField *connectionWindowServerTextField;
@@ -148,6 +152,9 @@ typedef enum {
 - (IBAction)toggleChannelCommander:(id)sender;
 - (IBAction)toggleBlockWhispers:(id)sender;
 - (IBAction)menuChangeChannelAction:(id)sender;
+- (IBAction)debugWindowMenuAction:(id)sender;
+- (IBAction)debugWindowCopyAction:(id)sender;
+- (void)debugWindowWillClose:(NSNotification*)notification;
 
 #pragma mark Connection Window Actions
 

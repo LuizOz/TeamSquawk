@@ -35,6 +35,7 @@
 #import "TSAudioExtraction.h"
 #import "TSPlayer.h"
 #import "TSChannel.h"
+#import "TSLogger.h"
 
 #define SPEECH_RATE 150.0f
 
@@ -461,6 +462,32 @@
 - (IBAction)menuChangeChannelAction:(id)sender
 {
   [teamspeakConnection changeChannelTo:[sender tag] withPassword:nil];
+}
+
+- (IBAction)debugWindowMenuAction:(id)sender
+{
+  [TSLogger setEventBlock:^{
+    NSString *t = [TSLogger log];
+    dispatch_async(dispatch_get_main_queue(), ^{
+      [debugTextView setString:t];
+      [debugTextView setNeedsDisplay:YES];
+    });
+  }];
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(debugWindowWillClose:) name:NSWindowWillCloseNotification object:debugWindow];
+  [debugTextView setString:[TSLogger log]];
+  [debugWindow makeKeyAndOrderFront:sender];
+}
+
+- (IBAction)debugWindowCopyAction:(id)sender
+{
+  [[NSPasteboard generalPasteboard] clearContents];
+  [[NSPasteboard generalPasteboard] setString:[debugTextView string] forType:NSPasteboardTypeString];
+}
+
+- (void)debugWindowWillClose:(NSNotification*)notification
+{
+  [[NSNotificationCenter defaultCenter] removeObserver:self name:NSWindowWillCloseNotification object:debugWindow];
+  [TSLogger setEventBlock:nil];
 }
 
 #pragma mark Connection Window Actions
