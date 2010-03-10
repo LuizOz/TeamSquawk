@@ -370,7 +370,7 @@
       }
       case PACKET_TYPE_PING_REPLY:
       {
-        SLLog(@"PING(%d): received ping, resetting ping counter after %d missed pings.", standardSequenceNumber, pingReplysPending);
+        //SLLog(@"PING(%d): received ping, resetting ping counter after %d missed pings.", standardSequenceNumber, pingReplysPending);
         
         pingReplysPending = 0;
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionPingReply:)])
@@ -578,8 +578,22 @@
         }
         break;
       }
+      case PACKET_TYPE_CHANNEL_MOVE:
+      {
+        SLLog(@"PLAYER(%d): recevied player admin moved packet: %@", standardSequenceNumber, packet);
+        if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerMovedNotification:fromChannel:intoChannel:adminPlayerID:)])
+        {
+          unsigned int playerID = [[packet objectForKey:@"SLMovedPlayerID"] unsignedIntValue];
+          unsigned int fromChannelID = [[packet objectForKey:@"SLFromChannelID"] unsignedIntValue];
+          unsigned int toChannelID = [[packet objectForKey:@"SLToChannelID"] unsignedIntValue];
+          unsigned int adminPlayerID = [[packet objectForKey:@"SLAdminPlayerID"] unsignedIntValue];
+          
+          [[self delegate] connection:self receivedPlayerMovedNotification:playerID fromChannel:fromChannelID intoChannel:toChannelID adminPlayerID:adminPlayerID];
+        }
+        break;
+      }
       default:
-        NSLog(@"got chomped packet I don't know about: %@", packet);
+        SLLog(@"UNKNOWN(%d): got an unknown chomped packet %@", standardSequenceNumber, packet);
     }
   }
   [pool release];
@@ -699,7 +713,7 @@
   
   pingReplysPending++;
   
-  SLLog(@"PING(%d): sending ping, currently waiting for %d replies.", standardSequenceNumber, pingReplysPending);
+  //SLLog(@"PING(%d): sending ping, currently waiting for %d replies.", standardSequenceNumber, pingReplysPending);
   
   [pool release];
 }

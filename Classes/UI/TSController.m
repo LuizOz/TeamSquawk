@@ -1291,6 +1291,20 @@
   }
 }
 
+- (void)connection:(SLConnection*)connection receivedPlayerMovedNotification:(unsigned int)playerID fromChannel:(unsigned int)fromChannelID intoChannel:(unsigned int)channelID adminPlayerID:(unsigned int)adminPlayerID
+{
+  TSPlayer *player = [players objectForKey:[NSNumber numberWithUnsignedInt:playerID]];
+  TSChannel *fromChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:fromChannelID]];
+  TSChannel *toChannel = [flattenedChannels objectForKey:[NSNumber numberWithUnsignedInt:channelID]];
+  
+  dispatch_async(dispatch_get_main_queue(), ^{
+    [fromChannel removePlayer:player];
+    [toChannel addPlayer:player];
+    [mainWindowOutlineView reloadData];
+    [mainWindowOutlineView expandItem:nil expandChildren:YES];
+  });
+}
+
 #pragma mark Audio
 
 - (void)outputDeviceHasChanged:(NSNotification*)notification

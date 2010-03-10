@@ -26,7 +26,9 @@
 #import "SLPacketBuilder.h"
 
 #import "NSData+Extensions.h"
+#import "TSLogger.h"
 
+#define SLLog(f, x...) TSLog(f, ##x)
 
 #define SNARF_INIT(data)  unsigned int snarfPos = 0; \
                           NSData *snarfData = data
@@ -339,9 +341,16 @@
       [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
       return chompedPacket;
     }
+    case PACKET_TYPE_CHANNEL_MOVE:
+    {
+      NSDictionary *chompedPacket = [self chompChannelMove:data];
+      NSData *ackPacket = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
+      [socket sendData:ackPacket withTimeout:TRANSMIT_TIMEOUT];
+      return chompedPacket;
+    }
     default:
     {
-      NSLog(@"unknown packet type: 0x%08x", packetType);
+      SLLog(@"WARNING(%d): encountered unknown packet type 0x%08x", sequenceNumber, packetType);
       NSData *packet = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID clientID:clientID sequenceID:sequenceNumber];
       [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
       break;
@@ -983,6 +992,53 @@
                                     reason, @"SLReason",
                                     nil];
   
+  return packetDictionary;
+}
+
+- (NSDictionary*)chompChannelMove:(NSData*)data
+{
+  SNARF_INIT(data);
+  SNARF_SKIP(4);
+  
+  // get connection id and client id
+  unsigned int connectionID, clientID;
+  SNARF_INT(connectionID);
+  SNARF_INT(clientID);
+  
+  unsigned int sequenceNumber = 0;
+  SNARF_INT(sequenceNumber);
+  
+  // resend and fragment count
+  unsigned short resendCount = 0, fragmentCount = 0;
+  SNARF_SHORT(resendCount);
+  SNARF_SHORT(fragmentCount);
+  
+  // we've already done the CRC for standard packets before. Plus if they're coalesed it won't work.
+  SNARF_SKIP(4);
+  
+  unsigned int movedPlayerID;
+  SNARF_INT(movedPlayerID);
+  
+  unsigned int fromChannel;
+  SNARF_INT(fromChannel);
+  
+  unsigned int toChannel;
+  SNARF_INT(toChannel);
+  
+  unsigned int adminPlayerID;
+  SNARF_INT(adminPlayerID);
+  
+  NSDictionary *packetDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                    [NSNumber numberWithUnsignedInt:PACKET_TYPE_CHANNEL_MOVE], @"SLPacketType",
+                                    [NSNumber numberWithUnsignedInt:clientID], @"SLClientID",
+                                    [NSNumber numberWithUnsignedInt:connectionID], @"SLConnectionID",
+                                    [NSNumber numberWithUnsignedInt:fragmentCount], @"SLFragmentCount",
+                                    [NSNumber numberWithUnsignedInt:sequenceNumber], @"SLSequenceNumber",
+                                    [NSNumber numberWithUnsignedInt:movedPlayerID], @"SLMovedPlayerID",
+                                    [NSNumber numberWithUnsignedInt:adminPlayerID], @"SLAdminPlayerID",
+                                    [NSNumber numberWithUnsignedInt:fromChannel], @"SLFromChannelID",
+                                    [NSNumber numberWithUnsignedInt:toChannel], @"SLToChannelID",
+                                    nil];
   return packetDictionary;
 }
 
