@@ -791,7 +791,7 @@
                                                                                    sequenceID:OSAtomicIncrement32Barrier(&standardSequenceNumber)
                                                                                  newChannelID:newChannel
                                                                                      password:password];
-  SLLog(@"CHANNEL(%d): sending change channel to %d%@", standardSequenceNumber, (password ? @" with password" : @""));
+  SLLog(@"CHANNEL(%d): sending change channel to %d%@", standardSequenceNumber, newChannel, (password ? @" with password" : @""));
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   [pool release];
 }
