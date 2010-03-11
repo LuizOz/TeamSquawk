@@ -97,6 +97,7 @@
   // reset our internal state
   isConnected = NO;
   isConnecting = NO;
+  isClosing = NO;
   players = [[TSSafeMutableDictionary alloc] init];
   channels = [[TSSafeMutableDictionary alloc] init];
   flattenedChannels = [[TSSafeMutableDictionary alloc] init];
@@ -1001,6 +1002,14 @@
 
 - (void)connectionDisconnected:(SLConnection*)connection withError:(NSError*)error
 {  
+  if (isClosing)
+  {
+    // We got a disconnect but we were supposed to be closing the app
+    // so tell NSApp
+    [NSApp replyToApplicationShouldTerminate:YES];
+    return;
+  }
+  
   isConnected = NO;
   isConnecting = NO;
   
@@ -1530,12 +1539,15 @@
 
 #pragma mark NSApplication Delegate
 
-- (void)applicationWillTerminate:(NSNotification *)aNotification
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
   if (isConnected)
   {
+    isClosing = YES;
     [teamspeakConnection disconnect];
+    return NSTerminateLater;
   }
+  return NSTerminateNow;
 }
 
 //- (void)audioDecoderThread2

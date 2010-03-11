@@ -86,6 +86,7 @@ typedef enum {
   // state
   BOOL isConnecting;
   BOOL isConnected;
+  BOOL isClosing;
   NSString *currentServerAddress;
   
   TSSafeMutableDictionary *players;
@@ -225,6 +226,6 @@ typedef enum {
 
 #pragma mark NSApplication Delegate
 
-- (void)applicationWillTerminate:(NSNotification *)aNotification;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
 
 @end

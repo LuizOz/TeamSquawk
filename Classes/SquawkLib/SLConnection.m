@@ -169,18 +169,6 @@
   
   [socket sendData:packet withTimeout:TRANSMIT_TIMEOUT];
   SLLog(@"LOGOUT(%d): waiting for disconnect timeout (%ds)", standardSequenceNumber, TRANSMIT_TIMEOUT);
-  
-  while (!hasFinishedDisconnecting)
-  {
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-  }
-
-  SLLog(@"LOGOUT(%d): disconnected");
-  
-  if ([self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
-  {
-    [[self delegate] connectionDisconnected:self withError:nil];
-  }
 }
 
 #pragma mark Incoming Events
@@ -468,13 +456,7 @@
       }
       case PACKET_TYPE_PLAYER_LEFT:
       {
-        // this could be us!
-        if (isDisconnecting)
-        {
-          hasFinishedDisconnecting = YES;
-        }
-        
-        SLLog(@"PLAYER(%d): received player left packet, disconnecting: %d: %@", standardSequenceNumber, isDisconnecting, packet);
+        SLLog(@"PLAYER(%d): received player left packet, isDisconnecting: %d: %@", standardSequenceNumber, isDisconnecting, packet);
         
         unsigned int playerID = [[packet objectForKey:@"SLPlayerID"] unsignedIntValue];
         // check if we're not disconnecting but it was us that left. we've been kicked or the server went down
@@ -493,6 +475,11 @@
           if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerLeftNotification:)])
           {
             [[self delegate] connection:self receivedPlayerLeftNotification:playerID];
+          }
+          else if (isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connectionDisconnected:withError:)])
+          {
+            SLLog(@"LOGOUT(%d): disconnected");
+            [[self delegate] connectionDisconnected:self withError:nil];
           }
         }        
         break;
