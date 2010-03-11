@@ -159,12 +159,13 @@ OSStatus InputRenderCallback(void *inRefCon,
   
   {
     // output unit
-    ComponentDescription outputComponentDescription;
-    outputComponentDescription.componentType = kAudioUnitType_Output;
-    outputComponentDescription.componentSubType = kAudioUnitSubType_HALOutput;
-    outputComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
-    outputComponentDescription.componentFlags = 0;
-    outputComponentDescription.componentFlagsMask = 0;
+    const AudioComponentDescription outputComponentDescription = {
+      .componentType = kAudioUnitType_Output,
+      .componentSubType = kAudioUnitSubType_HALOutput,
+      .componentManufacturer = kAudioUnitManufacturer_Apple,
+      .componentFlags = 0,
+      .componentFlagsMask = 0,
+    };
     
     err = AUGraphAddNode(outputGraph, &outputComponentDescription, &outputDeviceNode);
     initCheckErr(err, @"AUGraphAddNode");
@@ -203,12 +204,13 @@ OSStatus InputRenderCallback(void *inRefCon,
   
   {
     // converter unit
-    ComponentDescription converterComponentDescription;
-    converterComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
-    converterComponentDescription.componentType = kAudioUnitType_FormatConverter;
-    converterComponentDescription.componentSubType = kAudioUnitSubType_AUConverter;
-    converterComponentDescription.componentFlags = 0;
-    converterComponentDescription.componentFlagsMask = 0;
+    const AudioComponentDescription converterComponentDescription = {
+      .componentManufacturer = kAudioUnitManufacturer_Apple,
+      .componentType = kAudioUnitType_FormatConverter,
+      .componentSubType = kAudioUnitSubType_AUConverter,
+      .componentFlags = 0,
+      .componentFlagsMask = 0,
+    };
     
     err = AUGraphAddNode(outputGraph, &converterComponentDescription, &converterNode);
     initCheckErr(err, @"AUGraphAddNode (init converter node)");
@@ -226,12 +228,13 @@ OSStatus InputRenderCallback(void *inRefCon,
   {
     // mixer unit
     
-    ComponentDescription mixerComponentDescription;
-    mixerComponentDescription.componentType = kAudioUnitType_Mixer;
-    mixerComponentDescription.componentSubType = kAudioUnitSubType_StereoMixer;
-    mixerComponentDescription.componentManufacturer = kAudioUnitManufacturer_Apple;
-    mixerComponentDescription.componentFlags = 0;
-    mixerComponentDescription.componentFlagsMask = 0;
+    const AudioComponentDescription mixerComponentDescription = {
+      .componentType = kAudioUnitType_Mixer,
+      .componentSubType = kAudioUnitSubType_StereoMixer,
+      .componentManufacturer = kAudioUnitManufacturer_Apple,
+      .componentFlags = 0,
+      .componentFlagsMask = 0,
+    };
     
     err = AUGraphAddNode(outputGraph, &mixerComponentDescription, &mixerNode);
     initCheckErr(err, @"AUGraphAddNode");
