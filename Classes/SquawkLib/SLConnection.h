@@ -129,6 +129,12 @@ typedef enum {
   SLConnectionPermissionAdmin = 0x05,
 } SLConnectionPermissionType;
 
+typedef enum {
+  SLConnectionLoginGotStart = 0x01,
+  SLConnectionLoginGotChannelList = 0x02,
+  SLConnectionLoginGotPlayerList = 0x04,
+} SLConnectionLoginProgress;
+
 @interface SLConnection : NSObject {
   GCDUDPSocket *socket;
   
@@ -142,6 +148,7 @@ typedef enum {
   
   int connectionSequenceNumber;
   int standardSequenceNumber;
+  SLConnectionLoginProgress loginProgress;
   
   unsigned int serverConnectionSequenceNumber;
   unsigned int serverStandardSequenceNumber;

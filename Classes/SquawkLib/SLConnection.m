@@ -85,6 +85,7 @@
     hasFinishedDisconnecting = NO;
     pendingReceive = NO;
     pingReplysPending = 0;
+    loginProgress = 0;
     
     connectionSequenceNumber = 0;
     standardSequenceNumber = 0;
@@ -212,6 +213,13 @@
         break;
       default:
       {
+        // If we haven't got the both the channel and player lists then we can't process a login end packet.
+        if ((packetType == PACKET_TYPE_LOGIN_END) &&
+            ((loginProgress & (SLConnectionLoginGotPlayerList|SLConnectionLoginGotChannelList)) != (SLConnectionLoginGotPlayerList|SLConnectionLoginGotChannelList)))
+        {
+          return;
+        }
+        
         NSData *ackPacketData = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID
                                                                                                clientID:clientID
                                                                                              sequenceID:sequenceID];
@@ -219,7 +227,7 @@
       }
     }
     
-    if (sequenceID)
+    if ([packet objectForKey:@"SLSequenceNumber"])
     {
       if ((packetType & 0x0000ffff) == 0x0000bef4)
       {
@@ -310,6 +318,8 @@
           
           connectionID = [[packet objectForKey:@"SLNewConnectionID"] unsignedIntValue];
           clientID = [[packet objectForKey:@"SLClientID"] unsignedIntValue];
+          loginProgress = SLConnectionLoginGotStart;
+          
           unsigned int lastCRC32 = [[packet objectForKey:@"SLCRC32"] unsignedIntValue];
           
           NSData *newPacket = [[SLPacketBuilder packetBuilder] buildLoginResponsePacketWithConnectionID:connectionID
@@ -350,6 +360,7 @@
         SLLog(@"CHANNEL(%d): received channel list packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedChannelList:)])
         {
+          loginProgress |= SLConnectionLoginGotChannelList;
           dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
             [[self delegate] connection:self receivedChannelList:packet];
           });
@@ -361,6 +372,7 @@
         SLLog(@"PLAYER(%d): received player list packet: %@", standardSequenceNumber, packet);
         if (!isDisconnecting && [self delegate] && [[self delegate] respondsToSelector:@selector(connection:receivedPlayerList:)])
         {
+          loginProgress |= SLConnectionLoginGotPlayerList;
           [[self delegate] connection:self receivedPlayerList:packet];
         }
         break;
