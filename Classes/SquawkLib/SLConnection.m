@@ -200,28 +200,44 @@
   if (packet)
   {
     unsigned int packetType = [[packet objectForKey:@"SLPacketType"] unsignedIntValue];
-    
-    if ([packet objectForKey:@"SLSequenceNumber"])
+    unsigned int sequenceID = [[packet objectForKey:@"SLSequenceNumber"] unsignedIntValue];
+
+    switch (packetType)
     {
-      unsigned int seq = [[packet objectForKey:@"SLSequenceNumber"] unsignedIntValue];
-      
+      // These packets never get ACK packets sent. We're doing this ahead of the of the switch
+      // we do later because the ACK needs to be emitted as soon as possible after we know whats
+      // going on.
+      case PACKET_TYPE_LOGIN_REPLY:
+      case PACKET_TYPE_PING_REPLY:
+        break;
+      default:
+      {
+        NSData *ackPacketData = [[SLPacketBuilder packetBuilder] buildAcknowledgePacketWithConnectionID:connectionID
+                                                                                               clientID:clientID
+                                                                                             sequenceID:sequenceID];
+        [socket sendData:ackPacketData withTimeout:TRANSMIT_TIMEOUT];
+      }
+    }
+    
+    if (sequenceID)
+    {
       if ((packetType & 0x0000ffff) == 0x0000bef4)
       {
         // connection sequence
-        if (seq <= serverConnectionSequenceNumber)
+        if (sequenceID <= serverConnectionSequenceNumber)
         {
           return;
         }
-        serverConnectionSequenceNumber = seq;
+        serverConnectionSequenceNumber = sequenceID;
       }
       else if ((packetType & 0x0000ffff) == 0x0000bef0)
       {
         // standard sequence
-        if (seq <= serverStandardSequenceNumber)
+        if (sequenceID <= serverStandardSequenceNumber)
         {
           return;
         }
-        serverStandardSequenceNumber = seq;
+        serverStandardSequenceNumber = sequenceID;
       }
     }
     
