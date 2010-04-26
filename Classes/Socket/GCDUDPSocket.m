@@ -70,13 +70,21 @@
     socketfd = socket(addr.sin_family, SOCK_DGRAM, IPPROTO_UDP);
     if (socketfd == -1)
     {
-      NSLog(@"%s", strerror(errno));
+      if (errPtr)
+      {
+        *errPtr = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%s", strerror(errno)], NSLocalizedDescriptionKey, nil]];
+      }
+
       return NO;
     }
     
     if (connect(socketfd, (struct sockaddr*)&addr, sizeof(addr)) == -1)
     {
-      NSLog(@"%s", strerror(errno));
+      if (errPtr)
+      {
+        *errPtr = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%s", strerror(errno)], NSLocalizedDescriptionKey, nil]];
+      }
+
       return NO;
     }
   }
@@ -93,7 +101,10 @@
     
     if (error)
     {
-      NSLog(@"%s", strerror(error));
+      if (errPtr)
+      {
+        *errPtr = [NSError errorWithDomain:@"GetAddrInfoErrorDomain" code:error userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%s", gai_strerror(error)], NSLocalizedDescriptionKey, nil]];
+      }
       return NO;
     }
     
@@ -105,14 +116,22 @@
         socketfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
         if (socketfd == -1)
         {
-          NSLog(@"%s", strerror(errno));
+          if (errPtr)
+          {
+            *errPtr = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%s", strerror(errno)], NSLocalizedDescriptionKey, nil]];
+          }
+          
           freeaddrinfo(res0);
           return NO;
         }
         
         if (connect(socketfd, res->ai_addr, res->ai_addrlen) == -1)
         {
-          NSLog(@"%s", strerror(errno));
+          if (errPtr)
+          {
+            *errPtr = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:[NSDictionary dictionaryWithObjectsAndKeys:[NSString stringWithFormat:@"%s", strerror(errno)], NSLocalizedDescriptionKey, nil]];
+          }
+
           freeaddrinfo(res0);
           return NO;
         }

@@ -855,7 +855,7 @@
     
     if (error)
     {
-      if ([[error domain] isEqual:@"kCFStreamErrorDomainNetDB"])
+      if ([[error domain] isEqual:@"GetAddrInfoErrorDomain"])
       {
         NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:[[error localizedDescription] capitalizedString], NSLocalizedDescriptionKey, 
                               @"Could not resolve the address of the server you specified, please check the address and try again. Alternatively, the server may not exist.", NSLocalizedRecoverySuggestionErrorKey, nil];
