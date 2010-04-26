@@ -5,8 +5,7 @@
 //  Created by Matt Wright on 28/06/2009.
 //  Copyright 2009 Matt Wright Consulting. All rights reserved.
 //
-
-#import <WiganWallgate/dispatch.h>
+#import <dispatch/dispatch.h>
 
 #import <Sparkle/Sparkle.h>
 #import "TSStandardVersionComparator.h"

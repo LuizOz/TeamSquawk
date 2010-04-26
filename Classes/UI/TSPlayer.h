@@ -6,7 +6,7 @@
 //  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
-#import <WiganWallgate/dispatch.h>
+#import <dispatch/dispatch.h>
 
 #import <Cocoa/Cocoa.h>
 #import "SpeexDecoder.h"
