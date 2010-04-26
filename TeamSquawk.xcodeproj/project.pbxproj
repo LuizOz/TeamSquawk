@@ -73,7 +73,6 @@
 		C9BD02940FFC972400FC280A /* TSCoreAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD02930FFC972400FC280A /* TSCoreAudioPlayer.m */; };
 		C9BD05F60FFD692C00FC280A /* TSAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = C9BD05F50FFD692C00FC280A /* TSAudioConverter.m */; };
 		C9C9D4BE105088350042A5B0 /* NSObject+Blocks.m in Sources */ = {isa = PBXBuildFile; fileRef = C9C9D4BD105088350042A5B0 /* NSObject+Blocks.m */; };
-		C9E1443B10544A5A0085F206 /* WiganWallgate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1443A10544A5A0085F206 /* WiganWallgate.framework */; };
 		C9E1446A10544AB40085F206 /* WiganWallgate.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1443A10544A5A0085F206 /* WiganWallgate.framework */; };
 		C9E1448910544B4B0085F206 /* PLBlocks.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1448810544B4B0085F206 /* PLBlocks.framework */; };
 		C9E1448E10544B530085F206 /* PLBlocks.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = C9E1448810544B4B0085F206 /* PLBlocks.framework */; };
@@ -539,7 +538,6 @@
 				C939E1E7100DB5FA002CBED3 /* AudioUnit.framework in Frameworks */,
 				C939EDCE1011E7A1002CBED3 /* Sparkle.framework in Frameworks */,
 				C95468FC101540CD00FCF935 /* MWFramework.framework in Frameworks */,
-				C9E1443B10544A5A0085F206 /* WiganWallgate.framework in Frameworks */,
 				C9E1448910544B4B0085F206 /* PLBlocks.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1547,7 +1545,6 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
-				GCC_VERSION = coop.plausible.blocks.compilers.gcc.4_2;
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/Frameworks\"/**",
 					"\"$(SRCROOT)/speex-1.2rc1/include\"",
@@ -1577,7 +1574,6 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = TeamSquawk_Prefix.pch;
-				GCC_VERSION = coop.plausible.blocks.compilers.gcc.4_2;
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/Frameworks\"/**",
 					"\"$(SRCROOT)/speex-1.2rc1/include\"",
@@ -1600,12 +1596,11 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 			};
 			name = Debug;
 		};
@@ -1614,11 +1609,10 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 			};
 			name = Release;
 		};
