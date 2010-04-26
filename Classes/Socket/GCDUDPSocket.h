@@ -7,7 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import <WiganWallgate/dispatch.h>
+#import <dispatch/dispatch.h>
 
 @protocol GCDUDPSocketDelegate;
 
