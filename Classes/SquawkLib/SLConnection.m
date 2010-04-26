@@ -9,6 +9,7 @@
 #import "SLConnection.h"
 #import "SLPacketBuilder.h"
 #import "SLPacketChomper.h"
+#import <libkern/OSAtomic.h>
 
 //#define PERMS_DEBUG 1
 //#define LOGIN_DEBUG 1
