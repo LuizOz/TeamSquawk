@@ -48,7 +48,7 @@
   
   if (returnCode == 0)
   {
-    [[UKCrashReporter alloc] initWithLogString:(NSString*)context];
+    [[[UKCrashReporter alloc] initWithLogString:(NSString*)context] autorelease];
     [(NSException*)context release];
   }
 }

@@ -601,7 +601,8 @@
   {
     NSMenuItem *recentServer = [[[NSMenuItem alloc] initWithTitle:@"No Recent Servers" action:@selector(unusedSelfDisablingAction:) keyEquivalent:@""] autorelease];
     [recentServer setTarget:self];
-    [fileMenu insertItem:recentServer atIndex:recentServersIndex++];
+    recentServersIndex++;
+    [fileMenu insertItem:recentServer atIndex:recentServersIndex];
   }
 }
 

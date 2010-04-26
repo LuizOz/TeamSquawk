@@ -132,6 +132,7 @@ static TSHotkeyManager *globalHotkeyManager = nil;
 - (void)addHotkey:(TSHotkey*)hotkey
 {
   EventHotKeyID hotkeyID;
+  hotkeyID.signature = 0;
   hotkeyID.id = [hotkey hotkeyID];
   
   OSStatus err = RegisterEventHotKey([hotkey keyCode], [hotkey modifiers], hotkeyID, GetApplicationEventTarget(), 0, [hotkey hotkeyRef]);
