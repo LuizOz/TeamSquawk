@@ -31,7 +31,7 @@ typedef enum {
   TSControllerPlayerBlockWhispers = 300,
 } TSControllerPlayerStatus;
 
-@interface TSController : NSObject {
+@interface TSController : NSObject <NSOutlineViewDelegate, NSOutlineViewDataSource, NSToolbarDelegate> {
   
   // user interface
   
