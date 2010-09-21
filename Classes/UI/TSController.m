@@ -1032,7 +1032,8 @@
         [blocker unblockThread];
         [[NSException exceptionWithName:@"ParentChannelNotFound" reason:@"Subchannel defined before parent channel." userInfo:nil] raise];
       }
-      [(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
+      //[(TSChannel*)[flattenedChannels objectForKey:parentChannel] addSubChannel:channel];
+		[channels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
     }
     [blocker unblockThread];
   }
