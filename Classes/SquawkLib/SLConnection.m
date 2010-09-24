@@ -261,7 +261,7 @@
   }
   
   NSDictionary *packet = [chomper chompPacket:data];
-  
+
   if (packet)
   {
     unsigned int packetType = [[packet objectForKey:@"SLPacketType"] unsignedIntValue];
@@ -289,7 +289,7 @@
         serverStandardSequenceNumber = seq;
       }
     }
-    
+	      	  
     switch (packetType)
     {
       case PACKET_TYPE_LOGIN_REPLY:

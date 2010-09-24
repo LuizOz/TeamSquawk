@@ -145,7 +145,7 @@
     {
       statusText = [[NSMutableAttributedString alloc] initWithString:@"Unregistered"];
     }
-    
+
     float playerFontSize = (small ? [NSFont smallSystemFontSize] : [NSFont systemFontSize]);
     NSFont *playerNameFont = [NSFont labelFontOfSize:playerFontSize];
     [playerName addAttribute:NSFontAttributeName value:playerNameFont range:NSMakeRange(0, [playerName length])];

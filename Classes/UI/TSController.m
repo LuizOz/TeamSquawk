@@ -1019,7 +1019,8 @@
     
     // root channels have a parent of 0xffffffff, if we've got a real parent and we haven't
     // encountered yet then we should crater
-    if ([channel parent] == 0xffffffff)
+
+	if ([channel parent] == 0xffffffff)
     {
       [channels setObject:channel forKey:[NSNumber numberWithUnsignedInt:[channel channelID]]];
     }
@@ -1040,6 +1041,7 @@
   
   [blocker blockMainThread];
   [sortedChannels autorelease];
+	
   NSArray *sortDescriptors = [NSArray arrayWithObjects:
                               [[[NSSortDescriptor alloc] initWithKey:@"sortOrder" ascending:YES] autorelease],
                               [[[NSSortDescriptor alloc] initWithKey:@"channelName" ascending:YES] autorelease],

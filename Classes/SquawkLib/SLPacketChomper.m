@@ -410,7 +410,9 @@
                                     [NSNumber numberWithUnsignedInt:numberOfChannels], @"SLNumberOfChannels",
                                     channels, @"SLChannels",
                                     nil];
-  
+  if (numberOfChannels > 100) {
+		return packetDictionary;
+  }
   while (currentChannel < numberOfChannels)
   {
     unsigned int channelID = 0;
