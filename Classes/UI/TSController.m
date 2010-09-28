@@ -1349,6 +1349,24 @@
       }
       break;
     }
+	case TSHotkeyCommandChannelPriv:
+	{
+		TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+		if ([me isChannelCommander])
+		{
+			NSArray *channelCommanders = [[[players allValues] filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"(isChannelCommander == YES) AND (playerID != %d) AND (channelID == %d)", [teamspeakConnection clientID],[me channelID]]] valueForKeyPath:@"playerID"];
+			
+			[transmission setWhisperRecipients:channelCommanders];
+			[transmission setIsWhispering:YES];
+			[transmission setIsTransmitting:YES];
+			[me setIsWhispering:YES];
+			[me setIsTransmitting:YES];
+			
+			[self updatePlayerStatusView];
+			[mainWindowOutlineView reloadItem:me];
+		}
+		break;
+	}
     default:
       break;
   }
@@ -1382,6 +1400,18 @@
       [mainWindowOutlineView reloadItem:me];
       break;
     }
+	case TSHotkeyCommandChannelPriv:
+	{
+		TSPlayer *me = [players objectForKey:[NSNumber numberWithUnsignedInt:[teamspeakConnection clientID]]];
+		[transmission setIsTransmitting:NO];
+		[transmission setIsWhispering:NO];
+		[transmission setWhisperRecipients:nil];
+		[me setIsTransmitting:NO];
+		
+		[self updatePlayerStatusView];
+		[mainWindowOutlineView reloadItem:me];
+		break;
+	}
     default:
       break;
   }

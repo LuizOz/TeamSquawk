@@ -19,6 +19,7 @@ typedef enum {
   TSHotkeyNone = -1,
   TSHotkeyPushToTalk = 1,
   TSHotkeyCommandChannel = 2,
+  TSHotkeyCommandChannelPriv = 3,
 } TSHotkeyActions;
 
 @interface TSPreferencesController : DBPrefsWindowController {

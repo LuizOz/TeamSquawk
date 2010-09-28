@@ -609,8 +609,9 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
     [hotkeyEditorActionPopup removeAllItems];
     [[[hotkeyEditorActionPopup menu] addItemWithTitle:@"No Action" action:nil keyEquivalent:@""] setTag:TSHotkeyNone];
     [[[hotkeyEditorActionPopup menu] addItemWithTitle:@"Push to Talk" action:nil keyEquivalent:@""] setTag:TSHotkeyPushToTalk];
-    [[[hotkeyEditorActionPopup menu] addItemWithTitle:@"Talk on Commander Channel" action:nil keyEquivalent:@""] setTag:TSHotkeyCommandChannel];
-    
+    [[[hotkeyEditorActionPopup menu] addItemWithTitle:@"Talk on Global Commander Channel" action:nil keyEquivalent:@""] setTag:TSHotkeyCommandChannel];
+	[[[hotkeyEditorActionPopup menu] addItemWithTitle:@"Talk on Commander Channel" action:nil keyEquivalent:@""] setTag:TSHotkeyCommandChannelPriv];
+
     NSDictionary *hotkeyDict = [[[NSUserDefaults standardUserDefaults] arrayForKey:@"Hotkeys"] objectAtIndex:row];
     unsigned int modifiers = [[hotkeyDict objectForKey:@"HotkeyModifiers"] unsignedIntValue];
     int tag = [[hotkeyDict objectForKey:@"HotkeyAction"] unsignedIntValue];
@@ -715,8 +716,10 @@ NSString *TSPreferencesServersDragType = @"TSPreferencesServersDragType";
       case TSHotkeyPushToTalk:
         return @"Push to Talk";
       case TSHotkeyCommandChannel:
-        return @"Talk on Commander Channel";
-      default:
+        return @"Talk on Global Commander Channel";
+	  case TSHotkeyCommandChannelPriv:
+		return @"Talk on Commander Channel";
+	  default:
         return @"Unknown";
     }
   }
